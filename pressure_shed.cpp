@@ -1,5 +1,4 @@
 #include "gauravlib.h"
-
 void shed(vector<CV>& w,vector<double>& x)
 {
 for ( int j = 2; j <= res; j++)

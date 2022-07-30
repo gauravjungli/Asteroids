@@ -1,5 +1,6 @@
 #include <gauravlib.h>
 
+
 CV::CV(): p(0), q(0), r(0),h(0),u(0),v(0){}
 
 CV::CV(double h, double u, double v,double x)
@@ -27,8 +28,8 @@ CV flux( CV w, double x )
 	double f3 = w.q * w.r / w.p;// change for the specific case
 	f.modify(f1,f2,f3);
 	return f;
-}
 
+}
 
 
 CV Source(int j, const CV& wtemp, grav& g)
@@ -42,4 +43,5 @@ CV Source(int j, const CV& wtemp, grav& g)
 	int sgn_v = (vt > 0) ? 1 : ((vt < 0) ? -1 : 0);
 	source.modify(0,0,0) ;//change for the sphere
 	return source;
+
 }

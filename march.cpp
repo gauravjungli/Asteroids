@@ -82,4 +82,5 @@ void cfl(vector<CV>& wl,vector<CV>& wr, vector<double>x, double & dt)
 	}
 
 	dt = min(dx/8,dx/8/maxspeed);
+
 }

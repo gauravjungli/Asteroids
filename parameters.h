@@ -1,3 +1,4 @@
+
 #ifndef PARAMETERS
 #define PARAMETERS
 
@@ -15,10 +16,13 @@ const double delta = 20 * PI / 180; // angle of friction in degrees
 const double theta = 1.0; // used in min-mod limiter
 
 
+
 const double epsilon = 0.01; // shallowness parameter
 
 ///donot change beyond this
 
 const double dx = (xmax-xmin) / res;
+
 const double omega=1.5;
 #endif
+

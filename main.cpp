@@ -13,5 +13,6 @@ int main()
 	uniform_IC(w,x,Om);
 	march(w,Om,x,g,finalt);
 	
+
 	return 0;
 }

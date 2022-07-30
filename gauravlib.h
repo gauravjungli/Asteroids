@@ -17,6 +17,7 @@ void write(const vector<CV> &, double  );
 void write( const double &, double  );
 
 
+
 //To read files
 void read ( vector<double>& );
 
@@ -46,11 +47,13 @@ class CV{
         double p, q, r,h,u,v;
         CV(): p(0), q(0), r(0),h(0),u(0),v(0){}
         CV(double h, double u, double v,double x){}
+
         void modify(double p, double q, double r);
 };
 
 //To compute source terms
 CV Source(int , const CV& , grav& );
+
 
 
 //To incorporate topography
@@ -64,11 +67,14 @@ double minmod(double , double , double );
 
 
 //To initialize the simulation
+
 void uniform_IC (vector<CV> & , vector<double> & , double& );
+
 void grid(vector<double>&);
 
 
 //To be used in the solver terms
+
 CV Hx(CV , CV , double ); 
 
 
@@ -86,6 +92,7 @@ CV derivative( CV , CV , CV );
 //To check cfl condition
 void cfl();
 
+
 //To be used in the time marching
 void march (vector<CV>& , double & , vector<double> & , vector<grav>& ,double);
 void predictor(vector<CV>& ,  vector<CV>& , double , vector<double>& , double, vector<grav>& );
@@ -100,4 +107,5 @@ double phi(CV&,double&);
 
 //values at edges
 void edge(vector<CV>& , vector<CV>& , vector<CV>& );
+
 #endif

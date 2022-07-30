@@ -9,6 +9,7 @@ void grid(vector<double> & x)
         }
 }
 
+
 void uniform_IC (vector<CV> & w, vector<double> & x, double & Om )
 {   
     Om = omega;

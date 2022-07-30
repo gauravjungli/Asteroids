@@ -16,5 +16,3 @@ CV Hx( CV wl, CV wr,double x) // this xx, yy corresponds to boundaries of cells
 	return w;
 }
 
-
-
