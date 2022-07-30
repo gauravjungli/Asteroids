@@ -13,8 +13,9 @@
 using namespace std;
 
 //To write files
-void write(const double,const double t );
-void write( vector<CV>&,const double t );
+void write(const vector<CV> &, double  );
+void write( const double &, double  );
+
 
 
 //To read files
@@ -46,16 +47,13 @@ class CV{
         double p, q, r,h,u,v;
         CV(): p(0), q(0), r(0),h(0),u(0),v(0){}
         CV(double h, double u, double v,double x){}
+
+        void modify(double p, double q, double r);
 };
 
 //To compute source terms
-double S1(int , const CV& , grav& );
-double S2(int , const CV& , grav& );
-double S3(int , const CV& , grav& );
+CV Source(int , const CV& , grav& );
 
-
-//To compute characteristic speeds
-double ax(int j );
 
 
 //To incorporate topography
@@ -69,42 +67,45 @@ double minmod(double , double , double );
 
 
 //To initialize the simulation
-void uniform_IC (vector<CV> & , const CV& , double& );
+
+void uniform_IC (vector<CV> & , vector<double> & , double& );
+
 void grid(vector<double>&);
 
 
 //To be used in the solver terms
-double Hx(int , int , vector<CV>& ); 
+
+CV Hx(CV , CV , double ); 
 
 
 //To calculate flux
-double flux(CV ,  int  );
+CV flux(CV , double  );
 
 
-//To calculate eigen value
-double maxeigenx(double , int );
-
+//To calculate eigen value and chareacteristics speed
+double eigen(CV, double );
+double ax(CV , CV , double );
 
 //To be used for the limiters
-double derivative( int , int , vector<CV>& );
-
-//For the boundary conditions
-double boundary_condt();
-
+CV derivative( CV , CV , CV );
 
 //To check cfl condition
 void cfl();
 
 
-//To reconstruct variables
-void reconstruction(CV&  );
-
-
 //To be used in the time marching
-void predictor_corrector(vector<CV>& ,  vector<CV>& , double , vector<double> , double );
+void march (vector<CV>& , double & , vector<double> & , vector<grav>& ,double);
+void predictor(vector<CV>& ,  vector<CV>& , double , vector<double>& , double, vector<grav>& );
+void corrector(vector<CV>& ,  vector<CV>& ,vector<CV>&, double , vector<double>& , double, vector<grav>& );
 
 //To update omega
-void omega(double , double ,double , double , double , double , double );
-void Ang_mom(const vector<CV>&, const double&,const vector<double>&,double,double);
+void Ang_mom(const vector<CV>&, const vector<CV>&, double& ,const vector<double>&,double,double);
+
+//mass shedding and pressure
+void shed(vector<CV>&,vector<double>&);
+double phi(CV&,double&);
+
+//values at edges
+void edge(vector<CV>& , vector<CV>& , vector<CV>& );
 
 #endif

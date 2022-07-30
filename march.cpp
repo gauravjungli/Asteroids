@@ -1,29 +1,86 @@
 #include "gauravlib.h"
-void predictor_corrector(vector<CV>& w,  vector<CV>& wtemp, double Om, vector<double> x, double dt, vector<grav>& g)
-{   double momincb=0;//chnage for the sphere
-    double integral1_o=0;
-    double integral2_o=0;
-    Ang_mom( w, Om , x, integral1_o, integral2_o);
 
 	// predictor step for interior
-    vector<CV> wtemphat(w);
-	for (int j = 0; j < res; j++)
-	{
-		w[j].p = wtemp[j].p - ((Hx(j + 1, 1, wtemp) - Hx(j, 1,wtemp)) / dx - S1(j,wtemp[j],g[j])) * dt;
-		w[j].q = wtemp[j].q - ((Hx(j + 1, 2,wtemp) - Hx(j, 2,wtemp)) / dx - S2(j,wtemp[j],g[j])) * dt;
-    	w[j].r = wtemp[j].r - ((Hx(j + 1, 3,wtemp) - Hx(j, 3,wtemp)) / dx - S3(j,wtemp[j], g[j])) * dt;
-	}
+void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, vector<double> & x, double dt, vector<grav>& g)
+{  	vector<CV> wtemp(w);
+	bc(wtemp);
 
-	// corrector step for interior
-    wtemp=w;
+	for (int j = 0; j < res; j++)
+	{	CV hr= Hx(wl[j+1],wr[j+1],x[j+1]);
+		CV hl= Hx(wl[j],wr[j],x[j]);
+		CV source=Source(j, wtemp[j],g[j]);
+		w[j].modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
+		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
+    	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);
+	}
+}
+
+// corrector step for interior
+void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemphat, double Om, vector<double> & x, double dt, vector<grav>& g)
+{	
+   vector<CV> wtemp(w);
+	bc(wtemp);
 	for (int j=0; j < res; j++)
 	{
-	w[j].p = wtemphat[j].r * weight + (1 - weight) * (wtemp[j].p - ((Hx(j + 1, 1,wtemp) - Hx(j, 1,wtemp)) / dx - S1(j,wtemp[j],g[j])) * dt);
-	w[j].q = wtemphat[j].r * weight + (1 - weight) * (wtemp[j].q - ((Hx(j + 1, 2,wtemp) - Hx(j, 2,wtemp)) / dx - S2(j,wtemp[j],g[j])) * dt);
-	w[j].r = wtemphat[j].r * weight + (1 - weight) * (wtemp[j].r - ((Hx(j + 1, 3,wtemp) - Hx(j, 3,wtemp)) / dx - S3(j,wtemp[j],g[j])) * dt);
+	CV hr= Hx(wl[j+1],wr[j+1],x[j+1]);
+	CV hl= Hx(wl[j],wr[j],x[j]);
+	CV source=Source(j, wtemp[j],g[j]);	
+	w[j].modify ( wtemphat[j].r * weight + (1 - weight) * (wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt)
+	, wtemphat[j].r * weight + (1 - weight) * (wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt)
+	,  wtemphat[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt));
 	}
-    double integral1=0;
-    double integral2=0;
-    Ang_mom( w, Om , x, integral1, integral2);
-    omega( Om, integral1, integral2, integral1_o, integral2_o, momincb,dt );
+}
+
+void march (vector<CV>& w, double & Om, vector<double> & x, vector<grav>& g,double finalt)
+{	static int timesteps=0;
+	double dt = dx / 4;
+	double momincb=0;
+	double t=0;
+	while(t<finalt)
+	{
+		if(timesteps%dump==0)
+		{
+			write(w,t);
+			write(Om,t);
+		}
+		vector<CV> wtemp(w);
+		vector<CV> wtemphat(wtemp);
+		vector<CV> wl(res),wr(res);
+		edge(w,wl,wr);
+		predictor(w,wl,wr,Om,x,dt,g);
+		corrector(w,wl,wr,wtemphat,Om,x,dt,g);
+		Ang_mom(w,wtemphat,Om,x,dt,momincb);
+		shed(w,x);
+		time_step(wl,wr,x,dt,t,timesteps);
+	}
+	
+	
+}
+
+void time_step(vector <CV>& wl, vector <CV>& wr,vector<double>& x, double & dt, double & t, int & timesteps)
+{	
+	
+	cfl(wl,wr,x,dt);
+
+	// time updation
+	t = t + dt;
+	//timep = timep + dt;
+	timesteps = timesteps + 1;
+
+}
+
+void cfl(vector<CV>& wl,vector<CV>& wr, vector<double>x, double & dt)
+{
+
+	double maxspeed = 0.00000001;
+	// to evaluate dt from maximum speeds (CFL condition)
+	for (int j = 1; j < res - 1; j++)
+	{
+		double eig = ax(wl[j],wr[j],x[j]);
+		if (maxspeed < abs(eig))
+		maxspeed = abs(eig);
+	}
+
+	dt = min(dx/8,dx/8/maxspeed);
+
 }

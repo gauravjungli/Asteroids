@@ -9,9 +9,14 @@ void grid(vector<double> & x)
         }
 }
 
-void uniform_IC (vector<CV> & w, const CV& v, double& Om )
+
+void uniform_IC (vector<CV> & w, vector<double> & x, double & Om )
 {   
-    Om = 1.5;
+    Om = omega;
+    
 	for (int j = 0; j < res; j++)
-	    w.push_back(v);
+    {   CV temp(uni_h,0,0,x[j]);
+        w.push_back(temp);
+    }
+	    
 }
