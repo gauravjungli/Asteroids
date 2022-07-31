@@ -15,12 +15,10 @@ double minmod(double a, double b, double c) // calculate minmod
 		return 0;
 }
 
-CV derivative( CV w1, CV w2, CV w3)
-{
-	CV w;	
-	w.modify( minmod(theta * (w2.p - w1.p) / dx, (w3.p - w1.p) / 2 / dx, theta * (w3.p - w2.p) / dx),
-			 minmod(theta * (w2.q - w1.q) / dx, (w3.q - w1.q) / 2 / dx, theta * (w3.q - w2.q) / dx),
-			 minmod(theta * (w2.r - w1.r) / dx, (w3.r - w1.r) / 2 / dx, theta * (w3.r - w2.r) / dx));
 
+double derivative( double w1, double w2, double w3)
+{
+	double w;	
+	w= minmod(theta * (w2 - w1) / dx, (w3 - w1) / 2 / dx, theta * (w3 - w2) / dx);
 	return w;		 
 }

@@ -6,13 +6,11 @@ int main()
 	double Om=0;
     vector<grav> g(res);
 	grav_sph(g);
-	vector<double> x;
+	vector<double> x(res);
 	grid(x);
 	vector<CV> w;
-
-	uniform_IC(w,x,Om);
-	march(w,Om,x,g,finalt);
-	
-
+	uniform_IC(w,x,g,Om);
+	march(w,Om,finalt);
 	return 0;
+	
 }

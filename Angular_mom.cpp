@@ -1,6 +1,6 @@
 #include "gauravlib.h"
 
-void Ang_mom(const vector<CV>& w,const vector<CV>& wtemphat, double& Om ,const vector<double>& x, double dt,double momincb)
+void Ang_mom(const vector<CV>& w,const vector<CV>& wtemphat, double& Om , double dt,double momincb)
 {  
 	double integral1_o=0,integral2_o=0,integral1=0,integral2=0;
    double mass_total_o = 0;

@@ -1,8 +1,8 @@
 #include "gauravlib.h"
-void grav_sph (vector<grav>& v )
+void grav_sph (vector<grav>& g )
 {
-    for(int i=0;i<v.size();i++)
+    for(int i=0;i<res;i++)
     {
-        v[i].X=0;v[i].Y=0;v[i].Z=1;
+        g[i].X=0;g[i].Y=0;g[i].Z=1;
     }
 }

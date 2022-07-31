@@ -5,18 +5,27 @@ void grid(vector<double> & x)
     for (int i=0;i<res;i++)
         {
         double z=(xmax-xmin) * i / res + (xmax-xmin) / 2 / res;
-        x.push_back(z);
+        x[i]=z;
         }
 }
 
 
-void uniform_IC (vector<CV> & w, vector<double> & x, double & Om )
+void uniform_IC (vector<CV> & w, vector<double> & x, vector<grav>& g, double & Om )
 {   
     Om = omega;
+    vector<double>  b(res);
+    vector<double> psi(res);
     
+    Base(b);
 	for (int j = 0; j < res; j++)
-    {   CV temp(uni_h,0,0,x[j]);
+    {   Psi();
+        CV temp(uni_h,0,0,b[j],g[j],x[j],psi[j]);
         w.push_back(temp);
     }
 	    
+}
+
+void Base(vector<double> & b)
+{
+    b=vector<double>(res,0);
 }

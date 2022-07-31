@@ -1,14 +1,14 @@
 #include "gauravlib.h"
 
 	// predictor step for interior
-void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, vector<double> & x, double dt, vector<grav>& g)
+void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, double dt)
 {  	vector<CV> wtemp(w);
 	bc(wtemp);
 
 	for (int j = 0; j < res; j++)
-	{	CV hr= Hx(wl[j+1],wr[j+1],x[j+1]);
-		CV hl= Hx(wl[j],wr[j],x[j]);
-		CV source=Source(j, wtemp[j],g[j]);
+	{	FS hr= Hx(wl[j+1],wr[j+1]);
+		FS hl= Hx(wl[j],wr[j]);
+		FS source=Source( wtemp[j]);
 		w[j].modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
     	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);
@@ -16,22 +16,22 @@ void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, vector
 }
 
 // corrector step for interior
-void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemphat, double Om, vector<double> & x, double dt, vector<grav>& g)
+void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemphat, double Om, double dt)
 {	
    vector<CV> wtemp(w);
 	bc(wtemp);
 	for (int j=0; j < res; j++)
 	{
-	CV hr= Hx(wl[j+1],wr[j+1],x[j+1]);
-	CV hl= Hx(wl[j],wr[j],x[j]);
-	CV source=Source(j, wtemp[j],g[j]);	
+	FS hr= Hx(wl[j+1],wr[j+1]);
+	FS hl= Hx(wl[j],wr[j]);
+	FS source=Source( wtemp[j]);	
 	w[j].modify ( wtemphat[j].r * weight + (1 - weight) * (wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt)
 	, wtemphat[j].r * weight + (1 - weight) * (wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt)
 	,  wtemphat[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt));
 	}
 }
 
-void march (vector<CV>& w, double & Om, vector<double> & x, vector<grav>& g,double finalt)
+void march (vector<CV>& w, double & Om, double finalt)
 {	static int timesteps=0;
 	double dt = dx / 4;
 	double momincb=0;
@@ -45,22 +45,22 @@ void march (vector<CV>& w, double & Om, vector<double> & x, vector<grav>& g,doub
 		}
 		vector<CV> wtemp(w);
 		vector<CV> wtemphat(wtemp);
-		vector<CV> wl(res),wr(res);
+		vector<CV> wl(w),wr(w);
 		edge(w,wl,wr);
-		predictor(w,wl,wr,Om,x,dt,g);
-		corrector(w,wl,wr,wtemphat,Om,x,dt,g);
-		Ang_mom(w,wtemphat,Om,x,dt,momincb);
-		shed(w,x);
-		time_step(wl,wr,x,dt,t,timesteps);
+		predictor(w,wl,wr,Om,dt);
+		corrector(w,wl,wr,wtemphat,Om,dt);
+		Ang_mom(w,wtemphat,Om,dt,momincb);
+		shed(w);
+		time_step(wl,wr,dt,t,timesteps);
 	}
 	
 	
 }
 
-void time_step(vector <CV>& wl, vector <CV>& wr,vector<double>& x, double & dt, double & t, int & timesteps)
+void time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps)
 {	
 	
-	cfl(wl,wr,x,dt);
+	cfl(wl,wr,dt);
 
 	// time updation
 	t = t + dt;
@@ -69,14 +69,14 @@ void time_step(vector <CV>& wl, vector <CV>& wr,vector<double>& x, double & dt, 
 
 }
 
-void cfl(vector<CV>& wl,vector<CV>& wr, vector<double>x, double & dt)
+void cfl(vector<CV>& wl,vector<CV>& wr, double & dt)
 {
 
 	double maxspeed = 0.00000001;
 	// to evaluate dt from maximum speeds (CFL condition)
 	for (int j = 1; j < res - 1; j++)
 	{
-		double eig = ax(wl[j],wr[j],x[j]);
+		double eig = ax(wl[j],wr[j]);
 		if (maxspeed < abs(eig))
 		maxspeed = abs(eig);
 	}

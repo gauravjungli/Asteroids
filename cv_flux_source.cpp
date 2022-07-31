@@ -1,47 +1,47 @@
 #include <gauravlib.h>
 
-
-CV::CV(): p(0), q(0), r(0),h(0),u(0),v(0){}
-
-CV::CV(double h, double u, double v,double x)
-{
-    this->h=h;this->h=u;this->v=v;
-    this->p=h*sin(x); //change for specific case
-	this->q=h*u*sin(x)+epsilon*sin(x)*(h*h*u)/2; // change for specific case
-	this->r=h*v*sin(x)+epsilon*sin(x)*(h*h*v)/2; // change for specific case
+CV::CV(double h, double u, double v, double b, grav g, double x, double psi )
+{	
+    this->h=h;this->h=u;this->v=v;this->b=b;this->g=g;this->x=x;this->psi=psi;
+	lambda= 1+epsilon*(b+h/2.0);
+    this->p=h*sin(x)*(1+2*epsilon*lambda); //change for specific case
+	this->q=h*u*sin(x)*(1+3*epsilon*lambda); // change for specific case
+	this->r=h*v*sin(x)*(1+3*epsilon*lambda); // change for specific case
 }
 
 void CV::modify(double p, double q, double r)
-{
+{	h=(-(1+2*epsilon*b)+pow(pow((1+2*epsilon*b),2)+2*epsilon*p/sin(x),0.5))/epsilon;
+	lambda= 1+epsilon*(b+h/2.0);
 	this->p=p; this->q=q; this->r=r;
-	this->h=0;//change for specific case
-	this->u=0;//change for specific case
-	this->v=0;//change for the specific case
+	u=q/p*(1+2*epsilon*lambda)/(1+3*epsilon*lambda);//change for specific case
+	v=r/p*(1+2*epsilon*lambda)/(1+3*epsilon*lambda);//change for specific case
+	psi=Psi();
 }
 
-CV flux( CV w, double x )
+  
+
+FS flux( CV w )
 
 {
-	CV f;
-	double f1 = w.p;//change for specific case
-	double f2 = w.q*w.q / w.p; //change for specific case
-	double f3 = w.q * w.r / w.p;// change for the specific case
-	f.modify(f1,f2,f3);
+	FS f;
+	 f.p = w.u*w.h*(1+epsilon*w.lambda)*sin(w.x);//change for specific case
+	 f.q = (w.u*w.u+epsilon*w.psi*w.h)*w.h*(1+2*epsilon*w.lambda)*sin(w.x); //change for specific case
+	 f.r = (w.u*w.v)*w.h*(1+2*epsilon*w.lambda)*sin(w.x);// change for the specific case
 	return f;
 
 }
 
 
-CV Source(int j, const CV& wtemp, grav& g)
+FS Source(const CV& w, double Om)
 {
-	 CV source;
-	double ht = wtemp.h;
-	double ut = wtemp.u;
-	double vt = wtemp.v;
-	int sgn_u = (ut > 0) ? 1 : ((ut < 0) ? -1 : 0);
-	double Gt = 0;//change for the sphere
-	int sgn_v = (vt > 0) ? 1 : ((vt < 0) ? -1 : 0);
-	source.modify(0,0,0) ;//change for the sphere
+	FS source;
+	source.p=0;
+	double bf=Om*Om*cos(w.x)*sin(w.x)*(1+4*epsilon*w.lambda)/(1+3*epsilon*w.lambda)+2*Om*cos(w.x)*w.v;
+	double mu=0;
+	double fr=-mu*w.psi*w.h*w.u/(pow(pow(w.u,2)+pow(w.v,2),0.5));
+	source.q = (w.v*w.v+epsilon*w.psi*w.h)*w.h*(1+2*epsilon*w.lambda)+bf*w.h*sin(w.x)*(1+3*epsilon*w.lambda)+fr*sin(w.x)*(1+epsilon*w.b);
+	fr=-mu*w.psi*w.h*w.v/(pow(pow(w.u,2)+pow(w.v,2),0.5));
+	bf=-2*Om*cos(w.x)*w.u;
+	source.r=(w.u*w.v)*w.h*(1+epsilon*w.lambda)+bf*w.h*sin(w.x)*(1+3*epsilon*w.lambda)+fr*sin(w.x)*(1+epsilon*w.b);;//change for the sphere
 	return source;
-
 }
