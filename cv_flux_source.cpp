@@ -1,21 +1,21 @@
-#include <gauravlib.h>
+#include "gauravlib.h"
 
-CV::CV(double h, double u, double v, double b, grav g, double x, double psi )
+CV::CV(double h, double u, double v, double b, grav g, double x, double Om )
 {	
-    this->h=h;this->h=u;this->v=v;this->b=b;this->g=g;this->x=x;this->psi=psi;
+    this->h=h;this->h=u;this->v=v;this->b=b;this->g=g;this->x=x;this->psi=Psi(*this,Om);
 	lambda= 1+epsilon*(b+h/2.0);
     this->p=h*sin(x)*(1+2*epsilon*lambda); //change for specific case
 	this->q=h*u*sin(x)*(1+3*epsilon*lambda); // change for specific case
 	this->r=h*v*sin(x)*(1+3*epsilon*lambda); // change for specific case
 }
 
-void CV::modify(double p, double q, double r)
+void CV::modify(double p, double q, double r,double Om)
 {	h=(-(1+2*epsilon*b)+pow(pow((1+2*epsilon*b),2)+2*epsilon*p/sin(x),0.5))/epsilon;
 	lambda= 1+epsilon*(b+h/2.0);
 	this->p=p; this->q=q; this->r=r;
 	u=q/p*(1+2*epsilon*lambda)/(1+3*epsilon*lambda);//change for specific case
 	v=r/p*(1+2*epsilon*lambda)/(1+3*epsilon*lambda);//change for specific case
-	psi=Psi();
+	psi=Psi(*this, Om);
 }
 
   

@@ -14,12 +14,11 @@ void uniform_IC (vector<CV> & w, vector<double> & x, vector<grav>& g, double & O
 {   
     Om = omega;
     vector<double>  b(res);
-    vector<double> psi(res);
     
     Base(b);
 	for (int j = 0; j < res; j++)
-    {   Psi();
-        CV temp(uni_h,0,0,b[j],g[j],x[j],psi[j]);
+    {
+        CV temp(uni_h,0,0,b[j],g[j],x[j],Om);
         w.push_back(temp);
     }
 	    

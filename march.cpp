@@ -8,10 +8,10 @@ void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, double
 	for (int j = 0; j < res; j++)
 	{	FS hr= Hx(wl[j+1],wr[j+1]);
 		FS hl= Hx(wl[j],wr[j]);
-		FS source=Source( wtemp[j]);
+		FS source=Source( wtemp[j],Om);
 		w[j].modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
-    	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);
+    	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt,Om);
 	}
 }
 
@@ -24,10 +24,10 @@ void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemp
 	{
 	FS hr= Hx(wl[j+1],wr[j+1]);
 	FS hl= Hx(wl[j],wr[j]);
-	FS source=Source( wtemp[j]);	
+	FS source=Source( wtemp[j],Om);	
 	w[j].modify ( wtemphat[j].r * weight + (1 - weight) * (wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt)
 	, wtemphat[j].r * weight + (1 - weight) * (wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt)
-	,  wtemphat[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt));
+	,  wtemphat[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt),Om);
 	}
 }
 
@@ -40,17 +40,17 @@ void march (vector<CV>& w, double & Om, double finalt)
 	{
 		if(timesteps%dump==0)
 		{
-			write(w,t);
-			write(Om,t);
+			//write(w,t);
+			//write(Om,t);
 		}
 		vector<CV> wtemp(w);
 		vector<CV> wtemphat(wtemp);
 		vector<CV> wl(w),wr(w);
-		edge(w,wl,wr);
+		edge(w,wl,wr,Om);
 		predictor(w,wl,wr,Om,dt);
 		corrector(w,wl,wr,wtemphat,Om,dt);
 		Ang_mom(w,wtemphat,Om,dt,momincb);
-		shed(w);
+		shed(w,Om);
 		time_step(wl,wr,dt,t,timesteps);
 	}
 	

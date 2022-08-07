@@ -1,0 +1,7 @@
+make --dry-run --keep-going --print-directory
+make: Entering directory `/Users/kumargaurav/Asteroids'
+g++    -c -o Characteristics.o Characteristics.cpp
+ 
+g++ -o gaurav main.o Angular_mom.o bc.o Characteristics.o cv_flux_source.o gravity.o IC.o IO.o march.o pressure_shed.o solver.o topography.o TVD.o
+make: Leaving directory `/Users/kumargaurav/Asteroids'
+ 

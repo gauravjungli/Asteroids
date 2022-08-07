@@ -12,21 +12,8 @@
 
 using namespace std;
 
-//To write files
-void write(const vector<CV> &,const double  );
-void write( const double , const double  );
-
-//To read files
-void read ( vector<double>&, string file );
-
-//Boundary conditions
-void bc(vector<CV>& );
-
-//To catch errors
-void error(string , string );
-
-
 //Class for storing a 2D gravity field
+
 class grav{
     public:
         double X, Y, Z;
@@ -34,8 +21,6 @@ class grav{
         {}
         
 };
-//spherical gravity
-void grav_sph(vector<grav> &);
 
 //To store conserved variables
 class CV
@@ -43,8 +28,8 @@ class CV
     public:
         double p, q, r,h,u,v,b,x,psi,lambda;
         grav g;
-        CV(double h, double u, double v, double b, grav g, double x, double psi ){}
-        void modify(double p, double q, double r);
+        CV(double h, double u, double v, double b, grav g, double x, double Om );
+        void modify(double p, double q, double r, double Om);
 };
 
 class FS
@@ -56,8 +41,29 @@ class FS
 
 
 
+//To write files
+void write(const vector<CV> & w,const double t );
+void write( const double Om, const double t );
+
+//To read files
+void read ( vector<double>&, string file );
+
+//Boundary conditions
+void bc(vector<CV>& );
+
+//To catch errors
+void error(string , string );
+
+
+//spherical gravity
+void grav_sph(vector<grav> &);
+
+
+
+
+
 //To compute source terms
-FS Source(const CV& w);
+FS Source(const CV & w, double Om);
 
 
 
@@ -93,6 +99,7 @@ double ax(CV wl, CV wr );
 
 //To be used for the limiters
 double derivative( double w1, double w2, double w3);
+void reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
 
 //To check cfl condition
 void cfl(vector<CV>& wl,vector<CV>& wr, double & dt);
@@ -107,11 +114,11 @@ void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemp
 void Ang_mom(const vector<CV>& w,const vector<CV>& wtemphat, double& Om , double dt,double momincb);
 
 //mass shedding and pressure
-void shed(vector<CV>& w);
-double Psi();
+void shed(vector<CV>& w, double Om);
+double Psi(CV w, double Om);
 
 //values at edges
-void edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
+void edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double Om);
 
 void time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
 
