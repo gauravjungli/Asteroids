@@ -5,7 +5,7 @@ void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, double
 {  	vector<CV> wtemp(w);
 	bc(wtemp);
 
-	for (int j = 0; j < res; j++)
+	for (int j = 2; j < res-2; j++)
 	{	FS hr= Hx(wl[j+1],wr[j+1]);
 		FS hl= Hx(wl[j],wr[j]);
 		FS source=Source( wtemp[j],Om);
@@ -20,7 +20,7 @@ void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemp
 {	
    vector<CV> wtemp(w);
 	bc(wtemp);
-	for (int j=0; j < res; j++)
+	for (int j=2; j < res-2; j++)
 	{
 	FS hr= Hx(wl[j+1],wr[j+1]);
 	FS hl= Hx(wl[j],wr[j]);
@@ -40,8 +40,8 @@ void march (vector<CV>& w, double & Om, double finalt)
 	{
 		if(timesteps%dump==0)
 		{
-			//write(w,t);
-			//write(Om,t);
+			write(w,t);
+			write(Om,t);
 		}
 		vector<CV> wtemp(w);
 		vector<CV> wtemphat(wtemp);
@@ -74,7 +74,7 @@ void cfl(vector<CV>& wl,vector<CV>& wr, double & dt)
 
 	double maxspeed = 0.00000001;
 	// to evaluate dt from maximum speeds (CFL condition)
-	for (int j = 1; j < res - 1; j++)
+	for (int j = 2; j < res - 2; j++)
 	{
 		double eig = ax(wl[j],wr[j]);
 		if (maxspeed < abs(eig))

@@ -18,8 +18,6 @@ void CV::modify(double p, double q, double r,double Om)
 	psi=Psi(*this, Om);
 }
 
-  
-
 FS flux( CV w )
 
 {
@@ -36,11 +34,14 @@ FS Source(const CV& w, double Om)
 {
 	FS source;
 	source.p=0;
+	double mu=tan(delta);
 	double bf=Om*Om*cos(w.x)*sin(w.x)*(1+4*epsilon*w.lambda)/(1+3*epsilon*w.lambda)+2*Om*cos(w.x)*w.v;
-	double mu=0;
-	double fr=-mu*w.psi*w.h*w.u/(pow(pow(w.u,2)+pow(w.v,2),0.5));
+	double fr=0;
+	if (pow(pow(w.u,2)+pow(w.v,2),0.5)>1e-10) fr=-mu*w.psi*w.h*w.u/pow(pow(w.u,2)+pow(w.v,2),0.5);
+
 	source.q = (w.v*w.v+epsilon*w.psi*w.h)*w.h*(1+2*epsilon*w.lambda)+bf*w.h*sin(w.x)*(1+3*epsilon*w.lambda)+fr*sin(w.x)*(1+epsilon*w.b);
-	fr=-mu*w.psi*w.h*w.v/(pow(pow(w.u,2)+pow(w.v,2),0.5));
+	if (pow(pow(w.u,2)+pow(w.v,2),0.5)>1e-10) fr=-mu*w.psi*w.h*w.v/pow(pow(w.u,2)+pow(w.v,2),0.5);
+
 	bf=-2*Om*cos(w.x)*w.u;
 	source.r=(w.u*w.v)*w.h*(1+epsilon*w.lambda)+bf*w.h*sin(w.x)*(1+3*epsilon*w.lambda)+fr*sin(w.x)*(1+epsilon*w.b);;//change for the sphere
 	return source;

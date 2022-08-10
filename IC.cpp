@@ -4,7 +4,7 @@ void grid(vector<double> & x)
 {
     for (int i=0;i<res;i++)
         {
-        double z=(xmax-xmin) * i / res + (xmax-xmin) / 2 / res;
+        double z=dx * (i+0.5);
         x[i]=z;
         }
 }

@@ -4,7 +4,7 @@ void Ang_mom(const vector<CV>& w,const vector<CV>& wtemphat, double& Om , double
 {  
 	double integral1_o=0,integral2_o=0,integral1=0,integral2=0;
    double mass_total_o = 0;
-	for (int j = 2; j <= res + 1; j++)
+	for (int j = 2; j < res -2; j++)
 	{
 		mass_total_o = mass_total_o + 2 * PI * w[j].p * dx;
 		integral1 = integral1 ;//complete

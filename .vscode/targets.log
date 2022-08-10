@@ -7,10 +7,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 
 # This program built for i386-apple-darwin11.3.0
  
-make: *** No rule to make target `all'.  Stop.
 
-
-# Make data base, printed on Mon Aug  8 02:08:11 2022
+# Make data base, printed on Tue Aug  9 11:08:19 2022
 
 # Variables
 
@@ -32,10 +30,12 @@ SHELL = /bin/sh
 VSCODE_NLS_CONFIG = {"locale":"en-gb","availableLanguages":{},"_languagePackSupport":true}
 # environment
 _ = /usr/bin/make
-# makefile (from `Makefile', line 3)
+# makefile (from `Makefile', line 4)
 objects = main.o Angular_mom.o bc.o Characteristics.o cv_flux_source.o gravity.o IC.o IO.o march.o pressure_shed.o solver.o topography.o TVD.o
 # makefile (from `Makefile', line 1)
 MAKEFILE_LIST :=  Makefile
+# makefile (from `Makefile', line 2)
+CXXFLAGS := -g 
 # environment
 __CFBundleIdentifier = com.microsoft.VSCode
 # environment
@@ -43,11 +43,13 @@ VSCODE_CWD = /
 # environment
 PATH = /Users/kumargaurav/opt/anaconda3/bin:/Users/kumargaurav/opt/anaconda3/condabin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # environment
+LaunchInstanceID = 86D6175F-7A4E-4490-A31F-671982D44B1F
+# environment
 ELECTRON_RUN_AS_NODE = 1
 # default
 .FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
 # environment
-SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.akUxlPUS32/Listeners
+SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.ChuWFJMcxm/Listeners
 # automatic
 %F = $(notdir $%)
 # environment
@@ -63,7 +65,7 @@ HOME = /Users/kumargaurav
 # default
 MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
 # environment
-VSCODE_CODE_CACHE_PATH = /Users/kumargaurav/Library/Application Support/Code/CachedData/3b889b090b5ad5793f524b5d1d39fda662b96a2a
+VSCODE_CODE_CACHE_PATH = /Users/kumargaurav/Library/Application Support/Code/CachedData/da76f93349a72022ca4670c1b84860304616aaa2
 # environment
 LOGNAME = kumargaurav
 # environment
@@ -89,7 +91,7 @@ MAKE_VERSION := 3.81
 # environment
 USER = kumargaurav
 # makefile
-.DEFAULT_GOAL := gaurav
+.DEFAULT_GOAL := all
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
 # environment
@@ -103,7 +105,7 @@ TMPDIR = /var/folders/6d/2xs5q4_d7n57jj6hw8sd072m0000gn/T/
 # automatic
 *F = $(notdir $*)
 # environment
-VSCODE_IPC_HOOK = /Users/kumargaurav/Library/Application Support/Code/1.69.2-main.sock
+VSCODE_IPC_HOOK = /Users/kumargaurav/Library/Application Support/Code/1.70.0-main.sock
 # environment
 MallocNanoZone = 0
 # makefile
@@ -132,6 +134,8 @@ CXX = g++
 LC_ALL = C
 # environment
 CONDA_PYTHON_EXE = /Users/kumargaurav/opt/anaconda3/bin/python
+# environment
+SECURITYSESSIONID = 186b1
 # automatic
 ^F = $(notdir $^)
 # default
@@ -143,13 +147,13 @@ MAKELEVEL := 0
 # environment
 CONDA_PREFIX = /Users/kumargaurav/opt/anaconda3
 # environment
-VSCODE_PID = 22385
+VSCODE_PID = 583
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=67/1024=7%, Rehash=0, Collisions=2/92=2%
+# Load=70/1024=7%, Rehash=0, Collisions=2/95=2%
 
 # Pattern-specific Variable Values
 
@@ -157,9 +161,9 @@ LANG = C
 
 # Directories
 
-# . (device 16777230, inode 46834665): 36 files, no impossibilities.
+# . (device 16777230, inode 46834665): 40 files, no impossibilities.
 
-# 36 files, no impossibilities in 1 directories.
+# 40 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -169,30 +173,39 @@ LANG = C
 
 gaurav: main.o Angular_mom.o bc.o Characteristics.o cv_flux_source.o gravity.o IC.o IO.o march.o pressure_shed.o solver.o topography.o TVD.o
 #  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  commands to execute (from `Makefile', line 7):
-	$(CXX) -o gaurav $(objects)
+#  Last modified 2022-08-09 10:56:18
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
+#  commands to execute (from `Makefile', line 11):
+	$(CXX) $(CXXFLAGS) -o gaurav $(objects)
 	
 
-# Not a target:
-all:
+all: gaurav
 #  Command-line target.
 #  Implicit rule search has been done.
 #  File does not exist.
-#  File has not been updated.
+#  File has been updated.
+#  Successfully updated.
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-IO.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+IO.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:50
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-Characteristics.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+Characteristics.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:49
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
 # Not a target:
 .SUFFIXES:
@@ -203,26 +216,44 @@ Characteristics.o: gauravlib.h
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-08 02:07:49
+#  Last modified 2022-08-09 10:51:40
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-march.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+# Not a target:
+parameters.h:
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:17:45
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-gravity.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+march.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:56:18
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-cv_flux_source.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+gravity.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:49
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
+
+cv_flux_source.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:49
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
 # Not a target:
 .DEFAULT:
@@ -230,54 +261,90 @@ cv_flux_source.o: gauravlib.h
 #  Modification time never checked.
 #  File has not been updated.
 
-Angular_mom.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+Angular_mom.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:48
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-IC.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+IC.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:49
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-TVD.o: gauravlib.h
+clean:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+#  commands to execute (from `Makefile', line 15):
+	rm gaurav $(objects)
+	
 
-pressure_shed.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+TVD.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:51
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-topography.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+pressure_shed.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:50
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-main.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+topography.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:51
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-bc.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+main.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:48
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+ 
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
-solver.o: gauravlib.h
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+bc.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:48
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
+
+solver.o: gauravlib.h parameters.h
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 10:51:51
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
 # Not a target:
 gauravlib.h:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
+#  Implicit rule search has been done.
+#  Last modified 2022-08-09 09:05:36
+#  File has been updated.
+#  Successfully updated.
+# variable set hash-table stats:
+# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
 # files hash-table stats:
-# Load=19/1024=2%, Rehash=0, Collisions=0/57=0%
+# Load=21/1024=2%, Rehash=0, Collisions=0/74=0%
 # VPATH Search Paths
 
 # No `vpath' search paths.
@@ -289,6 +356,6 @@ gauravlib.h:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Finished Make data base on Mon Aug  8 02:08:11 2022
+# Finished Make data base on Tue Aug  9 11:08:19 2022
 
  

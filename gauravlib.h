@@ -16,8 +16,8 @@ using namespace std;
 
 class grav{
     public:
-        double X, Y, Z;
-        grav(): X(0), Y(0), Z(0)
+        double X1, X2, X3;
+        grav(): X1(0), X2(0), X3(0)
         {}
         
 };

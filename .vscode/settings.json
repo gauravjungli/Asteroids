@@ -1,4 +1,12 @@
 {
+    "makefile.alwaysPreConfigure": false,
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/Users/kumargaurav/Asteroids",
+            "binaryPath": "/Users/kumargaurav/Asteroids/gaurav",
+            "binaryArgs": []
+        }
+    ],
     "files.associations": {
         "vector": "cpp"
     }

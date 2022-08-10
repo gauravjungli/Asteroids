@@ -48,8 +48,8 @@ void edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double Om)
 	wl.r=w2.r+sign*dx*derivative(w1.r,w2.r,w3.r)/2;
 	wl.b=w2.b+sign*dx*derivative(w1.b,w2.b,w3.b)/2;
 	wl.x=w2.x+sign*dx*derivative(w1.x,w2.x,w3.x)/2;
-	wl.g.X=w2.g.X+sign*dx*derivative(w1.g.X,w2.g.X,w3.g.X)/2;
-	wl.g.Y=w2.g.Y+sign*dx*derivative(w1.g.Y,w2.g.Y,w3.g.Y)/2;
-	wl.g.Z=w2.g.Z+sign*dx*derivative(w1.g.Z,w2.g.Z,w3.g.Z)/2;
+	wl.g.X1=w2.g.X1+sign*dx*derivative(w1.g.X1,w2.g.X1,w3.g.X1)/2;
+	wl.g.X2=w2.g.X2+sign*dx*derivative(w1.g.X2,w2.g.X2,w3.g.X2)/2;
+	wl.g.X3=w2.g.X3+sign*dx*derivative(w1.g.X3,w2.g.X3,w3.g.X3)/2;
 
   } 
