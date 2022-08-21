@@ -1,5 +1,5 @@
 #include "gauravlib.h"
-void grav_sph (vector<grav>& g )
+void Grav_sph (vector<Grav>& g )
 {
     for(int i=0;i<res;i++)
     {

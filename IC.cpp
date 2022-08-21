@@ -1,6 +1,6 @@
 #include "gauravlib.h"
 
-void grid(vector<double> & x)
+void Grid(vector<double> & x)
 {
     for (int i=0;i<res;i++)
         {
@@ -10,15 +10,14 @@ void grid(vector<double> & x)
 }
 
 
-void uniform_IC (vector<CV> & w, vector<double> & x, vector<grav>& g, double & Om )
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om )
 {   
-    Om = omega;
     vector<double>  b(res);
     
     Base(b);
 	for (int j = 0; j < res; j++)
     {
-        CV temp(uni_h,0,0,b[j],g[j],x[j],Om);
+        CV temp(uni_h,0,0,b[j],g[j],x[j],om);
         w.push_back(temp);
     }
 	    

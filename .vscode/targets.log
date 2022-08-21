@@ -6,9 +6,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # PARTICULAR PURPOSE.
 
 # This program built for i386-apple-darwin11.3.0
- 
 
-# Make data base, printed on Tue Aug  9 11:08:19 2022
+# Make data base, printed on Wed Aug 17 21:49:14 2022
 
 # Variables
 
@@ -43,8 +42,6 @@ VSCODE_CWD = /
 # environment
 PATH = /Users/kumargaurav/opt/anaconda3/bin:/Users/kumargaurav/opt/anaconda3/condabin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
 # environment
-LaunchInstanceID = 86D6175F-7A4E-4490-A31F-671982D44B1F
-# environment
 ELECTRON_RUN_AS_NODE = 1
 # default
 .FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
@@ -65,7 +62,7 @@ HOME = /Users/kumargaurav
 # default
 MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
 # environment
-VSCODE_CODE_CACHE_PATH = /Users/kumargaurav/Library/Application Support/Code/CachedData/da76f93349a72022ca4670c1b84860304616aaa2
+VSCODE_CODE_CACHE_PATH = /Users/kumargaurav/Library/Application Support/Code/CachedData/6d9b74a70ca9c7733b29f0456fd8195364076dda
 # environment
 LOGNAME = kumargaurav
 # environment
@@ -105,7 +102,7 @@ TMPDIR = /var/folders/6d/2xs5q4_d7n57jj6hw8sd072m0000gn/T/
 # automatic
 *F = $(notdir $*)
 # environment
-VSCODE_IPC_HOOK = /Users/kumargaurav/Library/Application Support/Code/1.70.0-main.sock
+VSCODE_IPC_HOOK = /Users/kumargaurav/Library/Application Support/Code/1.70.1-main.sock
 # environment
 MallocNanoZone = 0
 # makefile
@@ -115,7 +112,7 @@ MFLAGS = -Rrqp
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
 # environment
-XPC_SERVICE_NAME = application.com.microsoft.VSCode.54824822.54824828
+XPC_SERVICE_NAME = application.com.microsoft.VSCode.55575794.55575800
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
 # automatic
@@ -134,8 +131,6 @@ CXX = g++
 LC_ALL = C
 # environment
 CONDA_PYTHON_EXE = /Users/kumargaurav/opt/anaconda3/bin/python
-# environment
-SECURITYSESSIONID = 186b1
 # automatic
 ^F = $(notdir $^)
 # default
@@ -147,13 +142,13 @@ MAKELEVEL := 0
 # environment
 CONDA_PREFIX = /Users/kumargaurav/opt/anaconda3
 # environment
-VSCODE_PID = 583
+VSCODE_PID = 22634
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=70/1024=7%, Rehash=0, Collisions=2/95=2%
+# Load=68/1024=7%, Rehash=0, Collisions=2/93=2%
 
 # Pattern-specific Variable Values
 
@@ -173,7 +168,7 @@ LANG = C
 
 gaurav: main.o Angular_mom.o bc.o Characteristics.o cv_flux_source.o gravity.o IC.o IO.o march.o pressure_shed.o solver.o topography.o TVD.o
 #  Implicit rule search has not been done.
-#  Last modified 2022-08-09 10:56:18
+#  Last modified 2022-08-12 15:35:55
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -193,7 +188,7 @@ all: gaurav
 
 IO.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:50
+#  Last modified 2022-08-12 15:35:54
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -201,7 +196,7 @@ IO.o: gauravlib.h parameters.h
 
 Characteristics.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:49
+#  Last modified 2022-08-12 15:35:53
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -225,7 +220,7 @@ Makefile:
 # Not a target:
 parameters.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:17:45
+#  Last modified 2022-08-10 12:05:25
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -233,7 +228,7 @@ parameters.h:
 
 march.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:56:18
+#  Last modified 2022-08-12 15:35:54
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -241,7 +236,7 @@ march.o: gauravlib.h parameters.h
 
 gravity.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:49
+#  Last modified 2022-08-12 15:35:53
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -249,7 +244,7 @@ gravity.o: gauravlib.h parameters.h
 
 cv_flux_source.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:49
+#  Last modified 2022-08-12 15:35:53
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -263,7 +258,7 @@ cv_flux_source.o: gauravlib.h parameters.h
 
 Angular_mom.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:48
+#  Last modified 2022-08-12 15:35:52
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -271,7 +266,7 @@ Angular_mom.o: gauravlib.h parameters.h
 
 IC.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:49
+#  Last modified 2022-08-12 15:35:53
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -287,7 +282,7 @@ clean:
 
 TVD.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:51
+#  Last modified 2022-08-12 15:35:55
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -295,7 +290,7 @@ TVD.o: gauravlib.h parameters.h
 
 pressure_shed.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:50
+#  Last modified 2022-08-12 15:35:54
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -303,24 +298,24 @@ pressure_shed.o: gauravlib.h parameters.h
 
 topography.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:51
+#  Last modified 2022-08-12 15:35:55
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
+ 
 main.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:48
+#  Last modified 2022-08-12 15:35:52
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
- 
 # Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
 bc.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:48
+#  Last modified 2022-08-12 15:35:52
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -328,7 +323,7 @@ bc.o: gauravlib.h parameters.h
 
 solver.o: gauravlib.h parameters.h
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 10:51:51
+#  Last modified 2022-08-12 15:35:55
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -337,7 +332,7 @@ solver.o: gauravlib.h parameters.h
 # Not a target:
 gauravlib.h:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-09 09:05:36
+#  Last modified 2022-08-12 15:34:52
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -356,6 +351,6 @@ gauravlib.h:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
-# Finished Make data base on Tue Aug  9 11:08:19 2022
+# Finished Make data base on Wed Aug 17 21:49:14 2022
 
  

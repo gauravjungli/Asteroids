@@ -12,13 +12,27 @@
 
 using namespace std;
 
+//----------------------------------------------------------------------------
+
 //Class for storing a 2D gravity field
 
-class grav{
+class Grav{
     public:
         double X1, X2, X3;
-        grav(): X1(0), X2(0), X3(0)
+        Grav(): X1(0), X2(0), X3(0)
         {}
+        
+};
+
+class AMB{
+    public:
+        std::vector<double> ang_mom;
+        std::vector<double> inertia;
+        AMB(double mom, double inr)
+        {
+            ang_mom=vector<double>(5,mom);
+            inertia=vector<double>(5,inr);
+        }
         
 };
 
@@ -27,9 +41,9 @@ class CV
 {
     public:
         double p, q, r,h,u,v,b,x,psi,lambda;
-        grav g;
-        CV(double h, double u, double v, double b, grav g, double x, double Om );
-        void modify(double p, double q, double r, double Om);
+        Grav g;
+        CV(double h, double u, double v, double b, Grav g, double x, double om );
+        void Modify(double p, double q, double r, double om);
 };
 
 class FS
@@ -39,88 +53,114 @@ class FS
         FS(): p(0), q(0), r(0){}      
 };
 
+//---------------------------------------------------------------------------------
 
+/////   I/O
 
-//To write files
-void write(const vector<CV> & w,const double t );
-void write( const double Om, const double t );
+//To write files 
+void Write(const vector<CV> & w,const double t );
+void Write( const double om, const double t );
 
 //To read files
-void read ( vector<double>&, string file );
-
-//Boundary conditions
-void bc(vector<CV>& );
+void Read ( vector<double>&, string file );
 
 //To catch errors
-void error(string , string );
+void Error(string , string );
 
+//----------------------------------------------------------------------------------------
+///// bc.cpp
+//Boundary conditions
+void BC(vector<CV>& w, double om );
 
+//---------------------------------------------------------------------------------
+
+//////// gavity.cpp
 //spherical gravity
-void grav_sph(vector<grav> &);
+void Grav_sph(vector<Grav> & g);
 
+//--------------------------------------------------------------------------------
 
+///////// TVD.cpp
 
-
-
-//To compute source terms
-FS Source(const CV & w, double Om);
-
-
-
-//To incorporate topography
-double xi(double , double ); 
-double dbdx(double , double );
-double dbdy(double , double );
-void Base(vector<double> & base);
-
+//To be used for the limiters
+double Derivative( double w1, double w2, double w3);
 
 //Calculate minmod limiter
-double minmod(double a, double b, double c); 
+double Minmod(double a, double b, double c); 
 
+//--------------------------------------------------------------------------
+//////////  IC.cpp
 
 //To initialize the simulation
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om );
+void Grid(vector<double> & x);
+//To incorporate topography
+void Base(vector<double> & b);
 
-void uniform_IC (vector<CV> & w, vector<double> & x, vector<grav>& g, double & Om );
+//-------------------------------------------------------------------------
 
-void grid(vector<double> & x);
-
+////////////// solver.cpp
 
 //To be used in the solver terms
 
 FS Hx( CV wl, CV wr);
 
 
+//------------------------------------------------------------------------------------------
+
+////////// cv_flux-source.cpp
+
 //To calculate flux
-FS flux( CV w );
+FS Flux( CV w );
+
+//To compute source terms
+FS Source( CV w, double om);
+
+//---------------------------------------------------------------------------------
+
+///////// characteristics.cpp
 
 //To calculate eigen value and chareacteristics speed
-double eigen(CV w );
-double ax(CV wl, CV wr );
+double Eigen(CV w );
+double Ax(CV wl, CV wr );
+//values at edges
+void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om);
+void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
 
-//To be used for the limiters
-double derivative( double w1, double w2, double w3);
-void reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
 
-//To check cfl condition
-void cfl(vector<CV>& wl,vector<CV>& wr, double & dt);
+//--------------------------------------------------------------------------------------------------------
 
+/////// march.cpp
 
 //To be used in the time marching
-void march (vector<CV>& w, double & Om, double finalt);
-void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, double dt);
-void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemphat, double Om, double dt);
+void March (vector<CV>& w, double & om, double finalt);
+void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double om, double dt, AMB amb);
+void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double om, double om_init, double dt, AMB amb);
+void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
+void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 
+//------------------------------------------------------------------------------------------------------------
+
+///////// Angular_mom.cpp
 //To update omega
-void Ang_mom(const vector<CV>& w,const vector<CV>& wtemphat, double& Om , double dt,double momincb);
+void Ang_mom(AMB& amb, double integral1, double integral2);
+double Alpha( double& om , double dt, AMB amb );
+void Integrals(double& integral1, double& integral2, vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
+double Int_B(CV w);
+double Int_A(CV w);
+double Diff(vector<double> w, double dt);
+
+
+//--------------------------------------------------------------------------------------------------------------
+
+///////// pressure_shed.cpp
 
 //mass shedding and pressure
-void shed(vector<CV>& w, double Om);
-double Psi(CV w, double Om);
+void Shed(vector<CV>& w, double om);
+double Psi(CV w, double om);
 
-//values at edges
-void edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double Om);
 
-void time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
+
 
 
 #endif

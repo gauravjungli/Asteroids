@@ -1,66 +1,76 @@
 #include "gauravlib.h"
 
 	// predictor step for interior
-void predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double Om, double dt)
+void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double om, double dt, AMB amb)
 {  	vector<CV> wtemp(w);
-	bc(wtemp);
+	BC(wtemp,om);
 
 	for (int j = 2; j < res-2; j++)
-	{	FS hr= Hx(wl[j+1],wr[j+1]);
-		FS hl= Hx(wl[j],wr[j]);
-		FS source=Source( wtemp[j],Om);
-		w[j].modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
+	{	FS hr= Hx(wr[j],wl[j+1]);
+		FS hl= Hx(wr[j-1],wl[j]);
+		FS source=Source( wtemp[j],om);
+		w[j].Modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
-    	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt,Om);
+    	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt,om);
+		om=om+Alpha( om , dt, amb )*dt;
 	}
 }
 
 // corrector step for interior
-void corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& wtemphat, double Om, double dt)
+void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double om, double om_init, double dt, AMB amb)
 {	
    vector<CV> wtemp(w);
-	bc(wtemp);
+	BC(wtemp,om);
 	for (int j=2; j < res-2; j++)
 	{
-	FS hr= Hx(wl[j+1],wr[j+1]);
-	FS hl= Hx(wl[j],wr[j]);
-	FS source=Source( wtemp[j],Om);	
-	w[j].modify ( wtemphat[j].r * weight + (1 - weight) * (wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt)
-	, wtemphat[j].r * weight + (1 - weight) * (wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt)
-	,  wtemphat[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt),Om);
+	FS hr= Hx(wr[j],wl[j+1]);
+	FS hl= Hx(wr[j-1],wl[j]);
+	FS source=Source( wtemp[j],om);	
+	w[j].Modify ( w_init[j].p * weight + (1 - weight) * (wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt)
+	, w_init[j].q * weight + (1 - weight) * (wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt)
+	,  w_init[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt),om);
 	}
+	om=om_init*weight+(1-weight)*(om+ Alpha( om , dt, amb )*dt);
 }
 
-void march (vector<CV>& w, double & Om, double finalt)
-{	static int timesteps=0;
+void March (vector<CV>& w, double & om, double finalt)
+{	
 	double dt = dx / 4;
-	double momincb=0;
+	static int timesteps=0;
+	double alpha=0;
+	
+	vector<CV> wl(w),wr(w);
+	Edge(w,wl,wr,om);
+	double integral1=0,integral2=0;
+	Integrals(integral1,integral2,w,wl,wr);
+	AMB amb(integral1,integral2);
+	
 	double t=0;
 	while(t<finalt)
 	{
 		if(timesteps%dump==0)
 		{
-			write(w,t);
-			write(Om,t);
+			Write(w,t);
+			Write(om,t);
 		}
-		vector<CV> wtemp(w);
-		vector<CV> wtemphat(wtemp);
-		vector<CV> wl(w),wr(w);
-		edge(w,wl,wr,Om);
-		predictor(w,wl,wr,Om,dt);
-		corrector(w,wl,wr,wtemphat,Om,dt);
-		Ang_mom(w,wtemphat,Om,dt,momincb);
-		shed(w,Om);
-		time_step(wl,wr,dt,t,timesteps);
+		vector<CV> w_init(w);
+		double om_init=om;
+		Edge(w,wl,wr,om);
+		Predictor(w,wl,wr,om,dt,amb);
+		Corrector(w,wl,wr,w_init,om,om_init,dt,amb);
+		Integrals(integral1,integral2,w,wl,wr);
+		Ang_mom(amb,integral1,integral2);
+		Shed(w,om);
+		Time_step(wl,wr,dt,t,timesteps);
 	}
 	
 	
 }
 
-void time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps)
+void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps)
 {	
 	
-	cfl(wl,wr,dt);
+	CFL(wl,wr,dt);
 
 	// time updation
 	t = t + dt;
@@ -69,14 +79,14 @@ void time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & 
 
 }
 
-void cfl(vector<CV>& wl,vector<CV>& wr, double & dt)
+void CFL(vector<CV>& wl,vector<CV>& wr, double & dt)
 {
 
 	double maxspeed = 0.00000001;
 	// to evaluate dt from maximum speeds (CFL condition)
 	for (int j = 2; j < res - 2; j++)
 	{
-		double eig = ax(wl[j],wr[j]);
+		double eig = Ax(wr[j-1],wl[j]);
 		if (maxspeed < abs(eig))
 		maxspeed = abs(eig);
 	}

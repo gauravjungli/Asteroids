@@ -3,14 +3,15 @@
 
 int main()
 {	
-	double Om=0;
-    vector<grav> g(res);
-	grav_sph(g);
+
+	double om=omega;
+    vector<Grav> g(res);
+	Grav_sph(g);
 	vector<double> x(res);
-	grid(x);
+	Grid(x);
 	vector<CV> w;
-	uniform_IC(w,x,g,Om);
-	march(w,Om,finalt);
+	Uniform_IC(w,x,g,om);
+	March(w,om,finalt);
 	return 0;
 	
 }
