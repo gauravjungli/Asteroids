@@ -4,9 +4,8 @@ void Shed(vector<CV>& w, double om)
 for ( int j = 2; j < res-2; j++)
 {
 
-	if (Psi(w[j],om) > 0) // -1e-6
+	if (Psi(w[j],om) > 0) 
 	{
-		//cout << "mass shed";
 		w[j].Modify(  pow(10, -8),
 			pow(10, -8) * w[j].u,
 		 pow(10, -8) * w[j].v,om);	
@@ -15,5 +14,5 @@ for ( int j = 2; j < res-2; j++)
 }
 double Psi(CV w, double om)
 {
-return	om*om*sin(w.x)*sin(w.x)+2*om*w.v*sin(w.x)+w.g.X3+w.u*w.u+w.v*w.v;//change for the sphere
+return	(om*om*sin(w.x)*sin(w.x)+2*om*w.v*sin(w.x)+w.g.X1+w.u*w.u+w.v*w.v);//change for the sphere
 }

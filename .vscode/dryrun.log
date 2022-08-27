@@ -1,18 +1,18 @@
 make gaurav --dry-run --always-make --keep-going --print-directory
 make: Entering directory `/Users/kumargaurav/Asteroids'
-g++ -g    -c -o main.o main.cpp
-g++ -g    -c -o Angular_mom.o Angular_mom.cpp
-g++ -g    -c -o bc.o bc.cpp
-g++ -g    -c -o Characteristics.o Characteristics.cpp
-g++ -g    -c -o cv_flux_source.o cv_flux_source.cpp
-g++ -g    -c -o gravity.o gravity.cpp
-g++ -g    -c -o IC.o IC.cpp
-g++ -g    -c -o IO.o IO.cpp
-g++ -g    -c -o march.o march.cpp
-g++ -g    -c -o pressure_shed.o pressure_shed.cpp
-g++ -g    -c -o solver.o solver.cpp
-g++ -g    -c -o topography.o topography.cpp
-g++ -g    -c -o TVD.o TVD.cpp
-g++ -g  -o gaurav main.o Angular_mom.o bc.o Characteristics.o cv_flux_source.o gravity.o IC.o IO.o march.o pressure_shed.o solver.o topography.o TVD.o
+g++ -g -std=c++17    -c -o main.o main.cpp
+g++ -g -std=c++17    -c -o Angular_mom.o Angular_mom.cpp
+g++ -g -std=c++17    -c -o bc.o bc.cpp
+g++ -g -std=c++17    -c -o Characteristics.o Characteristics.cpp
+g++ -g -std=c++17    -c -o cv_flux_source.o cv_flux_source.cpp
+g++ -g -std=c++17    -c -o gravity.o gravity.cpp
+g++ -g -std=c++17    -c -o IC.o IC.cpp
+g++ -g -std=c++17    -c -o IO.o IO.cpp
+g++ -g -std=c++17    -c -o march.o march.cpp
+g++ -g -std=c++17    -c -o pressure_shed.o pressure_shed.cpp
+g++ -g -std=c++17    -c -o solver.o solver.cpp
+g++ -g -std=c++17    -c -o topography.o topography.cpp
+g++ -g -std=c++17    -c -o TVD.o TVD.cpp
+g++ -g -std=c++17  -o gaurav main.o Angular_mom.o bc.o Characteristics.o cv_flux_source.o gravity.o IC.o IO.o march.o pressure_shed.o solver.o topography.o TVD.o
 make: Leaving directory `/Users/kumargaurav/Asteroids'
  

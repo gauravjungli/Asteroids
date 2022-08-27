@@ -2,10 +2,6 @@
 
 double Minmod(double a, double b, double c) // calculate minmod
 {
-	double temps;
-	//temps = std::min(abs(a), std::min(abs(b), abs(c)));
-
-	//return temps;
 
 	if (a < 0 && b < 0 && c < 0)
 		return std::max(a, std::max(b, c));

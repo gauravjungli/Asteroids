@@ -9,7 +9,9 @@
 #include <iomanip>
 #include <vector>
 #include "parameters.h"
-
+#include <filesystem>
+#include <sys/stat.h>
+#include <sys/types.h>
 using namespace std;
 
 //----------------------------------------------------------------------------
@@ -58,7 +60,7 @@ class FS
 /////   I/O
 
 //To write files 
-void Write(const vector<CV> & w,const double t );
+void Write(const vector<CV> & w,const int count, string file );
 void Write( const double om, const double t );
 
 //To read files
@@ -66,6 +68,9 @@ void Read ( vector<double>&, string file );
 
 //To catch errors
 void Error(string , string );
+
+//to delete files
+void deleteDirectoryContents(const std::string& dir_path);
 
 //----------------------------------------------------------------------------------------
 ///// bc.cpp
@@ -95,7 +100,7 @@ double Minmod(double a, double b, double c);
 void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om );
 void Grid(vector<double> & x);
 //To incorporate topography
-void Base(vector<double> & b);
+void Base(vector<CV>& w,vector<double> & b);
 
 //-------------------------------------------------------------------------
 
@@ -103,7 +108,7 @@ void Base(vector<double> & b);
 
 //To be used in the solver terms
 
-FS Hx( CV wl, CV wr);
+FS Hx( CV wl, CV wr, double om);
 
 
 //------------------------------------------------------------------------------------------
@@ -111,17 +116,17 @@ FS Hx( CV wl, CV wr);
 ////////// cv_flux-source.cpp
 
 //To calculate flux
-FS Flux( CV w );
+FS Flux( CV w, double om );
 
 //To compute source terms
-FS Source( CV w, double om);
-
+FS Source( CV w, double om, double alpha);
+double Eigen(CV w );
 //---------------------------------------------------------------------------------
 
 ///////// characteristics.cpp
 
 //To calculate eigen value and chareacteristics speed
-double Eigen(CV w );
+
 double Ax(CV wl, CV wr );
 //values at edges
 void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om);
@@ -133,9 +138,9 @@ void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
 /////// march.cpp
 
 //To be used in the time marching
-void March (vector<CV>& w, double & om, double finalt);
-void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double om, double dt, AMB amb);
-void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double om, double om_init, double dt, AMB amb);
+void March (vector<CV>& w, double & om, double finalt, int i);
+void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB amb);
+void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB amb);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
 void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 

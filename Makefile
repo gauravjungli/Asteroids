@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS := -g #-Wall -O2
+CXXFLAGS := -g -std=c++17 #-Wall -O2
 
 objects =  main.o Angular_mom.o bc.o Characteristics.o \
             cv_flux_source.o gravity.o IC.o IO.o march.o \
