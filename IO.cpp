@@ -1,15 +1,14 @@
 #include "gauravlib.h"
 
-void Write ( const double om, const double t)
+void Write ( const double om, const double t, string file)
 {
-ofstream myfile("output/omega.txt",std::ofstream::app);
+ofstream myfile(file,std::ofstream::app);
 if (!myfile) Error("Can't open output file","Omega.txt");
 myfile<<std::setprecision(12)<<t<<" "<<om<< endl;
 myfile.close();
 }
-void Write (const vector<CV>& w,const int count, string file)
+void Write (const vector<CV>& w, string file)
 {
-file=file+string("/field_")+to_string(count)+string(".csv");
 ofstream myfile(file);
 if (!myfile) Error("Can't open output file field_%f",file);
 for (int i=2;i<res-2;i++)
@@ -36,4 +35,25 @@ void deleteDirectoryContents(const std::string& dir_path)
 {
     for (const auto& entry : std::filesystem::directory_iterator(dir_path)) 
         std::filesystem::remove_all(entry.path());
+}
+
+bool Parameters()
+{
+	ifstream myfile("parameters");
+	if (!myfile) Error("Can't open file", "parameters");
+	string line;
+	while (getline(myfile, line))  
+    {
+        istringstream iss(line);
+        string word1;
+        if (!(iss >> word1))
+            continue;  // line had no words
+        string word2;
+        if (!(iss >> word2))
+            continue;  // line only had one word
+
+		par[word1]=stof(word2);
+    }
+	
+    return true;
 }

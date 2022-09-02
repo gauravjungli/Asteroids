@@ -11,12 +11,30 @@ CV::CV(double h, double u, double v, double b, Grav g, double x, double om )
 
 void CV::Modify(double p, double q, double r,double om)
 {	h=0.5*(-2*b*epsilon-1+pow((pow(2*epsilon*b+1,2)+4*epsilon*p/sin(x)),0.5))/epsilon;
-	lambda= (b+h/2.0);
 	this->p=p; this->q=q; this->r=r;
+	//h=H(om);
+	lambda= (b+h/2.0);
 	u=q/(h*(1+3*epsilon*lambda)*sin(x));
+	//u=U(om);
 	v=r/(h*sin(x)*(1+3*epsilon*lambda))-epsilon*om*h;
+	//v=V(om);
 	psi=Psi(*this, om);
 }
+
+double CV::H( double om)
+{
+	return -p*(2*b*epsilon*sin(x)+epsilon*p-sin(x))/pow(sin(x),2);
+}
+double CV::U( double om)
+{
+	return -q*(2*b*epsilon*sin(x)+epsilon*p-2*sin(x))/(2*sin(x)*p);
+}
+
+double CV::V( double om)
+{
+	return -r*(2*b*epsilon*sin(x)+epsilon*p-2*sin(x))/(2*sin(x)*p)-epsilon*om*p/sin(x);
+}
+
 
 FS Flux( CV w, double om )
 
@@ -25,6 +43,9 @@ FS Flux( CV w, double om )
 	 f.p = w.u*w.h*(1+epsilon*w.lambda)*sin(w.x);
 	 f.q = (w.u*w.u-epsilon*w.psi*w.h/2)*w.h*(1+2*epsilon*w.lambda)*sin(w.x); 
 	 f.r = (w.u*(w.v+epsilon*om*w.h))*w.h*(1+2*epsilon*w.lambda)*sin(w.x);
+	//	f.p=-w.q*(2*w.b*epsilon*sin(w.x)+epsilon*w.p-sin(w.x))/sin(w.x);
+	//	f.q=-(4*w.b*epsilon*sin(w.x)*w.q*w.q+2*epsilon*w.p*w.q*w.q-2*sin(w.x)*w.q*w.q-epsilon*pow(w.p,3)*w.psi)/(2*sin(w.x)*w.p);
+	//	f.r=-w.q*w.r*(2*w.b*epsilon*sin(w.x)+epsilon*w.p-sin(w.x))/(sin(w.x)*w.p);
 	return f;
 
 }
@@ -34,7 +55,7 @@ FS Source( CV w, double om, double alpha)
 {
 	FS source;
 	source.p=0;
-	double mu=tan(delta);
+	double mu=tan(delta* PI / 180);
 	double bf=(om*om*cos(w.x)*sin(w.x)+2*om*cos(w.x)*w.v+w.g.X2);
 	double fr=0;
 	if (pow(pow(w.u,2)+pow(w.v,2),0.5)>1e-10) fr=mu*(w.psi/2.0)*w.h*w.u/pow(pow(w.u,2)+pow(w.v,2),0.5);

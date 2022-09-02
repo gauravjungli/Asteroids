@@ -15,10 +15,11 @@ void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om)
     {	
         Reconstruct(wr[i],w[i-1],w[i],w[i+1],1);
 		wr[i]=CV(  wr[i].h,wr[i].u,wr[i].v,wr[i].b,wr[i].g,wr[i].x,om);
-
+		//wr[i].Modify(wr[i].p,wr[i].q,wr[i].r,om);
         Reconstruct(wl[i],w[i-1],w[i],w[i+1],-1);            
         wl[i]=CV(  wl[i].h,wl[i].u,wl[i].v,wl[i].b,wl[i].g,wl[i].x,om);
-    }
+	//	wl[i].Modify(wl[i].p,wl[i].q,wl[i].r,om);   
+	 }
 }
 
   void Reconstruct(CV& w, CV w1, CV w2, CV w3, int sign )

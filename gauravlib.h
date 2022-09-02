@@ -8,13 +8,52 @@
 #include <string>
 #include <iomanip>
 #include <vector>
-#include "parameters.h"
+#include <sstream>
 #include <filesystem>
+#include <map>
+#//include "parameters.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 using namespace std;
 
 //----------------------------------------------------------------------------
+/*#define res (int) round(par["res"])
+#define PI 3.14159265
+#define dump int(par["dump"])
+#define offset par["offset"]
+#define xmax   par["xmax"]
+#define xmin par["xmin"]
+#define weight par["weight"] // used in 2nd  order RK
+#define uni_h par["uni_h"]
+#define finalt par["finalt"]
+#define delta par["delta"] // angle of friction in degrees
+#define theta par["theta"] // used in min-mod limiter
+#define slides par["slides"]
+#define epsilon par["epsilon"] // shallowness parameter
+#define omega par["omega"]
+#define dx par["dx"]*/
+extern std::map <std::string, double> par;
+
+extern  int res;
+extern double PI;
+extern int dump;
+extern double offset;
+extern double xmax;
+extern double xmin;
+extern double weight;
+extern double uni_h;
+extern double finalt;
+extern double delta;
+extern double theta;
+extern double slides;
+extern double epsilon;
+extern double omega;
+extern double dx;
+
+
+
+
+//------------------------------------------------------------------------------
 
 //Class for storing a 2D gravity field
 
@@ -46,6 +85,9 @@ class CV
         Grav g;
         CV(double h, double u, double v, double b, Grav g, double x, double om );
         void Modify(double p, double q, double r, double om);
+        double H(double om);
+        double U(double om);
+        double V(double om);
 };
 
 class FS
@@ -55,16 +97,18 @@ class FS
         FS(): p(0), q(0), r(0){}      
 };
 
+
 //---------------------------------------------------------------------------------
 
 /////   I/O
 
 //To write files 
-void Write(const vector<CV> & w,const int count, string file );
-void Write( const double om, const double t );
+void Write(const vector<CV> & w, string file  );
+void Write( const double om, const double t, string file );
 
 //To read files
 void Read ( vector<double>&, string file );
+bool Parameters();
 
 //To catch errors
 void Error(string , string );
@@ -138,7 +182,7 @@ void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
 /////// march.cpp
 
 //To be used in the time marching
-void March (vector<CV>& w, double & om, double finalt, int i);
+void March (vector<CV>& w, double & om, double final_t);
 void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB amb);
 void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB amb);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
