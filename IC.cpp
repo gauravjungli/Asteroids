@@ -30,13 +30,13 @@ void Grid(vector<double> & x)
 void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om )
 {   
     vector<double>  b(res);
-    
-    Base(w,b);
+    vector<double>  grad_b(res);
+    Base(w,b,grad_b);
     if (w.empty())
     {
 	for (int j = 0; j < res; j++)
     {
-   CV temp(uni_h,0,0,b[j],g[j],x[j],om);
+   CV temp(uni_h,0,0,b[j],grad_b[j],g[j],x[j],om);
         w.push_back(temp);
     }
     }
@@ -44,20 +44,26 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om 
     {
         for (int j = 0; j < res; j++)
        { 
-            w[j]=CV(uni_h,0,0,b[j],g[j],x[j],om);
+            w[j]=CV(uni_h,0,0,b[j],grad_b[j],g[j],x[j],om);
        }
     }
 	    
 }
 
-void Base(vector<CV>& w, vector<double> & b)
+void Base(vector<CV>& w, vector<double> & b,vector<double> & grad_b)
 {   
     if (w.empty())
+    {
         b=vector<double>(res,0);
+        grad_b=vector<double>(res,0);
+    }
     else
     {
         for (int j = 0; j < res; j++) 
+         {   
             b[j]=w[j].b+w[j].h-uni_h;
+            grad_b[j]=(b[j+1]-b[j-1])/(2*dx);
+         }
     }
         
 }

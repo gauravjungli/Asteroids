@@ -104,11 +104,11 @@ void CFL(vector<CV>& wl,vector<CV>& wr, double & dt)
 	// to evaluate dt from maximum speeds (CFL condition)
 	for (int j = 2; j < res - 2; j++)
 	{
-		double eig = Ax(wr[j-1],wl[j]);
-		if (maxspeed < abs(eig))
-		maxspeed = abs(eig);
+		double eig = max(abs(Ax(wr[j-1],wl[j],"max")),abs(Ax(wr[j-1],wl[j],"min")));
+		if (maxspeed < eig)
+		maxspeed = eig;
 	}
 	//cout<<maxspeed<<endl;
-	dt = min(dx/8,dx/8/maxspeed);
+	dt = min(dx/4,dx/4/maxspeed);
 
 }

@@ -26,6 +26,7 @@ int main()
 		
 		March(w,om,i*finalt);
 		Write(w,file1);
+		Write (om,"output/omega.txt");
 		cout<<i<<endl;
 	}
 	

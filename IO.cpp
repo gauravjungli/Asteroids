@@ -7,6 +7,13 @@ if (!myfile) Error("Can't open output file","Omega.txt");
 myfile<<std::setprecision(12)<<t<<" "<<om<< endl;
 myfile.close();
 }
+void Write ( const double om, string file)
+{
+ofstream myfile(file,std::ofstream::out);
+if (!myfile) Error("Can't open output file","Omega.txt");
+myfile<<std::setprecision(12)<<" "<<om<< endl;
+myfile.close();
+}
 void Write (const vector<CV>& w, string file)
 {
 ofstream myfile(file);
@@ -54,6 +61,14 @@ bool Parameters()
 
 		par[word1]=stof(word2);
     }
-	
+    myfile.close();
+    myfile.open("output/omega.txt");
+    if (!myfile) Error("Can't open file", "omega.txt");
+    getline(myfile, line);
+    istringstream iss(line);
+    string word;
+    iss >> word;
+    cout<<word;
+    par["omega"]=stof(word);
     return true;
 }

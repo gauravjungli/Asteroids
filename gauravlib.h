@@ -11,7 +11,7 @@
 #include <sstream>
 #include <filesystem>
 #include <map>
-#//include "parameters.h"
+//#include "parameters.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 using namespace std;
@@ -81,10 +81,11 @@ class AMB{
 class CV
 {
     public:
-        double p, q, r,h,u,v,b,x,psi,lambda;
+        double p, q, r,h,u,v,b,grad_b,x,psi,lambda;
         Grav g;
-        CV(double h, double u, double v, double b, Grav g, double x, double om );
+        CV(double h, double u, double v, double b, double grad_b, Grav g, double x, double om );
         void Modify(double p, double q, double r, double om);
+        
         double H(double om);
         double U(double om);
         double V(double om);
@@ -94,7 +95,12 @@ class FS
 {
     public:
         double p, q, r;
-        FS(): p(0), q(0), r(0){}      
+        FS(): p(0), q(0), r(0){} 
+        FS(CV w);
+        FS operator+ (FS w); 
+        FS operator- (FS w);  
+        FS operator* (double w);   
+        FS operator/ (double w);    
 };
 
 
@@ -104,6 +110,7 @@ class FS
 
 //To write files 
 void Write(const vector<CV> & w, string file  );
+void Write( const double om, string file );
 void Write( const double om, const double t, string file );
 
 //To read files
@@ -136,7 +143,7 @@ double Derivative( double w1, double w2, double w3);
 
 //Calculate minmod limiter
 double Minmod(double a, double b, double c); 
-
+FS Minmod(FS w, FS v); 
 //--------------------------------------------------------------------------
 //////////  IC.cpp
 
@@ -164,14 +171,14 @@ FS Flux( CV w, double om );
 
 //To compute source terms
 FS Source( CV w, double om, double alpha);
-double Eigen(CV w );
+FS Eigen(CV w );
 //---------------------------------------------------------------------------------
 
 ///////// characteristics.cpp
 
 //To calculate eigen value and chareacteristics speed
 
-double Ax(CV wl, CV wr );
+double Ax(CV wl, CV wr, string s);
 //values at edges
 void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om);
 void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
