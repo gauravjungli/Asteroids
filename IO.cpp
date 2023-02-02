@@ -4,14 +4,14 @@ void Write ( const double om, const double t, string file)
 {
 ofstream myfile(file,std::ofstream::app);
 if (!myfile) Error("Can't open output file","Omega.txt");
-myfile<<std::setprecision(12)<<t<<" "<<om<< endl;
+myfile<<std::setprecision(18)<<t<<" "<<om<< endl;
 myfile.close();
 }
 void Write ( const double om, string file)
 {
 ofstream myfile(file,std::ofstream::out);
 if (!myfile) Error("Can't open output file","Omega.txt");
-myfile<<std::setprecision(12)<<" "<<om<< endl;
+myfile<<std::setprecision(18)<<" "<<omega<< endl;//change to om for SSAH
 myfile.close();
 }
 void Write (const vector<CV>& w, string file)
@@ -19,7 +19,7 @@ void Write (const vector<CV>& w, string file)
 ofstream myfile(file);
 if (!myfile) Error("Can't open output file field_%f",file);
 for (int i=2;i<res-2;i++)
-		myfile<<std::setprecision(12)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<"\n";
+		myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<"\n";
 myfile.close();
 }
 
@@ -59,7 +59,7 @@ bool Parameters()
         if (!(iss >> word2))
             continue;  // line only had one word
 
-		par[word1]=stof(word2);
+		par[word1]=stod(word2);
     }
     myfile.close();
     myfile.open("output/omega.txt");
@@ -69,6 +69,6 @@ bool Parameters()
     string word;
     iss >> word;
     cout<<word;
-    par["omega"]=stof(word);
+    par["omega"]=stod(word);
     return true;
 }

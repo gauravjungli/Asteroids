@@ -7,7 +7,7 @@ void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, doubl
 	for (int j = 2; j < res-2; j++)
 	{	FS hr= Hx(wr[j],wl[j+1],om);
 		FS hl= Hx(wr[j-1],wl[j],om);
-		FS source=Source( wtemp[j],om,Alpha( om , dt, amb ));
+		FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1], om, Alpha( om , dt, amb ));
 		w[j].Modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
     	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt,om);
@@ -29,7 +29,7 @@ void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_ini
 	{
 	FS hr= Hx(wr[j],wl[j+1],om);
 	FS hl= Hx(wr[j-1],wl[j],om);
-	FS source=Source( wtemp[j],om,Alpha( om , dt, amb ));	
+	FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1], om, Alpha( om , dt, amb ));	
 	w[j].Modify ( w_init[j].p * weight + (1 - weight) * (wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt)
 	, w_init[j].q * weight + (1 - weight) * (wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt)
 	,  w_init[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt),om);
@@ -44,6 +44,7 @@ void March (vector<CV>& w, double & om, double final_t)
 	double alpha=0;
 	
 	vector<CV> wl(w),wr(w);
+	BC(w,om);
 	Edge(w,wl,wr,om);
 	double integral1=0,integral2=0;
 	Integrals(integral1,integral2,w,wl,wr);
@@ -64,6 +65,7 @@ void March (vector<CV>& w, double & om, double final_t)
 		double om_init=om;
 		BC(w,om);
 		Edge(w,wl,wr,om);
+		
 		Predictor(w,wl,wr,om,dt,amb);
 		BC(w,om);
 		Edge(w,wl,wr,om);
@@ -76,7 +78,7 @@ void March (vector<CV>& w, double & om, double final_t)
 		double sum=0;
 		for (int i=2;i<res-2;i++)
 		{
-			sum+=(pow((1+epsilon*(w[i].h+w[i].b)),3)-pow((1+epsilon*(w[i].b)),3))*sin(w[i].x);
+			sum+=w[i].h*(1+2*epsilon*w[i].lambda)*sin(w[i].x);
 		}
 		cout<<std::setprecision(12)<<t<<"  "<<sum<<endl;
 	}

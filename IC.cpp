@@ -22,47 +22,55 @@ void Grid(vector<double> & x)
 {
     for (int i=0;i<res;i++)
         {
-        x[i]=offset+dx * (i+0.5);
+            x[i]=offset+dx * (i+0.5);
         }
 }
 
 
 void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om )
 {   
-    vector<double>  b(res);
-    vector<double>  grad_b(res);
-    Base(w,b,grad_b);
+    vector<double>  b;
+     vector <double> h(res), u(res);
+
+    for (int j=0;j<res;j++)
+    {
+        if (j<res/2)
+        {h[j]=uni_h; u[j]=0;}
+        else
+        {h[j]=uni_h; u[j]=0;}
+    }
+    Base(w,b,h);
     if (w.empty())
     {
-	for (int j = 0; j < res; j++)
-    {
-   CV temp(uni_h,0,0,b[j],grad_b[j],g[j],x[j],om);
-        w.push_back(temp);
-    }
+	    for (int j = 0; j < res; j++)
+        {
+            CV temp(h[j],u[j],0,b[j],g[j],x[j],om);
+            w.push_back(temp);
+        } 
     }
     else
     {
-        for (int j = 0; j < res; j++)
+        for (int j = 1; j < res-1; j++)
        { 
-            w[j]=CV(uni_h,0,0,b[j],grad_b[j],g[j],x[j],om);
+            w[j]=CV(h[j],u[j],0,b[j],g[j],x[j],om);
        }
-    }
+    } 
 	    
 }
 
-void Base(vector<CV>& w, vector<double> & b,vector<double> & grad_b)
+void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
 {   
     if (w.empty())
     {
         b=vector<double>(res,0);
-        grad_b=vector<double>(res,0);
+        for (int j=0;j<res;j++)
+            b[j]=uni_h-h[j];
     }
     else
     {
-        for (int j = 0; j < res; j++) 
+        for (int j = 1; j < res-1; j++) 
          {   
-            b[j]=w[j].b+w[j].h-uni_h;
-            grad_b[j]=(b[j+1]-b[j-1])/(2*dx);
+            b[j]=w[j].w-h[j];
          }
     }
         

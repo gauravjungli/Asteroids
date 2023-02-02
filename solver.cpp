@@ -15,9 +15,12 @@ FS Hx( CV wl, CV wr, double om)
 
 	FS w;
 	  
-		w= (fl*er-fr*el)/(er-el)+(Wr-Wl-delta_w)*(er*el)/(er-el);
+	//	w= (fl*er-fr*el)/(er-el)+(Wr-Wl-delta_w)*(er*el)/(er-el);
+		w=(fl+fr)/2-(Wr-Wl)*max(abs(el),abs(er))/2;
 	return w;
 }
+
+
 
 
 
