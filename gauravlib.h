@@ -81,9 +81,9 @@ class AMB{
 class CV
 {
     public:
-        double p, q, r,h,u,v,b,grad_b,x,psi,lambda;
+        double w, p, q, r,h,u,v,b,x,psi,lambda;
         Grav g;
-        CV(double h, double u, double v, double b, double grad_b, Grav g, double x, double om );
+        CV(double h, double u, double v, double b, Grav g, double x, double om );
         void Modify(double p, double q, double r, double om);
         
         double H(double om);
@@ -150,8 +150,8 @@ FS Minmod(FS w, FS v);
 //To initialize the simulation
 void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om );
 void Grid(vector<double> & x);
-//To incorporate topography
-void Base(vector<CV>& w,vector<double> & b);
+//To incorporate topography 
+void Base(vector<CV>& w, vector<double> & b,vector<double>& h);
 
 //-------------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ FS Hx( CV wl, CV wr, double om);
 FS Flux( CV w, double om );
 
 //To compute source terms
-FS Source( CV w, double om, double alpha);
+FS Source( CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha);
 FS Eigen(CV w );
 //---------------------------------------------------------------------------------
 
@@ -182,7 +182,7 @@ double Ax(CV wl, CV wr, string s);
 //values at edges
 void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om);
 void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
-
+void Grad_b(CV& w, CV w1, CV w2, CV w3, CV w4);
 
 //--------------------------------------------------------------------------------------------------------
 

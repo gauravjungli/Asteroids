@@ -1,13 +1,13 @@
- res 200
- dump 200
+ res 100
+ dump 50
  offset 0.05
- xmax  3.14159265
+ xmax  3.141592653589793238
  xmin 0
  weight 0.5 
  uni_h 1.0
- finalt 1
- delta 11
- theta 0.0
+ finalt 10
+ delta 0
+ theta 1.0
  slides 1
  epsilon 0.01
 

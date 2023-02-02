@@ -6,79 +6,49 @@ from pathlib import Path
 import glob
 
 #from mpl_toolkits.mplot3d import Axes3D
-xres = 2000
-x = np.linspace(0,1,196)
-
-
-
-omega=np.loadtxt("output/omega.txt",delimiter=" ")
+omega=0.25
+delta=0
+slides=1
+epsilon=0.01
+file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
+omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
+plt.clf()
 plt.plot(omega[:,0],omega[:,1])
+#plt.close()
 #%%    
-#fig = plt.figure(figsize=(6,6))
-for count in range(6):
-    file=glob.glob("output/field_"+str(count+5)+".csv",recursive=True)
+fig = plt.figure(figsize=(6,6))
+for count in range(slides):
+    file=glob.glob(file1+"/field_"+str(count)+".csv",recursive=True)
     w=np.loadtxt(file[0],delimiter=",",dtype=float)
-    print(file)
-    
+    #print(file)
+    if count!=slides-1 and count!=0:
+        continue
     #plt.clf()
-    x=np.sin(w[:,0])*(1+0.01*(w[:,1]+w[:,2]))
-    y=np.cos(w[:,0])*(1+0.01*(w[:,1]+w[:,2]))
+    x=np.sin(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
+    y=np.cos(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
     plt.axis('equal')
     plt.plot(x,y)
     plt.title("lanslide number="+str(count))
     plt.pause(0.5)
+plt.close()
  #%%   
 fig = plt.figure(figsize=(6,6))   
 for count in range(len(omega)):
 
-    file=glob.glob("output/field_"+str(count)+".csv",recursive=True)
+    file=glob.glob(file1+"/data/field_"+str(count)+".csv",recursive=True)
     w=np.loadtxt(file[0],delimiter=",",dtype=float)
     print(file)
     
     plt.clf()
-    x=np.sin(w[:,0])*(1+0.01*(w[:,1]+w[:,2]))
-    y=np.cos(w[:,0])*(1+0.01*(w[:,1]+w[:,2]))
-    plt.plot(w[:,0],w[:,1])
-    plt.pause(0.5)  
-    
-    
-# textFile = open("uout2.txt")
-# lineu1 = textFile.readlines()
-# for line in lineu1:
-#     datu.append(line.split(" "))
-    
-# textFile = open("vout2.txt")
-# linev1 = textFile.readlines()
-# for line in linev1:
-#     datv.append(line.split(" "))
-      
-# textFile = open("tout2.txt")
-# lino = textFile.readlines()
-# for line in lino:
-#     dato.append(line.split(" "))
-    
-# textFile = open("sout2.txt")
-# linu = textFile.readlines()
-# for line in linu:
-#     dats.append(line.split(" "))
-        
-# textFile = open("mout2.txt")
-# linm = textFile.readlines()
-# for line in linm:
-#     datm.append(line.split(" "))
-    
-# textFile = open("kout2.txt")
-# link = textFile.readlines()
-# for line in link:
-#     datk.append(line.split(" "))
-# 	
+    x=(w[:,0])
+    y=(w[:,2]+w[:,4])
+  #  if count%50!=0:
+   #     continue
+    plt.plot(x,y)
+    plt.title("Time="+str(count))
+    plt.pause(0.2)  
+#plt.close()  
 
-
-# for i in range (len(dato)):#
-#     datao[i]=float(dato[i][0])
-#     datas[i]=float(dats[i][0])
-#     datak[i]=float(datk[i][0])
-#     datam[i]=float(datm[i][0])
 
 
 # #plt.plot(datas,datak,'-')
