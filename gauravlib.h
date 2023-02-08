@@ -34,21 +34,21 @@ using namespace std;
 #define dx par["dx"]*/
 extern std::map <std::string, double> par;
 
-extern  int res;
-extern double PI;
-extern int dump;
-extern double offset;
-extern double xmax;
-extern double xmin;
-extern double weight;
-extern double uni_h;
-extern double finalt;
-extern double delta;
-extern double theta;
-extern double slides;
-extern double epsilon;
-extern double omega;
-extern double dx;
+extern const  int res;
+extern const double PI;
+extern const int dump;
+extern const double offset;
+extern const double xmax;
+extern const double xmin;
+extern const double weight;
+extern const double uni_h;
+extern const double finalt;
+extern const double delta;
+extern const double theta;
+extern const double slides;
+extern const double epsilon;
+extern const double omega;
+extern const double dx;
 
 
 
@@ -83,12 +83,9 @@ class CV
     public:
         double w, p, q, r,h,u,v,b,x,psi,lambda;
         Grav g;
-        CV(double h, double u, double v, double b, Grav g, double x, double om );
-        void Modify(double p, double q, double r, double om);
-        
-        double H(double om);
-        double U(double om);
-        double V(double om);
+        CV(double h, double u, double v, double b, Grav g, double x );
+        void Modify(double p, double q, double r);
+     
 };
 
 class FS
@@ -126,7 +123,7 @@ void deleteDirectoryContents(const std::string& dir_path);
 //----------------------------------------------------------------------------------------
 ///// bc.cpp
 //Boundary conditions
-void BC(vector<CV>& w, double om );
+void BC(vector<CV>& w );
 
 //---------------------------------------------------------------------------------
 
@@ -148,7 +145,7 @@ FS Minmod(FS w, FS v);
 //////////  IC.cpp
 
 //To initialize the simulation
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om );
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g );
 void Grid(vector<double> & x);
 //To incorporate topography 
 void Base(vector<CV>& w, vector<double> & b,vector<double>& h);
@@ -159,7 +156,7 @@ void Base(vector<CV>& w, vector<double> & b,vector<double>& h);
 
 //To be used in the solver terms
 
-FS Hx( CV wl, CV wr, double om);
+FS Hx( CV wl, CV wr);
 
 
 //------------------------------------------------------------------------------------------
@@ -167,7 +164,7 @@ FS Hx( CV wl, CV wr, double om);
 ////////// cv_flux-source.cpp
 
 //To calculate flux
-FS Flux( CV w, double om );
+FS Flux( CV w );
 
 //To compute source terms
 FS Source( CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha);
@@ -180,7 +177,7 @@ FS Eigen(CV w );
 
 double Ax(CV wl, CV wr, string s);
 //values at edges
-void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om);
+void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
 void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
 void Grad_b(CV& w, CV w1, CV w2, CV w3, CV w4);
 
@@ -189,7 +186,7 @@ void Grad_b(CV& w, CV w1, CV w2, CV w3, CV w4);
 /////// march.cpp
 
 //To be used in the time marching
-void March (vector<CV>& w, double & om, double final_t);
+double March (vector<CV>& w, double final_t);
 void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB amb);
 void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB amb);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
@@ -199,21 +196,21 @@ void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 
 ///////// Angular_mom.cpp
 //To update omega
-void Ang_mom(AMB& amb, double integral1, double integral2);
-double Alpha( double& om , double dt, AMB amb );
+void Ang_mom(AMB& amb, double integral1, double integral2, bool replace);
+double Alpha( double& om , double dt, AMB amb, double inertia );
 void Integrals(double& integral1, double& integral2, vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
 double Int_B(CV w);
-double Int_A(CV w);
+double Int_A(CV wl, CV w, CV wr);
 double Diff(vector<double> w, double dt);
-
+double AMB_corrector (vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
 
 //--------------------------------------------------------------------------------------------------------------
 
 ///////// pressure_shed.cpp
 
 //mass shedding and pressure
-void Shed(vector<CV>& w, double om);
-double Psi(CV w, double om);
+void Shed(vector<CV>& w);
+double Psi(CV w);
 
 
 

@@ -1,10 +1,10 @@
 #include "gauravlib.h"
 
-FS Hx( CV wl, CV wr, double om)
+FS Hx( CV wl, CV wr)
 {
 
-	FS fr = Flux(wr,om); 
-	FS fl = Flux(wl,om);
+	FS fr = Flux(wr); 
+	FS fl = Flux(wl);
 	double el=Ax(wl,wr,"min");
 	double er=Ax(wl,wr,"max");
 	FS delta_w(wl);

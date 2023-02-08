@@ -2,21 +2,21 @@
 
 std::map <std::string, double> par;
 bool set_parameter=Parameters();
-int res= (int) round(par["res"]);
-double PI= 3.14159265;
-int dump= int(par["dump"]);
-double offset= par["offset"];
-double xmax=   par["xmax"];
-double xmin= par["xmin"];
-double weight= par["weight"]; 
-double uni_h= par["uni_h"];
-double finalt= par["finalt"];
-double delta= par["delta"]; 
-double theta= par["theta"]; 
-double slides= par["slides"];
-double epsilon= par["epsilon"]; 
-double omega= par["omega"];
-double dx= (xmax-xmin-2*offset)/res;
+const int res= (int) round(par["res"]);
+const double PI= 3.14159265;
+const int dump= int(par["dump"]);
+const double offset= par["offset"];
+const double xmax=   par["xmax"];
+const double xmin= par["xmin"];
+const double weight= par["weight"]; 
+const double uni_h= par["uni_h"];
+const double finalt= par["finalt"];
+const double delta= par["delta"]; 
+const double theta= par["theta"]; 
+const double slides= par["slides"];
+const double epsilon= par["epsilon"]; 
+const double omega= par["omega"];
+const double dx= (xmax-xmin-2*offset)/res;
 
 void Grid(vector<double> & x)
 {
@@ -27,24 +27,22 @@ void Grid(vector<double> & x)
 }
 
 
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om )
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g)
 {   
     vector<double>  b;
-     vector <double> h(res), u(res);
+     vector <double> h(res), u(res),v(res);
 
     for (int j=0;j<res;j++)
     {
-        if (j<res/2)
-        {h[j]=uni_h; u[j]=0;}
-        else
-        {h[j]=uni_h; u[j]=0;}
+        h[j]=uni_h; u[j]=0;v[j]=0;
+        
     }
     Base(w,b,h);
     if (w.empty())
     {
 	    for (int j = 0; j < res; j++)
         {
-            CV temp(h[j],u[j],0,b[j],g[j],x[j],om);
+            CV temp(h[j],u[j],v[j],b[j],g[j],x[j]);
             w.push_back(temp);
         } 
     }
@@ -52,7 +50,7 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, double om 
     {
         for (int j = 1; j < res-1; j++)
        { 
-            w[j]=CV(h[j],u[j],0,b[j],g[j],x[j],om);
+            w[j]=CV(h[j],u[j],v[j],b[j],g[j],x[j]);
        }
     } 
 	    

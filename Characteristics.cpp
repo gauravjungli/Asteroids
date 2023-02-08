@@ -20,7 +20,7 @@ else
 
 
 
-void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om)
+void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr)
 {   
     for(int i=1; i<res-1;i++)
     {	
@@ -45,10 +45,10 @@ void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om)
 		wr[i].h=wr[i].w-wr[i].b;
 	
 
-		wl[i]=CV(  wl[i].h,wl[i].u,wl[i].v,wl[i].b,wl[i].g,wl[i].x,om);
+		wl[i]=CV(  wl[i].h,wl[i].u,wl[i].v,wl[i].b,wl[i].g,wl[i].x);
 	//	wl[i].Modify(wl[i].p,wl[i].q,wl[i].r,om);  
 
-		wr[i]=CV(  wr[i].h,wr[i].u,wr[i].v,wr[i].b,wr[i].g,wr[i].x,om);
+		wr[i]=CV(  wr[i].h,wr[i].u,wr[i].v,wr[i].b,wr[i].g,wr[i].x);
 	//	wr[i].Modify(wr[i].p,wr[i].q,wr[i].r,om);	
 	 }
 }

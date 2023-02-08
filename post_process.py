@@ -41,7 +41,7 @@ for count in range(len(omega)):
     
     plt.clf()
     x=(w[:,0])
-    y=(w[:,2]+w[:,4])
+    y=(w[:,2]+w[:,1])
   #  if count%50!=0:
    #     continue
     plt.plot(x,y)

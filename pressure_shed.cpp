@@ -1,18 +1,18 @@
 #include "gauravlib.h"
-void Shed(vector<CV>& w, double om)
+void Shed(vector<CV>& w)
 {
 for ( int j = 2; j < res-2; j++)
 {
 
-	if (Psi(w[j],om) < 0) 
+ 	if (Psi(w[j]) < 0) 
 	{
 		w[j].Modify(  pow(10, -8),
 			pow(10, -8) * w[j].u,
-		 pow(10, -8) * w[j].v,om);	
-	}
+		 pow(10, -8) * w[j].v);	
+	} 
 }
 }
-double Psi(CV w, double om)
+double Psi(CV w)
 {
-return	-(om*om*sin(w.x)*sin(w.x)+2*om*w.v*sin(w.x)+w.g.X1+w.u*w.u+w.v*w.v);//change for the sphere
+return	-(omega*omega*sin(w.x)*sin(w.x)+2*omega*w.v*sin(w.x)+w.g.X1+w.u*w.u+w.v*w.v);//change for the sphere
 }
