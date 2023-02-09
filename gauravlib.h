@@ -187,8 +187,8 @@ void Grad_b(CV& w, CV w1, CV w2, CV w3, CV w4);
 
 //To be used in the time marching
 double March (vector<CV>& w, double final_t);
-void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB amb);
-void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB amb);
+void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB& amb);
+void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB& amb);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
 void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 

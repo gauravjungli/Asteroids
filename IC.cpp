@@ -34,7 +34,7 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g)
 
     for (int j=0;j<res;j++)
     {
-        h[j]=uni_h; u[j]=0;v[j]=0;
+        h[j]=uni_h-pow((0.75*j/res),2); u[j]=0;v[j]=0;
         
     }
     Base(w,b,h);

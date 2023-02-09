@@ -9,8 +9,10 @@ void Integrals(double& integral1, double& integral2,  vector<CV>& w, vector<CV>&
 {	integral1=integral2=0;
 	for (int i=2;i<res-2;i++)
 	{
-	integral1+=dx/6*(Int_B(wl[i])+4*Int_B(w[i])+Int_B(wr[i]));
-	integral2+=dx/6*(Int_A(w[i-1],wl[i],w[i])+4*Int_A(wl[i],w[i],wr[i])+Int_A(w[i],wr[i],w[i+1]));
+	integral1+=Int_B(w[i])*dx;
+	//integral1+=dx/6*(Int_B(wl[i])+4*Int_B(w[i])+Int_B(wr[i]));
+	integral2+=Int_A(wl[i],w[i],wr[i])*dx;
+	//integral2+=dx/6*(Int_A(w[i-1],wl[i],w[i])+4*Int_A(wl[i],w[i],wr[i])+Int_A(w[i],wr[i],w[i+1]));
 	}
 	
 }
@@ -37,15 +39,15 @@ double Int_B(CV w)
 }
 double Int_A(CV wl, CV w, CV wr)
 {
-	return w.h*(1+2*epsilon*w.lambda)*pow(sin(w.x),1)*((sin(w.x-dx/2)*sin(w.x-dx/2)+sin(w.x+dx/2)*sin(w.x+dx/2))/2
-			+2*epsilon*(wl.b*wl.b*sin(w.x-dx/2)*sin(w.x-dx/2)+wr.b*wr.b*sin(w.x+dx/2)*sin(w.x+dx/2))/2);
+	return w.h*(1+2*epsilon*w.lambda)*sin(w.x)*((sin(w.x-dx/2)*sin(w.x-dx/2)+sin(w.x+dx/2)*sin(w.x+dx/2))/2
+			+2*epsilon*(wl.b*sin(w.x-dx/2)*sin(w.x-dx/2)+wr.b*sin(w.x+dx/2)*sin(w.x+dx/2))/2);
 }
 
 double Diff(vector<double> w, double dt)
 {
-		//cout<<(w[4]-w[3])<<endl;
-
-	return (w[0]-16/3.0*w[1]+12*w[2]-16*w[3]+25/3.0*w[4])/(4*dt);
+	//cout<<"In the Diff "<<(w[4]-w[3])<<endl;
+	return (w[4]-w[3])/dt;
+	//return (w[0]-16/3.0*w[1]+12*w[2]-16*w[3]+25/3.0*w[4])/(4*dt);
 }
 
 double AMB_corrector (vector<CV>& w, vector<CV>& wl, vector<CV>& wr)

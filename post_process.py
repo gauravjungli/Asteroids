@@ -6,7 +6,7 @@ from pathlib import Path
 import glob
 
 #from mpl_toolkits.mplot3d import Axes3D
-omega=0.25
+omega=0
 delta=0
 slides=1
 epsilon=0.01
@@ -41,7 +41,7 @@ for count in range(len(omega)):
     
     plt.clf()
     x=(w[:,0])
-    y=(w[:,2]+w[:,1])
+    y=(w[:,2])
   #  if count%50!=0:
    #     continue
     plt.plot(x,y)

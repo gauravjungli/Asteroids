@@ -1,42 +1,45 @@
 #include "gauravlib.h"
 
 	// predictor step for interior
-void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB amb)
+void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB& amb)
 {  	
 	vector<CV> wtemp(w);
 	BC(w);
 	Edge(w,wl,wr);
 	double integral1=0, integral2=0;
 	Integrals(integral1,integral2,w,wl,wr);
-	Ang_mom(amb,integral1,integral2,true);
+	Ang_mom(amb,integral1,integral2,false);
 	double inertia=AMB_corrector(w,wl,wr);
 	double alpha=Alpha( om , dt, amb, inertia );
 	double sum1=0,sum2=0;
 	for (int j = 2; j < res-2; j++)
-	{	FS hr= Hx(wr[j],wl[j+1]);
+	{	
 		FS hl= Hx(wr[j-1],wl[j]);
+		FS hr= Hx(wr[j],wl[j+1]);
+		
 		FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1], om, alpha );
 		w[j].Modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
     	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);
-		//sum1+=om*(hr.p-hl.p)*(sin(w[j].x-dx/2)*sin(w[j].x-dx/2)+sin(w[j].x+dx/2)*sin(w[j].x+dx/2))/2*dt;
-		//sum2+=source.r*dt*dx;
-
+	//	sum1+=(omega)*(hr.p-hl.p)*(sin(w[j].x-dx/2)*sin(w[j].x-dx/2)+sin(w[j].x+dx/2)*sin(w[j].x+dx/2))/2*dt;
+	//	sum2+=source.r*dx*dt;
+		
 	}
-	
+
+	cout<<alpha<<"  "<<endl;
 	om=om+alpha*dt;
-	//cout<<Alpha( om , dt, amb )<<endl;
+	
 }
 
 // corrector step for interior
-void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB amb)
+void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB& amb)
 {	
 	BC(w);
 	Edge(w,wl,wr);
     vector<CV> wtemp(w);
 	double integral1=0, integral2=0;
 	Integrals(integral1,integral2,w,wl,wr);
-	Ang_mom(amb,integral1,integral2,false);
+	Ang_mom(amb,integral1,integral2,true);
 	double inertia=AMB_corrector(w,wl,wr);
 	double alpha=Alpha( om , dt, amb, inertia );
 	for (int j=2; j < res-2; j++)
@@ -49,7 +52,7 @@ void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_ini
 	,  w_init[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt));
 	}
 	om=om_init*weight+(1-weight)*(om+ alpha*dt);
-
+	
 }
 
 double March (vector<CV>& w, double final_t)
@@ -57,6 +60,8 @@ double March (vector<CV>& w, double final_t)
 	double dt = dx / 4;
 	static int timesteps=0;
 	vector<CV> wl(w),wr(w);
+	BC(w);
+	Edge(w,wl,wr);
 	double om=0,inertia=0,integral1=0,integral2=0;
 	Integrals(integral1,integral2,w,wl,wr);
 	AMB amb(integral1,integral2);
@@ -72,7 +77,7 @@ double March (vector<CV>& w, double final_t)
 			string file1=file+string("/field_")+to_string(timesteps/dump)+string(".csv");
 			Write(w, file1);
 		    file1=string("output/files_")+to_string(delta)+string("_")+to_string(omega)+string("/omega.txt");
-			Write(omega+epsilon*om,t,file1);
+			Write(omega*(1+epsilon*om),t,file1);
 		}
 		vector<CV> w_init(w);
 		double om_init=om;
@@ -88,7 +93,7 @@ double March (vector<CV>& w, double final_t)
 		double sum=0;
 		for (int i=2;i<res-2;i++)
 		{
-			sum+=w[i].h*(1+0*2*epsilon*w[i].lambda)*sin(w[i].x);
+			sum+=w[i].h*(1+2*epsilon*w[i].lambda)*sin(w[i].x);
 		}
 		cout<<std::setprecision(12)<<t<<"  "<<sum<<endl;
 		
@@ -105,7 +110,7 @@ void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & 
 
 	// time updation
 	t = t + dt;
-	//timep = timep + dt;
+	
 	timesteps = timesteps + 1;
 
 }

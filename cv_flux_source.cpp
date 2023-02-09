@@ -7,7 +7,7 @@ CV::CV(double h, double u, double v, double b, Grav g, double x )
 	lambda= (b+h/2.0);
     this->p=h*sin(x)*(1+2*epsilon*lambda); 
 	this->q=h*u*sin(x)*(1+3*epsilon*lambda); 
-	this->r=h*(v+epsilon*omega*h)*sin(x)*sin(x)*(1+3*epsilon*lambda); 
+	this->r=h*(v+epsilon*omega*h*sin(x))*sin(x)*sin(x)*(1+3*epsilon*lambda); 
 }
 
 void CV::Modify(double p, double q, double r)
@@ -57,17 +57,10 @@ FS Source( CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha)
 					*(sin(w4.x)+sin(w3.x)-sin(w2.x)-sin(w1.x))/(2*dx);
 
 	source.q = pressure+(bf+fr)*w.h*sin(w.x)-grad_b;
-
-	bf=omega*(( w1.u*w1.h*sin(w1.x)*(epsilon*(om+w1.lambda)+1)
-				+w2.u*w2.h*sin(w2.x)*(epsilon*(om+w2.lambda)+1)
-			  	+w3.u*w3.h*sin(w3.x)*(epsilon*(om+w3.lambda)+1)
-				+w4.u*w4.h*sin(w4.x)*(epsilon*(om+w4.lambda)+1))/4
-				*((sin(w3.x)*sin(w3.x)+sin(w4.x)*sin(w4.x))-(sin(w1.x)*sin(w1.x)+sin(w2.x)*sin(w2.x)))/(2*dx)
-				+2*epsilon*( w1.u*w1.h*sin(w1.x)
-				+w2.u*w2.h*sin(w2.x)
-			  	+w3.u*w3.h*sin(w3.x)
-				+w4.u*w4.h*sin(w4.x))/4
-				*((w3.b*sin(w3.x)*sin(w3.x)+w4.b*sin(w4.x)*sin(w4.x))-(w1.b*sin(w1.x)*sin(w1.x)+w2.b*sin(w2.x)*sin(w2.x)))/(2*dx))
+	FS hl= Hx(w1,w2);
+	FS hr= Hx(w3,w4);
+	bf=omega*(1+epsilon*om)*(hl.p+hr.p)/2*(((sin(w3.x)*sin(w3.x)+sin(w4.x)*sin(w4.x))-(sin(w1.x)*sin(w1.x)+sin(w2.x)*sin(w2.x)))/(2*dx)
+				+2*epsilon*((w3.b*sin(w3.x)*sin(w3.x)+w4.b*sin(w4.x)*sin(w4.x))-(w1.b*sin(w1.x)*sin(w1.x)+w2.b*sin(w2.x)*sin(w2.x)))/(2*dx))
 				+epsilon*alpha*pow(sin(w.x),3)*w.h;
 	if (pow(pow(w.u,2)+pow(w.v,2),0.5)>1e-10) fr=mu*(w.psi)*w.v/pow(pow(w.u,2)+pow(w.v,2),0.5)*(1+3*epsilon*w.b)*w.h*pow(sin(w.x),2);
 	else fr=(bf>0?-1:1)*min(abs(bf),mu*w.psi*(1+3*epsilon*w.b));
