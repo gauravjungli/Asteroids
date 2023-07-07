@@ -4,22 +4,35 @@ void Write ( const double om, const double t, string file)
 {
 ofstream myfile(file,std::ofstream::app);
 if (!myfile) Error("Can't open output file","Omega.txt");
-myfile<<std::setprecision(18)<<t<<" "<<om<< endl;
+myfile<<std::setprecision(18)<<past_time+t<<" "<<om<< endl;
 myfile.close();
 }
+
 void Write ( const double om, string file)
 {
 ofstream myfile(file,std::ofstream::out);
 if (!myfile) Error("Can't open output file","Omega.txt");
-myfile<<std::setprecision(18)<<" "<<omega<< endl;//change to om for SSAH
+myfile<<std::setprecision(18)<<" "<<om<< endl;
 myfile.close();
 }
+
 void Write (const vector<CV>& w, string file)
 {
 ofstream myfile(file);
 if (!myfile) Error("Can't open output file field_%f",file);
 for (int i=2;i<res-2;i++)
-		myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<"\n";
+		myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<","<<dia<<"\n";
+myfile.close();
+}
+
+void Write ( std::map <std::string, double> par, string file)
+{
+ofstream myfile(file,std::ofstream::out);
+if (!myfile) Error("Can't open the file","parameters");
+
+	for (auto i = par.begin(); i != par.end(); i++)
+		myfile << i->first << "    " << i->second << " "<<endl;
+
 myfile.close();
 }
 
@@ -62,13 +75,5 @@ bool Parameters()
 		par[word1]=stod(word2);
     }
     myfile.close();
-    myfile.open("output/omega.txt");
-    if (!myfile) Error("Can't open file", "omega.txt");
-    getline(myfile, line);
-    istringstream iss(line);
-    string word;
-    iss >> word;
-    cout<<word;
-    par["omega"]=stod(word);
     return true;
 }

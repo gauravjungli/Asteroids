@@ -4,49 +4,83 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from pathlib import Path
 import glob
+import os
+import re
 
 #from mpl_toolkits.mplot3d import Axes3D
-omega=0
-delta=0
-slides=1
-epsilon=0.01
+omega=0.8
+delta=20
+slides=13
+epsilon=0.005
 file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
 omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
 plt.clf()
 plt.plot(omega[:,0],omega[:,1])
+
 #plt.close()
 #%%    
 fig = plt.figure(figsize=(6,6))
 for count in range(slides):
-    file=glob.glob(file1+"/field_"+str(count)+".csv",recursive=True)
+    file=glob.glob(file1+"/field_"+str(count+1)+".csv",recursive=True)
     w=np.loadtxt(file[0],delimiter=",",dtype=float)
-    #print(file)
-    if count!=slides-1 and count!=0:
-        continue
+    print(file)
+   # if count!=slides-1 and count!=0:
+    #    continue
     #plt.clf()
     x=np.sin(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
     y=np.cos(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
+    plt.clf()
     plt.axis('equal')
-    plt.plot(x,y)
-    plt.title("lanslide number="+str(count))
-    plt.pause(0.5)
-plt.close()
+    plt.plot(x,y,'-b')
+    x=-np.sin(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
+    plt.plot(x,y,'-b')
+    plt.title("lanslide number="+str(count+1))
+    plt.pause(0.2)
+    plt.savefig(file1+"/img_"+str(count+1))
+#plt.close()
  #%%   
-fig = plt.figure(figsize=(6,6))   
-for count in range(len(omega)):
+fig = plt.figure(figsize=(6,6))  
+dirFiles = os.listdir(file1+"/data") #list of directory files
+dirFiles.sort(key=lambda f: int(re.sub('\D', '', f)))
+os.chdir(file1+"/data")
+for file in dirFiles:
 
-    file=glob.glob(file1+"/data/field_"+str(count)+".csv",recursive=True)
-    w=np.loadtxt(file[0],delimiter=",",dtype=float)
-    print(file)
+    
+    w=np.loadtxt(file,delimiter=",",dtype=float)
+  #  print(file)
     
     plt.clf()
     x=(w[:,0])
-    y=(w[:,2])
+    y=(w[:,3]*w[:,1])
   #  if count%50!=0:
-   #     continue
+    #     continue
     plt.plot(x,y)
     plt.title("Time="+str(count))
-    plt.pause(0.2)  
+    plt.pause(0.1)  
+    print(w[0,1])
+   # print(sum(w[:,1]))
+    
+from resource import getrusage, RUSAGE_SELF
+print(getrusage(RUSAGE_SELF).ru_maxrss)
+    
+    
+    
+    
+    
+# for count in range(len(omega)):
+
+#     file=glob.glob(file1+"/data/field_"+str(count)+".csv",recursive=True)
+#     w=np.loadtxt(file[0],delimiter=",",dtype=float)
+#     print(file)
+    
+#     plt.clf()
+#     x=(w[:,0])
+#     y=(w[:,1]*w[:,3])
+#   #  if count%50!=0:
+#    #     continue
+#     plt.plot(x,y)
+#     plt.title("Time="+str(count))
+#     plt.pause(0.1)  
 #plt.close()  
 
 
@@ -130,3 +164,5 @@ for count in range(len(omega)):
 # #fig = plt.figure(figsize=(2.5,1))
 # #axp = fig.add_axes([0.20,0.25,0.7,0.65])
 # #axp.plot(datas[0:c-1],datam[0:c-1],'-')
+
+

@@ -3,11 +3,11 @@
 std::map <std::string, double> par;
 bool set_parameter=Parameters();
 const int res= (int) round(par["res"]);
-const double PI= 3.14159265;
+const double PI= M_PI;
 const int dump= int(par["dump"]);
 const double offset= par["offset"];
-const double xmax=   par["xmax"];
-const double xmin= par["xmin"];
+const double xmax=   PI;
+const double xmin=   0;
 const double weight= par["weight"]; 
 const double uni_h= par["uni_h"];
 const double finalt= par["finalt"];
@@ -16,7 +16,13 @@ const double theta= par["theta"];
 const double slides= par["slides"];
 const double epsilon= par["epsilon"]; 
 const double omega= par["omega"];
+const double omega_initial=par["omega_initial"];
 const double dx= (xmax-xmin-2*offset)/res;
+const int layers= par["layers"];
+const double radius=par["radius"];
+const double past_time=par["time"];
+const double dia=par["dia"];
+const double min_h=pow(dx,4);
 
 void Grid(vector<double> & x)
 {
@@ -27,17 +33,24 @@ void Grid(vector<double> & x)
 }
 
 
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g)
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string file)
 {   
-    vector<double>  b;
-     vector <double> h(res), u(res),v(res);
-
-    for (int j=0;j<res;j++)
+    vector<double>  b(res,0);
+    vector <double> h(res,uni_h), u(res,0),v(res,0);
+    
+//Uncomment this one only if you want special initial conditions
+  /*  for (int j=0;j<res;j++)
     {
-        h[j]=uni_h-pow((0.75*j/res),2); u[j]=0;v[j]=0;
         
-    }
-    Base(w,b,h);
+        b[j]=sin(x[j]);
+        h[j]=uni_h-b[j];
+        
+    } */
+    
+
+    if (slides>1)
+        Base(b,file);
+    
     if (w.empty())
     {
 	    for (int j = 0; j < res; j++)
@@ -60,7 +73,6 @@ void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
 {   
     if (w.empty())
     {
-        b=vector<double>(res,0);
         for (int j=0;j<res;j++)
             b[j]=uni_h-h[j];
     }
@@ -72,4 +84,25 @@ void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
          }
     }
         
+}
+
+void Base ( vector<double>& b,string file)
+{
+ifstream myfile(file);
+
+string line;
+int i=2;
+while(getline(myfile,line))
+{
+	istringstream iss(line);
+    string word1,temp,word2;
+	getline(iss, temp, ',');  
+    getline(iss, word1, ',');
+    getline(iss, word2, ',');       
+
+	b[i]=(1+epsilon*(stod(word1)+stod(word2))-radius)/epsilon;
+	i++;
+}
+myfile.close();
+
 }

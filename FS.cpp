@@ -34,3 +34,8 @@ FS FS::operator+ (FS w){
   {
 	this->p=w.p; this->q=w.q; this->r=w.r;
   }
+
+ /*  double sin(double x)
+  {
+    return 1;
+  } */

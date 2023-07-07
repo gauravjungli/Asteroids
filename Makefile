@@ -1,5 +1,6 @@
 CXX = g++
-CXXFLAGS := -g -std=c++17 #-Wall -O2
+CXXFLAGS  =  -O3 -std=c++17      
+#CXXFLAGS :=  -g -std=c++17
 
 objects =  main.o Angular_mom.o bc.o Characteristics.o \
             cv_flux_source.o gravity.o IC.o IO.o march.o \
@@ -10,7 +11,7 @@ objects_test =  main.o Angular_mom.o bc.o Characteristics.o \
 all: gaurav,test
 
 test: $(objects_test)
-	$(CXX) $(CXXFLAGS) -o test $(objects_test)
+	$(CXX) $(CXXFLAGS)  -o test $(objects_test)
 
 gaurav: $(objects)
 		$(CXX) $(CXXFLAGS) -o gaurav $(objects)
@@ -18,4 +19,4 @@ $(objects): gauravlib.h
 $(objects_test): gauravlib.h
 
 clean : 
-		rm gaurav $(objects)
+		rm gaurav test $(objects)
