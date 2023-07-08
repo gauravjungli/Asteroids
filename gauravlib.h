@@ -16,22 +16,6 @@
 #include <sys/types.h>
 using namespace std;
 
-//----------------------------------------------------------------------------
-/*#define res (int) round(par["res"])
-#define PI 3.14159265
-#define dump int(par["dump"])
-#define offset par["offset"]
-#define xmax   par["xmax"]
-#define xmin par["xmin"]
-#define weight par["weight"] // used in 2nd  order RK
-#define uni_h par["uni_h"]
-#define finalt par["finalt"]
-#define delta par["delta"] // angle of friction in degrees
-#define theta par["theta"] // used in min-mod limiter
-#define slides par["slides"]
-#define epsilon par["epsilon"] // shallowness parameter
-#define omega par["omega"]
-#define dx par["dx"]*/
 extern std::map <std::string, double> par;
 
 extern const  int res;
@@ -48,10 +32,12 @@ extern const double theta;
 extern const double slides;
 extern const double epsilon;
 extern const double omega;
+extern const double  omega_initial;
 extern const double dx;
-
-
-
+extern const double past_time;
+extern const double dia;
+extern const double min_h;
+extern const double gamma;
 
 //------------------------------------------------------------------------------
 
@@ -109,10 +95,12 @@ class FS
 void Write(const vector<CV> & w, string file  );
 void Write( const double om, string file );
 void Write( const double om, const double t, string file );
+void Write ( std::map <std::string, double> par, string file);
 
 //To read files
 void Read ( vector<double>&, string file );
 bool Parameters();
+void Read_grav( vector<Grav>& g, const string& file);
 
 //To catch errors
 void Error(string , string );
@@ -128,8 +116,7 @@ void BC(vector<CV>& w );
 //---------------------------------------------------------------------------------
 
 //////// gavity.cpp
-//spherical gravity
-void Grav_sph(vector<Grav> & g);
+void Init_grav(vector<Grav> & g, string file);
 
 //--------------------------------------------------------------------------------
 
@@ -145,11 +132,11 @@ FS Minmod(FS w, FS v);
 //////////  IC.cpp
 
 //To initialize the simulation
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g );
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string file);
 void Grid(vector<double> & x);
 //To incorporate topography 
 void Base(vector<CV>& w, vector<double> & b,vector<double>& h);
-
+void Base ( vector<double>& v,string file);
 //-------------------------------------------------------------------------
 
 ////////////// solver.cpp
@@ -169,6 +156,10 @@ FS Flux( CV w );
 //To compute source terms
 FS Source( CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha);
 FS Eigen(CV w );
+
+FS Friction (CV w, FS bf);
+
+FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha);
 //---------------------------------------------------------------------------------
 
 ///////// characteristics.cpp
@@ -179,16 +170,15 @@ double Ax(CV wl, CV wr, string s);
 //values at edges
 void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
 void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
-void Grad_b(CV& w, CV w1, CV w2, CV w3, CV w4);
-
+void Balancing (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, int i);
 //--------------------------------------------------------------------------------------------------------
 
 /////// march.cpp
 
 //To be used in the time marching
 double March (vector<CV>& w, double final_t);
-void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double dt, AMB& amb);
-void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double om_init, double dt, AMB& amb);
+void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double alpha, double dt);
+void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double alpha, double om_init, double dt);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
 void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 
@@ -197,13 +187,14 @@ void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 ///////// Angular_mom.cpp
 //To update omega
 void Ang_mom(AMB& amb, double integral1, double integral2, bool replace);
-double Alpha( double& om , double dt, AMB amb, double inertia );
+double Alpha_sys( double& om , double dt, AMB amb, double inertia );
 void Integrals(double& integral1, double& integral2, vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
 double Int_B(CV w);
 double Int_A(CV wl, CV w, CV wr);
 double Diff(vector<double> w, double dt);
-double AMB_corrector (vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
-
+double AMB_corrector (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, bool height);
+void Alpha_fric(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om, double& alpha);
+double Inertia(vector<CV>& w, int no);
 //--------------------------------------------------------------------------------------------------------------
 
 ///////// pressure_shed.cpp
@@ -213,7 +204,8 @@ void Shed(vector<CV>& w);
 double Psi(CV w);
 
 
-
+////////
+double sin(double x);
 
 
 #endif

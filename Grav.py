@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat May 23 13:31:27 2020
-
-@author: Deepayan Banik
+Created on Sat May 23 13:31:27 2020 
+Modified in June 2023
+@author: Deepayan Banik & Kumar Gaurav
 """
 from scipy.special import ellipk, ellipe,elliprf,elliprj
 from scipy.interpolate import make_interp_spline
+from scipy.constants import gravitational_constant
 import numpy as np
 from mpmath import ellippi
 import math
@@ -21,7 +22,6 @@ parameters={}
 with open('parameters') as f:
     for line in f:
         fields = line.split("    ")
-        #print(fields)
         parameters[fields[0]]=float(fields[1])
         
 Res=int(parameters["res"]-4)
@@ -29,6 +29,10 @@ omega=parameters["omega_initial"]
 delta=parameters["delta"]
 slides=int(parameters["slides"])
 epsilon=parameters["epsilon"]
+gamma=parameters["gamma"]
+density=parameters["density"]
+rad=parameters["dia"]*1000/2
+
 file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
 file=glob.glob(file1+"/field_"+str(slides)+".csv",recursive=True)
 w=np.loadtxt(file[0],delimiter=",",dtype=float)
@@ -36,8 +40,8 @@ w=np.loadtxt(file[0],delimiter=",",dtype=float)
 #Ellippi = np.loadtxt('I.txt')
 
 
-R=np.sin(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
-Z=np.cos(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
+R=rad*np.sin(w[:,0])*(1+gamma*(w[:,1])+epsilon*w[:,2])
+Z=rad*np.cos(w[:,0])*(1+gamma*(w[:,1])+epsilon*w[:,2])
 
 fR=make_interp_spline(w[:,0],R)
 fZ=make_interp_spline(w[:,0],Z)
@@ -86,20 +90,22 @@ def main():
     pool = multiprocessing.Pool(processes=num_processes)
     
   
-    arguments=[(R[i]+epsilon*np.sin(w[i,0]),Z[i]+ epsilon*np.cos(w[i,0])) for i in range(int(Res/2))]
+    arguments=[(R[i]+rad*epsilon*np.sin(w[i,0]),Z[i]+ rad*epsilon*np.cos(w[i,0])) for i in range(int(Res/2))]
     
-    
+    G=gravitational_constant
     grav = pool.starmap(Gravity, arguments)
     grav=np.array(grav)
     grav1=np.array([(grav[i,0],-grav[i,1]) for i in range(round(Res/2)-1,-1,-1)])
     grav=np.vstack((grav,grav1))
-    np.savetxt(file1+"/grav.txt",grav)
+    
      
    
-    r_grav=grav[:,0]*np.sin(w[:,0])+grav[:,1]*np.cos(w[:,0])
-    t_grav=grav[:,0]*np.cos(w[:,0])-grav[:,1]*np.sin(w[:,0])
+    r_grav=-G*density*(grav[:,0]*np.sin(w[:,0])+grav[:,1]*np.cos(w[:,0]))/(4/3*np.pi*density*rad*G)
+    t_grav=-G*density*(grav[:,0]*np.cos(w[:,0])-grav[:,1]*np.sin(w[:,0]))/(4/3*np.pi*density*rad*G)
     plt.plot(w[:,0],r_grav)
     plt.plot(w[:,0],t_grav)
+    grav=np.hstack((r_grav.reshape(-1,1),t_grav.reshape(-1,1)))
+    np.savetxt(file1+"/grav.txt",grav)
     
     # Close the pool
     pool.close()
@@ -151,18 +157,5 @@ if __name__=="__main__":
     
     #%%
     
-    ###  Usless codes
-    
-    # def my_Z(z, R, Z): # z = vertical lower limit of current disc, R, Z -> radial and vertical location of current point of evaluation
 
-    #     a = (HE - abs(z)) * np.tan(zet) # radius of disc being integrated
-        
-    #     smh = Z - z
-    #     delta = np.sqrt((a + R)**2 + (smh)**2)
-    #     k = 2 * np.sqrt(a * R) / delta
-    #     m = 2 * np.sqrt(a * R) / (a + R)
-    #     ks = ellipk(k**2)
-    #     return (2 * np.pi * np.sign(smh) * epsilon + 2 * smh * ((R - a)/(R + a) * ellippi(m**2, k**2) - ks) / delta)
-    
-    #TOT=pool.starmap(deep,zip(Tau, coordZ, repeat(3)))
     
