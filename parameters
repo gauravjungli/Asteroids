@@ -2,8 +2,10 @@ delta    20.
 dia    0.4895626662803987
 dia_in    0.5
 dump    100.
+density     1250
 epsilon    0.005
 finalt    10.
+gamma       0
 jinertia    1.97837
 jinertia1    1.69232
 layers    1.

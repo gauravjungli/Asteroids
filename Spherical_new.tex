@@ -1,0 +1,1307 @@
+%% Created by Maple 2023.0, Mac OS X
+%% Source Worksheet: Spherical_new_3
+%% Generated: Mon Jul 03 17:23:01 IST 2023
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{mathtools}
+\usepackage{maple}
+\usepackage[utf8]{inputenc}
+\usepackage[svgnames]{xcolor}
+\usepackage{amsmath}
+\usepackage{breqn}
+\usepackage{textcomp}
+\begin{document}
+\lstset{basicstyle=\ttfamily,breaklines=true,columns=flexible}
+\pagestyle{empty}
+\DefineParaStyle{Maple Bullet Item}
+\DefineParaStyle{Maple Heading 1}
+\DefineParaStyle{Maple Warning}
+\DefineParaStyle{Maple Heading 4}
+\DefineParaStyle{Maple Heading 2}
+\DefineParaStyle{Maple Heading 3}
+\DefineParaStyle{Maple Dash Item}
+\DefineParaStyle{Maple Error}
+\DefineParaStyle{Maple Title}
+\DefineParaStyle{Maple Ordered List 1}
+\DefineParaStyle{Maple Text Output}
+\DefineParaStyle{Maple Ordered List 2}
+\DefineParaStyle{Maple Ordered List 3}
+\DefineParaStyle{Maple Normal}
+\DefineParaStyle{Maple Ordered List 4}
+\DefineParaStyle{Maple Ordered List 5}
+\DefineCharStyle{Maple 2D Output}
+\DefineCharStyle{Maple 2D Input}
+\DefineCharStyle{Maple Maple Input}
+\DefineCharStyle{Maple 2D Math}
+\DefineCharStyle{Maple Hyperlink}
+\begin{Maple Normal}
+\textcolor[RGB]{51,51,153}{\textbf{Special functions:}}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+ 	
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{restart} ; $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{For changing r=R\_E+r in the equations wherever it is not appearing in the differentiation. }
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{rescaling} \coloneqq \boldsymbol{\mathrm{proc}}(f)
+\\
+ \boldsymbol{\mathrm{global}}x ,H ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f1} ,\mathit{f2} ,i ;
+\\
+ \boldsymbol{\mathrm{description}}\text{``\  Rescale r"};
+\\
+ \mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{if}}f =x [1]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{lambda}(x [2],x [3]);
+\\
+ \boldsymbol{\mathrm{elif}}f =x [2]\boldsymbol{\lor}f =x [3]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{elif}}f =H [1]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq f +H [2]+\textit{R\_E} ;
+\\
+ \boldsymbol{\mathrm{elif}}f =H [2]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq f +\textit{R\_E} ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{type} (f ,\mathit{atomic})\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{type} (f ,\mathit{function})\boldsymbol{\land}\mathit{op} (0,\mathit{op} (0,f))\neq \mathit{symbol} \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq f 
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{Diff} \boldsymbol{\lor}\mathit{op} (0,f)=\mathit{diff} \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{Diff} (\mathit{rescaling} (\mathit{op} (1,f)),\mathit{op} (2,f));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{=}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{=}(\mathit{rescaling} (\mathit{op} (1,f)),\mathit{rescaling} (\mathit{op} (2,f)));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{*}\boldsymbol{\lor}\mathit{op} (0,f)=\mathit{+}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f1} \coloneqq \mathit{op} (0,f)(\mathit{rescaling} (\mathit{op} (1,f)));
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}2\boldsymbol{\mathrm{to}}\mathit{nops} (f)\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{op} (0,f)(\mathit{f1} ,\mathit{rescaling} (\mathit{op} (i ,f)));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (f)\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{applyop} (\mathit{rescaling} ,i ,\mathit{f1});
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Taking out all constants from Diff}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{Differentiate} \coloneqq \boldsymbol{\mathrm{proc}}(f ,v)
+\\
+ \boldsymbol{\mathrm{global}}x ;
+\\
+ \boldsymbol{\mathrm{local}}i ,\mathit{f2} ,\mathit{f1} ,\mathit{f3} ,\mathit{f4} ,\mathit{f0} ;
+\\
+ \mathit{f0} \coloneqq \mathit{simplify} (f);
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,\mathit{f0})=\mathit{+}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f1} \coloneqq 0;
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (\mathit{f0})\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{f1} +\mathit{Differentiate} (\mathit{op} (i ,\mathit{f0}),v);
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ 
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{f0})=\mathit{*}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f3} \coloneqq 1;\mathit{f2} \coloneqq 1;
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (\mathit{f0})\boldsymbol{\mathrm{do}}
+\\
+ \boldsymbol{\mathrm{if}}\mathit{diff} (\mathit{op} (i ,\mathit{f0}),x [1])=0\boldsymbol{\land}\mathit{diff} (\mathit{op} (i ,\mathit{f0}),x [2])=0\boldsymbol{\land}\mathit{diff} (\mathit{op} (i ,\mathit{f0}),x [3])=0\boldsymbol{\mathrm{then}}\mathit{f3} \coloneqq \mathit{f3} \cdot \mathit{op} (i ,\mathit{f0});
+\\
+ \boldsymbol{\mathrm{else}}\mathit{f2} \coloneqq \mathit{f2} \cdot \mathit{op} (i ,\mathit{f0});
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,\mathit{f2})=\mathit{+}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f4} \coloneqq 0;
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (\mathit{f2})\boldsymbol{\mathrm{do}}
+\\
+ \boldsymbol{\mathrm{if}}\mathit{diff} (\mathit{op} (i ,\mathit{f2}),v)\neq 0\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f4} \coloneqq \mathit{f4} +\mathit{op} (i ,\mathit{f2});
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \mathit{f1} \coloneqq \mathit{f3} \cdot \mathit{Diff} (\mathit{f4} ,v);
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{diff} (\mathit{f2} ,v)\neq 0\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{f3} \cdot \mathit{Diff} (\mathit{f2} ,v);\boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq 0;\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{diff} (\mathit{f0} ,v)\neq 0\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{Diff} (\mathit{f0} ,v);
+\\
+ \boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq 0;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{Call\_Diff} \coloneqq \boldsymbol{\mathrm{proc}}(f)
+\\
+ \boldsymbol{\mathrm{global}}x ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f1} ,i ;
+\\
+ \mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,f)=\mathit{=}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \textit{Call\_Diff} (\mathit{op} (1,f))=\textit{Call\_Diff} (\mathit{op} (2,f));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{Diff} \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{Differentiate} (\mathit{op} (1,f),\mathit{op} (2,f));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{*}\boldsymbol{\lor}\mathit{op} (0,f)=\mathit{+}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f1} \coloneqq \mathit{op} (0,f)(\textit{Call\_Diff} (\mathit{op} (1,f)));
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}2\boldsymbol{\mathrm{to}}\mathit{nops} (f)\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{op} (0,f)(\mathit{f1} ,\textit{Call\_Diff} (\mathit{op} (i ,f)));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Non-dimensionalization }
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{nondim} \coloneqq \boldsymbol{\mathrm{proc}}(f)
+\\
+ \boldsymbol{\mathrm{global}}x ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f1} ,\mathit{f2} ,i ;
+\\
+ \boldsymbol{\mathrm{description}}\text{``Non Dimensionalization"};
+\\
+ \mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{if}}f =\mathrm{lambda}(x [2],x [3])\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \textit{R\_E} \cdot f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{op} (0,f))=\mathit{BF} \boldsymbol{\lor}\mathit{op} (0,\mathit{op} (0,f))=b \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq G \cdot f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=h [1]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{epsilon}\cdot \textit{R\_E} \cdot f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=h [2]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{gamma}\cdot \textit{R\_E} \cdot f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{type} (f ,\mathit{atomic})\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=u [1]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{epsilon}\cdot \mathrm{sqrt}(G \cdot \textit{R\_E})\cdot f ;\boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=u [2]\boldsymbol{\lor}\mathit{op} (0,f)=u [3]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{sqrt}(G \cdot \textit{R\_E})\cdot f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{op} (0,f))=\mathrm{omega}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{sqrt}(\frac{G}{\textit{R\_E}})\cdot f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=p [1,1]\boldsymbol{\lor}\mathit{op} (0,f)=p [2,2]\boldsymbol{\lor}\mathit{op} (0,f)=p [3,3]\boldsymbol{\lor}\mathit{op} (0,\mathit{op} (0,f))=\mathit{Pb} \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{epsilon}\cdot \mathrm{rho}\cdot G \cdot \textit{R\_E} \cdot f ;\boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=p [1,2]\boldsymbol{\lor}\mathit{op} (0,f)=p [1,3]\boldsymbol{\lor}\mathit{op} (0,f)=p [2,3]\boldsymbol{\lor}\mathit{op} (0,\mathit{op} (0,f))=\mathit{Fr} \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathrm{delta}\cdot \mathrm{epsilon}\cdot \mathrm{rho}\cdot G \cdot \textit{R\_E} \cdot f ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{Diff} \boldsymbol{\lor}\mathit{op} (0,f)=\mathit{diff} \boldsymbol{\mathrm{then}}
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (2,f)=x [1]\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \frac{1}{\textit{R\_E}};\boldsymbol{\mathrm{elif}}\mathit{op} (2,f)=t \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \frac{1}{\mathrm{sqrt}(\frac{\textit{R\_E}}{G})};\boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq 1;\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f2} \coloneqq \mathit{simplify} (\mathit{nondim} (\mathit{op} (1,f)));\mathit{f1} \coloneqq \mathit{Differentiate} (\mathit{f2} ,\mathit{op} (2,f))\cdot \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{=}\boldsymbol{\lor}\mathit{op} (0,f)=\mathit{{\mhat}}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{op} (0,f)(\mathit{nondim} (\mathit{op} (1,f)),\mathit{nondim} (\mathit{op} (2,f)));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{*}\boldsymbol{\lor}\mathit{op} (0,f)=\mathit{+}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f1} \coloneqq \mathit{op} (0,f)(\mathit{nondim} (\mathit{op} (1,f)));
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}2\boldsymbol{\mathrm{to}}\mathit{nops} (f)\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{op} (0,f)(\mathit{f1} ,\mathit{nondim} (\mathit{op} (i ,f)));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (f)\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{applyop} (\mathit{nondim} ,i ,\mathit{f1});
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ 
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Removing constant factors}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{selection} \coloneqq \boldsymbol{\mathrm{proc}}(f)
+\\
+ \boldsymbol{\mathrm{global}}x ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f1} ,j ,i ;
+\\
+ \boldsymbol{\mathrm{description}}\text{``Selecting appropriate equations"};
+\\
+ j \coloneqq 1;
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,f)=\mathit{=}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{simplify} (\mathit{selection} (\mathit{op} (1,f))=\frac{\mathit{selection} (\mathit{op} (1,f))}{\mathit{op} (1,f)}\cdot \mathit{op} (2,f));\boldsymbol{\mathrm{if}}\mathit{diff} (\mathit{denom} (\mathit{op} (2,\mathit{f1})),\mathrm{epsilon})\neq 0\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{denom} (\mathit{op} (2,\mathit{f1}))\cdot \mathit{f1} ;\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{*}\boldsymbol{\mathrm{then}}
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}2\boldsymbol{\mathrm{to}}\mathit{nops} (f)\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{if}}\mathit{nops} (\mathit{expand} (\mathit{op} (i ,f)))>\mathit{nops} (\mathit{expand} (\mathit{op} (j ,f)))\boldsymbol{\mathrm{then}}j \coloneqq i ;\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \mathit{f1} \coloneqq \mathit{op} (j ,f);
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Integration by parts used in the depth averaging}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{local\_integrate} \coloneqq \boldsymbol{\mathrm{proc}}(f)
+\\
+ \boldsymbol{\mathrm{global}}x ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f1} ,i ;
+\\
+ 
+\\
+ \mathit{f1} \coloneqq 0;
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,f)=\mathit{+}\boldsymbol{\mathrm{then}}
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (f)\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{f1} +\textit{lib\_part} (\mathit{op} (i ,f));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{=}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \textit{local\_integrate} (\mathit{op} (1,f))=\textit{local\_integrate} (\mathit{op} (2,f));
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \mathit{f1} \coloneqq \textit{lib\_part} (f);
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon 
+\\
+  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+\
+
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{lib\_part} \coloneqq \boldsymbol{\mathrm{proc}}(f)
+\\
+ \boldsymbol{\mathrm{global}}x ,H ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f2} ,\mathit{f3} ,\mathit{f4} ,\mathit{f5} ,\mathit{f6} ,i ,j ;
+\\
+ \mathit{f2} \coloneqq f ;\mathit{f3} \coloneqq 1;\mathit{f4} \coloneqq 1;
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,\mathit{f2})=\mathit{*}\boldsymbol{\mathrm{then}}
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (\mathit{f2})\boldsymbol{\mathrm{do}}
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,\mathit{op} (i ,\mathit{f2}))=\mathit{Diff}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f4} \coloneqq \mathit{f4} \cdot \mathit{op} (i ,\mathit{f2});
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \mathit{f3} \coloneqq \mathit{f3} \cdot \mathit{op} (i ,\mathit{f2});
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{f2})=\mathit{Diff}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f4} \coloneqq \mathit{f4} \cdot \mathit{f2} ;
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \mathit{f3} \coloneqq \mathit{f3} \cdot \mathit{f2} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{if}}\mathit{f4} \neq 1\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f5} \coloneqq \mathit{op} (1,\mathit{f4})\cdot \mathit{f3} ;
+\\
+ \mathit{f6} \coloneqq -\mathit{op} (1,\mathit{f4})\cdot \mathit{diff}(\mathit{f3} ,\mathit{op} (2,\mathit{f4}));
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (2,\mathit{f4})=x [1]\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f5} \coloneqq \mathit{subs} (x [1]=H [1],\mathit{f5})-\mathit{subs} (x [1]=H [2],\mathit{f5});
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \mathit{f5} \coloneqq \mathit{Differentiate} (\mathit{simplify} (\mathit{int} (\mathit{f5} ,x [1]=(1+\mathrm{gamma}\cdot H [2])..(1+\mathrm{gamma}\cdot H [2]+\mathrm{epsilon}\cdot H [1]))),\mathit{op} (2,\mathit{f4}))-\mathit{Diff}(\mathrm{gamma}\cdot H [2]+\mathrm{epsilon}\cdot H [1],\mathit{op} (2,\mathit{f4}))\cdot \mathit{subs} (x [1]=H [1],\mathit{f5})+\mathit{Diff}(\mathrm{gamma}\cdot H [2],\mathit{op} (2,\mathit{f4}))\cdot \mathit{subs} (x [1]=H [2],\mathit{f5});
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f6} \coloneqq \mathit{simplify} (\mathit{int} (\mathit{f6} ,x [1]=1+\mathrm{gamma}\cdot H [2]..(1+\mathrm{gamma}\cdot H [2]+\epsilon H [1])));
+\\
+ \boldsymbol{\mathrm{else}}
+\\
+ \mathit{f5} \coloneqq 0;\mathit{f6} \coloneqq \mathit{f3} ;
+\\
+ \mathit{f6} \coloneqq \mathit{simplify} (\mathit{int} (\mathit{f6} ,x [1]=(1+\mathrm{gamma}\cdot H [2])..(1+\mathrm{gamma}\cdot H [2]+\mathrm{epsilon}\cdot H [1])));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ 
+\\
+ \mathit{f5} +\mathit{f6} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Substituting the Bundary conditions}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{boundary} \coloneqq \boldsymbol{\mathrm{proc}}(f ,i)
+\\
+ \boldsymbol{\mathrm{global}}x ,H ,\textit{n\_K\_BC} ,\textit{n\_D\_BC} ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f3} ,\mathit{f4} ,\mathit{f5} ;
+\\
+ \mathit{f3} \coloneqq \mathit{subs} (\mathit{diff} =\mathit{Diff} ,\textit{n\_K\_BC});
+\\
+ \mathit{f5} \coloneqq \mathit{subs} (\mathit{diff} =\mathit{Diff} ,\textit{n\_D\_BC});
+\\
+ \esnum \mathit{f4}:=\mathit{algsubs} (\textit{n\_K\_BC} [1],\mathit{expand} (\mathit{algsubs} (\textit{n\_K\_BC} [2],f)));
+\\
+ \mathit{f4} \coloneqq \mathit{simplify} (\mathit{subs} (\mathrm{lambda}(x [2],x [3])=1+\mathrm{gamma}\cdot H [2],f),{\{\textit{n\_K\_BC} [2]\}});
+\\
+ \mathit{f4} \coloneqq \mathit{simplify} (\mathit{f4} ,{\{\textit{n\_K\_BC} [1]\}});
+\\
+ 
+\\
+ \boldsymbol{\mathrm{if}}i >0\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f4} \coloneqq \mathit{simplify} (\mathit{f4} ,{\{\mathit{f5} [1][i]\}});
+\\
+ \mathit{f4} \coloneqq \mathit{simplify} (\mathit{f4} ,{\{\mathit{f5} [2][i]\}});
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f4} ;
+\\
+ 
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Final form removing irrelevant terms}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{Final\_form} \coloneqq \boldsymbol{\mathrm{proc}}(f)
+\\
+ 
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f1} ,i ;
+\\
+ 
+\\
+ \boldsymbol{\mathrm{global}}x ,H ;\mathit{f1} \coloneqq f ;
+\\
+ 
+\\
+ \boldsymbol{\mathrm{if}}\mathit{diff} (f ,x [2])=0\boldsymbol{\land}\mathit{diff} (f ,x [3])=0\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{simplify} (\frac{1}{\mathrm{epsilon}\cdot h [1]}\mathit{int} (f ,x [1]=(1+\mathrm{gamma}\cdot h [2])..(1+\mathrm{gamma}\cdot h [2]+\mathrm{epsilon}\cdot h [1])),\mathit{assume} =[0<(h [1])]);
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{int}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{simplify} ((\mathrm{epsilon}\cdot h [1])\cdot \textit{Final\_form} (\mathit{op} (1,f)),\mathit{assume} =[0<(h [1])]);
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\esapos \mathit{Diff} \esapos \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{Diff} (\textit{Final\_form} (\mathit{op} (1,f)),\mathit{op} (2,f));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{type} (f ,\mathit{function})\boldsymbol{\mathrm{then}}
+\\
+ \boldsymbol{\mathrm{if}}\mathit{diff} (f ,x [1])\neq 0\boldsymbol{\mathrm{then}}
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,\mathit{op} (0,f))=\mathit{symbol}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{conjugate} (\mathit{op} (0,f))\boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq \mathit{conjugate} (\mathit{op} (0,\mathit{op} (0,f)))[\mathit{op} (\mathit{op} (0,f))];
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{op} (0,f))=\mathit{Fr} \boldsymbol{\lor}\mathit{op} (0,\mathit{op} (0,f))=h \boldsymbol{\lor}\mathit{op} (0,\mathit{op} (0,f))=\mathit{Pb} \boldsymbol{\lor}\mathit{op} (0,f)=h \boldsymbol{\lor}\mathit{op} (0,f)=\mathrm{lambda}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{op} (0,f)\boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,f)=\mathit{{\mhat}}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{op} (0,f)(\textit{Final\_form} (\mathit{op} (1,f)),\mathit{op} (2,f));
+\\
+ \boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq \mathit{op} (0,f)(\mathit{seq} (\textit{Final\_form} (\mathit{op} (i ,f)),i =1..\mathit{nops} (f)));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{Linearize} \coloneqq \boldsymbol{\mathrm{proc}}(f ,\mathit{par} ,\mathit{order})
+\\
+ \boldsymbol{\mathrm{global}}x ;
+\\
+ \boldsymbol{\mathrm{local}}\mathit{f1} ,\deg ,i ,\mathit{f2} ,\mathit{f3} ,\mathit{f4} ;
+\\
+ \boldsymbol{\mathrm{description}}\text{``Linearization"};
+\\
+ \mathit{f2} \coloneqq f ;
+\\
+ \mathit{f2} \coloneqq \mathit{expand} (\mathit{f2});
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,\mathit{f2})=\mathit{=}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{op} (0,\mathit{f2})(\mathit{Linearize} (\mathit{op} (1,\mathit{f2}),\mathit{par} ,\mathit{order}),\mathit{Linearize} (\mathit{op} (2,\mathit{f2}),\mathit{par} ,\mathit{order}));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{f2})=\mathit{Diff}\boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq \mathit{op} (0,\mathit{f2})(\mathit{Linearize} (\mathit{op} (1,\mathit{f2}),\mathit{par} ,\mathit{order}),\mathit{op} (2,\mathit{f2}));
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{f2})=\mathit{+}\boldsymbol{\mathrm{then}}
+\\
+ \mathit{f1} \coloneqq 0;
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (\mathit{f2})\boldsymbol{\mathrm{do}}
+\\
+ \mathit{f1} \coloneqq \mathit{op} (0,\mathit{f2})(\mathit{f1} ,\mathit{Linearize} (\mathit{op} (i ,\mathit{f2}),\mathit{par} ,\mathit{order}));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{op} (0,\mathit{f2})=\mathit{*}\boldsymbol{\mathrm{then}}
+\\
+ \deg \coloneqq 0;
+\\
+ \mathit{f3} \coloneqq 1;\mathit{f4} \coloneqq 1;
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}\mathit{nops} (\mathit{f2})\boldsymbol{\mathrm{do}}
+\\
+ \boldsymbol{\mathrm{if}}\mathit{op} (0,\mathit{op} (i ,\mathit{f2}))\neq \mathit{Diff}\boldsymbol{\mathrm{then}}\deg \coloneqq \deg +\mathit{degree} (\mathit{op} (i ,\mathit{f2}),\mathit{par});\mathit{f4} \coloneqq \mathit{f4} \cdot \mathit{op} (i ,\mathit{f2});\boldsymbol{\mathrm{else}}\mathit{f3} \coloneqq \mathit{simplify} (\mathit{Diff} (\mathit{Linearize} (\mathit{op} (1,\mathit{op} (i ,\mathit{f2})),\mathit{par} ,\mathit{order}),\mathit{op} (2,\mathit{op} (i ,\mathit{f2}))));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{if}}\deg >\mathit{order} \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq 0\boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq \mathit{f4} \cdot \mathit{f3} ;\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \boldsymbol{\mathrm{elif}}\mathit{degree} (f ,\mathit{par})>\mathit{order} \boldsymbol{\mathrm{then}}\mathit{f1} \coloneqq 0
+\\
+ \boldsymbol{\mathrm{else}}\mathit{f1} \coloneqq f ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}};
+\\
+ \mathit{f1} ;
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{proc}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{0,128,0}{Curvilinear Coordinates:}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{with} (\mathit{LinearAlgebra})\colon x [1],x [2],x [3]\coloneqq r ,\mathrm{theta},\mathrm{phi};\dim \coloneqq 3; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+x_{1},x_{2},x_{3}\coloneqq r ,\theta ,\phi 
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(1)}
+\dim \coloneqq 3
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{0,128,0}{Relation of curvilinear coordinates with cartesian coordinates:}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle X \coloneqq \mathit{Vector} (1..3)\colon X [1],X [2],X [3]\coloneqq r \cdot \cos (x [3])\cdot \sin (x [2]),r \cdot \sin (x [3])\cdot \sin (x [2]),r \cdot \cos (x [2]); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(2)}
+X_{1},X_{2},X_{3}\coloneqq r \cos \! \left(\phi \right) \sin \! \left(\theta \right),r \sin \! \left(\phi \right) \sin \! \left(\theta \right),r \cos \! \left(\theta \right)
+\end{dmath}
+\begin{Maple Normal}
+Defining covariant basis vectors:
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle e \coloneqq \mathit{Matrix} (1..3,1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}e [i ,j]\coloneqq \mathit{diff} (X [j],x [i]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(3)}
+0
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle e ; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(4)}
+\left[\begin{array}{ccc}
+\cos \! \left(\phi \right) \sin \! \left(\theta \right) & \sin \! \left(\phi \right) \sin \! \left(\theta \right) & \cos \! \left(\theta \right) 
+\\
+ r \cos \! \left(\phi \right) \cos \! \left(\theta \right) & r \sin \! \left(\phi \right) \cos \! \left(\theta \right) & -r \sin \! \left(\theta \right) 
+\\
+ -r \sin \! \left(\phi \right) \sin \! \left(\theta \right) & r \cos \! \left(\phi \right) \sin \! \left(\theta \right) & 0 
+\end{array}\right]
+\end{dmath}
+\begin{Maple Normal}
+Metric tensor:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle M \coloneqq \mathit{Matrix} (1..3,1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}M [i ,j]\coloneqq \mathit{simplify} (\mathit{DotProduct} (e [i],e [j],\mathit{conjugate} =\mathit{false}),\mathit{assume} =[0<x [2]]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};M ; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(5)}
+\left[\begin{array}{ccc}
+1 & 0 & 0 
+\\
+ 0 & r^{2} & 0 
+\\
+ 0 & 0 & r^{2} \sin \! \left(\theta \right)^{2} 
+\end{array}\right]
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle \textit{det\_M} \coloneqq \mathit{Determinant} (M); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(6)}
+\textit{det\_M} \coloneqq r^{4} \sin \! \left(\theta \right)^{2}
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle U \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}k \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}U [k]\coloneqq u [k](x [1],x [2],x [3],t);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{div\_u} \coloneqq \mathit{expand} (\mathit{simplify} (\mathit{add} (\frac{1}{\mathrm{sqrt}(\textit{det\_M})}\cdot (\mathit{Diff} (\frac{U [i]\cdot \mathrm{sqrt}(\textit{det\_M})}{\mathrm{sqrt}(M [i ,i])},x [i])),i =1..3),\mathit{assume} =[0<r ,0<\sin (\mathrm{theta})])); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(7)}
+\textit{div\_u} \coloneqq \frac{\csc \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)\right)}{r^{2}}+\frac{\csc \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) r \sin \! \left(\theta \right)\right)\right)}{r^{2}}+\frac{\csc \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) r \right)\right)}{r^{2}}
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+Defining christoffel symbols only for orthogonal systems:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle R \coloneqq \mathit{Array} (1..3,1..3,1..3)\colon 
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}
+\\
+ \boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}
+\\
+ \boldsymbol{\mathrm{for}}k \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}
+\\
+ R [i ,j ,k]\coloneqq \mathit{simplify} (\mathit{DotProduct} (\mathit{diff} \estilde (e [i],x [j]),\frac{e [k]}{M [k ,k]},\mathit{conjugate} =\mathit{false}));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}; $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{div\_uu} [i]\coloneqq \mathit{simplify} (\mathit{simplify} (\mathit{add} (\frac{1}{\mathrm{sqrt}(\textit{det\_M})\cdot \mathrm{sqrt}(M [i ,i])}\cdot (\mathit{Diff} (\frac{U [k]\cdot U [i]\cdot \mathrm{sqrt}(\textit{det\_M})\cdot \mathrm{sqrt}(M [i ,i])}{\mathrm{sqrt}(M [k ,k])},x [k])),k =1..3),\mathit{assume} =[0<r ,0<\sin (\mathrm{theta})])+\mathit{simplify} (\mathit{add} (\mathit{add} (\frac{U [k]\cdot U [j]}{\mathrm{sqrt}(M [k ,k])\cdot \mathrm{sqrt}(M [j ,j])}\cdot R [j ,k ,i]\cdot \mathrm{sqrt}(M [i ,i]),j =1..3)+\frac{2\cdot U [k]\cdot U [i]\cdot \mathrm{sqrt}(M [i ,i])}{\mathrm{sqrt}(M [k ,k])}\cdot \mathit{diff} (\frac{1}{\mathrm{sqrt}(M [i ,i])},x [k]),k =1..3),\mathit{assume} =[0<r ,0<\sin (\mathrm{theta})]));\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+\textit{div\_uu}_{1}\coloneqq \frac{\left(-u_{3}\! \left(r ,\theta ,\phi ,t \right)^{2} r \sin \! \left(\theta \right)-u_{2}\! \left(r ,\theta ,\phi ,t \right)^{2} r \sin \! \left(\theta \right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right)^{2} r^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) u_{1}\! \left(r ,\theta ,\phi ,t \right) r \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) u_{1}\! \left(r ,\theta ,\phi ,t \right) r \right)\right) \csc \! \left(\theta \right)}{r^{2}}
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+\textit{div\_uu}_{2}\coloneqq \frac{\left(-u_{3}\! \left(r ,\theta ,\phi ,t \right)^{2} \cos \! \left(\theta \right) r^{2}+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) u_{2}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right)^{2} r^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) u_{2}\! \left(r ,\theta ,\phi ,t \right) r^{2}\right)\right) \csc \! \left(\theta \right)}{r^{3}}
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(8)}
+\textit{div\_uu}_{3}\coloneqq \frac{\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) u_{3}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) u_{3}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right)^{2} r^{2} \sin \! \left(\theta \right)\right)\right) \csc \! \left(\theta \right)^{2}}{r^{3}}
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle P \coloneqq \mathit{Matrix} (1..3,1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}P [i ,j]\coloneqq p [i ,j](x [1],x [2],x [3],t);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}};P \coloneqq \mathit{subs} ({\{P [2,1]=P [1,2],P [3,2]=P [2,3],P [3,1]=P [1,3]\}},P)\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{div\_P} [i]\coloneqq \mathit{simplify} (\mathit{simplify} (\mathit{add} (\frac{1}{\mathrm{sqrt}(\textit{det\_M})\cdot \mathrm{sqrt}(M [i ,i])}\cdot (\mathit{Diff} (\frac{P [k ,i]\cdot \mathrm{sqrt}(\textit{det\_M})\cdot \mathrm{sqrt}(M [i ,i])}{\mathrm{sqrt}(M [k ,k])},x [k])),k =1..3),\mathit{assume} =[0<r ,0<\sin (\mathrm{theta})])+\mathit{simplify} (\mathit{add} (\mathit{add} (\frac{P [k ,j]}{\mathrm{sqrt}(M [k ,k])\cdot \mathrm{sqrt}(M [j ,j])}\cdot R [j ,k ,i]\cdot \mathrm{sqrt}(M [i ,i]),j =1..3)+\frac{2\cdot P [k ,i]\cdot \mathrm{sqrt}(M [i ,i])}{\mathrm{sqrt}(M [k ,k])}\cdot \mathit{diff} (\frac{1}{\mathrm{sqrt}(M [i ,i])},x [k]),k =1..3),\mathit{assume} =[0<r ,0<\sin (\mathrm{theta})]));\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+\textit{div\_P}_{1}\coloneqq -\frac{\left(r p_{2,2}\! \left(r ,\theta ,\phi ,t \right) \sin \! \left(\theta \right)+r p_{3,3}\! \left(r ,\theta ,\phi ,t \right) \sin \! \left(\theta \right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(p_{1,1}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(p_{1,2}\! \left(r ,\theta ,\phi ,t \right) r \sin \! \left(\theta \right)\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(p_{1,3}\! \left(r ,\theta ,\phi ,t \right) r \right)\right) \csc \! \left(\theta \right)}{r^{2}}
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+\textit{div\_P}_{2}\coloneqq \frac{\left(-p_{3,3}\! \left(r ,\theta ,\phi ,t \right) \cos \! \left(\theta \right) r^{2}+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(p_{1,2}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(p_{2,2}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(p_{2,3}\! \left(r ,\theta ,\phi ,t \right) r^{2}\right)\right) \csc \! \left(\theta \right)}{r^{3}}
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(9)}
+\textit{div\_P}_{3}\coloneqq \frac{\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(p_{1,3}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(p_{2,3}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(p_{3,3}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)\right) \csc \! \left(\theta \right)^{2}}{r^{3}}
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle \boldsymbol{\mathrm{for}}k \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{div\_P} [k]\coloneqq \mathit{expand} (\mathit{simplify} (\mathit{subs} ({\{P [2,1]=P [1,2],P [3,2]=P [2,3],P [3,1]=P [1,3]\}},\textit{div\_P} [k])))\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+In prinicipal CS of the body:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathrm{Omega}\coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\mathrm{Omega}[i]\coloneqq \mathrm{omega}[i](t)\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+In Body fixed curvilinear coodinates:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle B \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}B [i]\coloneqq b [i](x [1],x [2],x [3]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+In principal CS:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{pos} \coloneqq \mathit{Vector} (1..3)\colon \mathit{pos} \coloneqq X \colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{Cent} \coloneqq \mathit{simplify} (\mathit{CrossProduct} (\mathrm{Omega},\mathit{CrossProduct} (\mathrm{Omega},\mathit{pos})),\mathit{assume} =[0<x [1],\sin (x [2])>0])\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+In curvilinear coordinates:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{temp} \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\mathit{temp} [i]\coloneqq \mathit{simplify} (\mathit{DotProduct} (\mathit{Cent} ,\frac{e [i]}{\mathrm{sqrt}(M [i ,i])},\mathit{conjugate} =\mathit{false}),\mathit{assume} =[0<x [1],\sin (x [2])>0])\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle B \coloneqq B -\mathit{temp} \colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle B \coloneqq \mathit{simplify} (\mathit{subs} ({\{\mathrm{omega}[1](t)=0,\mathrm{omega}[2](t)=0\}},B),\mathit{assume} =[0<x [1],\sin (x [2])>0]); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(10)}
+B \coloneqq \left[\begin{array}{c}
+b_{1}\! \left(r ,\theta ,\phi \right)+r \sin \! \left(\theta \right)^{2} \omega_{3}\! \left(t \right)^{2} 
+\\
+ b_{2}\! \left(r ,\theta ,\phi \right)+r \omega_{3}\! \left(t \right)^{2} \sin \! \left(\theta \right) \cos \! \left(\theta \right) 
+\\
+ b_{3}\! \left(r ,\theta ,\phi \right) 
+\end{array}\right]
+\end{dmath}
+\begin{Maple Normal}
+In Principal CS:
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle A \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}A [i]\coloneqq \mathrm{alpha}[i](t);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{A\_acc} \coloneqq \mathit{CrossProduct} (A ,\mathit{pos})\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+In CCS:
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{temp} [1..3]\coloneqq \textit{A\_acc} [1..3]\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{A\_acc} [i]\coloneqq \mathit{simplify} (\mathit{DotProduct} (\mathit{temp} ,\frac{e [i]}{\mathrm{sqrt}(M [i ,i])},\mathit{conjugate} =\mathit{false}),\mathit{assume} =[0<x [1],\sin (x [2])>0])\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{A\_acc} \coloneqq \mathit{simplify} (\mathit{subs} ({\{\mathrm{alpha}[1](t)=0,\mathrm{alpha}[2](t)=0\}},\textit{A\_acc}),\mathit{assume} =[0<x [1],\sin (x [2])>0]); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(11)}
+\textit{A\_acc} \coloneqq \left[\begin{array}{c}
+0 
+\\
+ 0 
+\\
+ \alpha_{3}\! \left(t \right) \sin \! \left(\theta \right) r  
+\end{array}\right]
+\end{dmath}
+\begin{Maple Normal}
+In BFCS:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{Omega\_B} \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{Omega\_B} [i]\coloneqq \mathit{simplify} (\mathit{DotProduct} (\mathrm{Omega},\frac{e [i]}{\mathrm{sqrt}(M [i ,i])},\mathit{conjugate} =\mathit{false}),\mathit{assume} =[0<x [1],\sin (x [2])>0])\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon \mathit{corr} \coloneqq \mathit{simplify} (\mathit{CrossProduct} (\textit{Omega\_B} ,U),\mathit{assume} =[0<x [1],\sin (x [2])>0])\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{corr} \coloneqq \mathit{simplify} (\mathit{subs} ({\{\mathrm{omega}[1](t)=0,\mathrm{omega}[2](t)=0\}},\mathit{corr})); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(12)}
+\mathit{corr} \coloneqq \left[\begin{array}{c}
+-\omega_{3}\! \left(t \right) \sin \! \left(\theta \right) u_{3}\! \left(r ,\theta ,\phi ,t \right) 
+\\
+ -\omega_{3}\! \left(t \right) \cos \! \left(\theta \right) u_{3}\! \left(r ,\theta ,\phi ,t \right) 
+\\
+ \omega_{3}\! \left(t \right) \left(\sin \! \left(\theta \right) u_{1}\! \left(r ,\theta ,\phi ,t \right)+\cos \! \left(\theta \right) u_{2}\! \left(r ,\theta ,\phi ,t \right)\right) 
+\end{array}\right]
+\end{dmath}
+\begin{Maple Normal}
+Acceleration of the core in PCS:
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{A\_core} \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{A\_core} [i]\coloneqq a [i](t)\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+Acceleration of the core in CCS:
+\end{Maple Normal}
+\begin{Maple Normal}
+ 
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{a\_B} \coloneqq \mathit{Vector} (1..3)\colon 
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{a\_B} [i]\coloneqq \mathit{simplify} (\mathit{DotProduct} (\textit{A\_core} ,\frac{e [i]}{\mathrm{sqrt}(M [i ,i])},\mathit{conjugate} =\mathit{false}),\mathit{assume} =[0<x [1],\sin (x [2])>0])\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+\textit{a\_B}_{1}\coloneqq a_{1}\! \left(t \right) \cos \! \left(\phi \right) \sin \! \left(\theta \right)+a_{2}\! \left(t \right) \sin \! \left(\phi \right) \sin \! \left(\theta \right)+a_{3}\! \left(t \right) \cos \! \left(\theta \right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+\textit{a\_B}_{2}\coloneqq \cos \! \left(\theta \right) a_{1}\! \left(t \right) \cos \! \left(\phi \right)+\cos \! \left(\theta \right) a_{2}\! \left(t \right) \sin \! \left(\phi \right)-\sin \! \left(\theta \right) a_{3}\! \left(t \right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(13)}
+\textit{a\_B}_{3}\coloneqq -a_{1}\! \left(t \right) \sin \! \left(\phi \right)+\cos \! \left(\phi \right) a_{2}\! \left(t \right)
+\end{dmath}
+\begin{Maple Normal}
+Momentum balance:
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{mom} \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{div\_uu} [i]\coloneqq \mathit{convert} (\textit{div\_uu} [i],\mathit{sincos});\textit{div\_P} [i]\coloneqq \mathit{convert} (\textit{div\_P} [i],\mathit{sincos});\mathit{mom} [i]\coloneqq \mathrm{rho}\cdot \mathit{Diff} (U [i]\cdot \mathit{denom} (\textit{div\_uu} [i]),t)+\mathrm{rho}\cdot \mathit{numer} (\textit{div\_uu} [i])=-\mathit{numer} (\textit{div\_P} [i])+\mathrm{rho}\cdot \mathit{BF} [i](x [1],x [2],x [3],t)\cdot \mathit{denom} (\textit{div\_uu} [i]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon \esnum \mathit{BF\,also\,contains\,acceleration\,of\,the\,core\,}  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{cont} \coloneqq \mathit{numer} (\mathit{convert} (\textit{div\_u} ,\mathit{sincos})); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(14)}
+\mathit{cont} \coloneqq \frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) r \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) r \right)
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\mathit{mom} [i]\coloneqq \mathit{collect} (\mathit{mom} [i],\mathrm{rho})\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+\mathit{mom}_{1}\coloneqq \left(-u_{3}\! \left(r ,\theta ,\phi ,t \right)^{2} r \sin \! \left(\theta \right)-u_{2}\! \left(r ,\theta ,\phi ,t \right)^{2} r \sin \! \left(\theta \right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right)^{2} r^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) u_{1}\! \left(r ,\theta ,\phi ,t \right) r \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) u_{1}\! \left(r ,\theta ,\phi ,t \right) r \right)\right) \rho =r p_{2,2}\! \left(r ,\theta ,\phi ,t \right) \sin \! \left(\theta \right)+r p_{3,3}\! \left(r ,\theta ,\phi ,t \right) \sin \! \left(\theta \right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(p_{1,1}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(p_{1,2}\! \left(r ,\theta ,\phi ,t \right) r \sin \! \left(\theta \right)\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(p_{1,3}\! \left(r ,\theta ,\phi ,t \right) r \right)+\rho  \mathit{BF}_{1}\! \left(r ,\theta ,\phi ,t \right) \sin \! \left(\theta \right) r^{2}
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+\mathit{mom}_{2}\coloneqq \left(-u_{3}\! \left(r ,\theta ,\phi ,t \right)^{2} \cos \! \left(\theta \right) r^{2}+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) \sin \! \left(\theta \right) r^{3}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) u_{2}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right)^{2} r^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) u_{2}\! \left(r ,\theta ,\phi ,t \right) r^{2}\right)\right) \rho =p_{3,3}\! \left(r ,\theta ,\phi ,t \right) \cos \! \left(\theta \right) r^{2}-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(p_{1,2}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(p_{2,2}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(p_{2,3}\! \left(r ,\theta ,\phi ,t \right) r^{2}\right)+\rho  \mathit{BF}_{2}\! \left(r ,\theta ,\phi ,t \right) \sin \! \left(\theta \right) r^{3}
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(15)}
+\mathit{mom}_{3}\coloneqq \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) u_{3}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) u_{3}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right)^{2} r^{2} \sin \! \left(\theta \right)\right)\right) \rho =-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(p_{1,3}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)^{2}\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(p_{2,3}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)^{2}\right)-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(p_{3,3}\! \left(r ,\theta ,\phi ,t \right) r^{2} \sin \! \left(\theta \right)\right)+\rho  \mathit{BF}_{3}\! \left(r ,\theta ,\phi ,t \right) r^{3} \sin \! \left(\theta \right)^{2}
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Boundary conditions:}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle H \coloneqq \mathit{Vector} (1..2)\colon H [1]\coloneqq h [1](x [2],x [3],t)\colon H [2]\coloneqq h [2](x [2],x [3])\colon \textit{K\_BC} \coloneqq \mathit{Vector} (1..2)\colon N \coloneqq \mathit{Vector} (1..2)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}2\boldsymbol{\mathrm{do}}N [i]\coloneqq \mathit{subs} (x [1]=H [i],\mathit{convert} ([\frac{\mathit{diff} (x [1]-H [i],x [1])}{\mathrm{sqrt}(M [1,1])},\frac{\mathit{diff} (x [1]-H [i],x [2])}{\mathrm{sqrt}(M [2,2])},\frac{\mathit{diff} (x [1]-H [i],x [3])}{\mathrm{sqrt}(M [3,3])}],\mathit{Vector}));\boldsymbol{\mathrm{if}}i =1\boldsymbol{\mathrm{then}}\textit{K\_BC} [i]\coloneqq \mathit{simplify} (\mathit{subs} ((x [1]=H [i]),\mathit{DotProduct} (U ,N [i],\mathit{conjugate} =\mathit{false})=\mathit{diff} (H [i],t)),\mathit{assume} =[H [i]>0,\sin (x [2])>0]);\boldsymbol{\mathrm{else}}\textit{K\_BC} [i]\coloneqq \mathit{simplify} (\mathit{subs} ((x [1]=H [2]),\mathit{DotProduct} (U ,N [i],\mathit{conjugate} =\mathit{false})=\mathit{diff} (H [i],t)),\mathit{assume} =[H [i]>0,\sin (x [2])>0]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{if}}
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{K\_BC} ; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(16)}
+\left[\begin{array}{c}
+\frac{-u_{3}\left(h_{1}\left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \left(\frac{\partial}{\partial \phi}h_{1}\left(\theta ,\phi ,t \right)\right) \csc \left(\theta \right)+u_{1}\left(h_{1}\left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) h_{1}\left(\theta ,\phi ,t \right)-u_{2}\left(h_{1}\left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \left(\frac{\partial}{\partial \theta}h_{1}\left(\theta ,\phi ,t \right)\right)}{h_{1}\left(\theta ,\phi ,t \right)}=
+\\
+\frac{\partial}{\partial t}h_{1}\! \left(\theta ,\phi ,t \right) 
+\\
+ \frac{h_{2}\left(\theta ,\phi \right) u_{1}\left(h_{2}\left(\theta ,\phi \right),\theta ,\phi ,t \right)-u_{2}\left(h_{2}\left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\partial}{\partial \theta}h_{2}\left(\theta ,\phi \right)\right)-u_{3}\left(h_{2}\left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\partial}{\partial \phi}h_{2}\left(\theta ,\phi \right)\right) \csc \left(\theta \right)}{h_{2}\left(\theta ,\phi \right)}=
+\\
+0 
+\end{array}\right]
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle 
+\\
+ \textit{n\_cont} \coloneqq \mathit{simplify} (\mathit{rescaling} (\mathit{cont}));\textit{n\_cont} \coloneqq \mathit{simplify} (\mathit{nondim} (\textit{n\_cont}));\textit{n\_cont} \coloneqq \mathit{simplify} (\mathit{selection} (\mathit{simplify} (\textit{n\_cont} ,\mathit{assume} =[0<\textit{R\_E} ,0<G ,0<\sin (\mathrm{theta}),\mathrm{epsilon}>0]))); $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+\textit{n\_cont} \coloneqq \frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)\right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+\textit{n\_cont} \coloneqq \sqrt{G \textit{R\_E}}\, \textit{R\_E} \left(\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right)\right)\right) \epsilon +\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right)\right)\right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(17)}
+\textit{n\_cont} \coloneqq \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right)\right)\right) \epsilon +\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right)\right)
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle \textit{n\_mom} \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{n\_mom} [i]\coloneqq \mathit{rescaling} (\mathit{mom} [i]);\textit{n\_mom} [i]\coloneqq \mathit{nondim} (\textit{n\_mom} [i]);\textit{n\_mom} [i]\coloneqq \mathit{simplify} (\mathit{selection} (\mathit{simplify} (\textit{n\_mom} [i],\mathit{assume} =[0<\textit{R\_E} ,0<G])));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{n\_mom} [1]; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(18)}
+-\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right)^{2} \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right)\right)\right) \epsilon^{2}-\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}\left(u_{1}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right)\right)\right) \epsilon -\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(u_{2}\! \left(r ,\theta ,\phi ,t \right) u_{1}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right)\right)\right) \epsilon -\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(u_{3}\! \left(r ,\theta ,\phi ,t \right) u_{1}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)\right)\right) \epsilon +\sin \! \left(\theta \right) \lambda \! \left(\theta ,\phi \right) \left(u_{2}\! \left(r ,\theta ,\phi ,t \right)^{2}+u_{3}\! \left(r ,\theta ,\phi ,t \right)^{2}\right)=\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}r}\left(p_{1,1}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right)\right)\right) \epsilon +\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(p_{1,2}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right)\right)\right) \delta  \epsilon +\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(p_{1,3}\! \left(r ,\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)\right)\right) \delta  \epsilon -\sin \! \left(\theta \right) \lambda \! \left(\theta ,\phi \right) \left(\lambda \! \left(\theta ,\phi \right) \mathit{BF}_{1}\! \left(r ,\theta ,\phi ,t \right)+\epsilon  p_{2,2}\! \left(r ,\theta ,\phi ,t \right)+\epsilon  p_{3,3}\! \left(r ,\theta ,\phi ,t \right)\right)
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle \textit{n\_K\_BC} \coloneqq \mathit{Vector} (1..2)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}2\boldsymbol{\mathrm{do}}\textit{n\_K\_BC} [i]\coloneqq \mathit{rescaling} (\textit{K\_BC} [i]);\textit{n\_K\_BC} [i]\coloneqq \mathit{simplify} (\mathit{nondim} (\textit{n\_K\_BC} [i]),\mathit{assume} =[0<\textit{R\_E} ,0<G ,0<\mathrm{epsilon}]);
+\\
+ \textit{n\_K\_BC} [i]\coloneqq \textit{Call\_Diff} (\mathit{convert} (\mathit{simplify} (\mathit{selection} (\textit{n\_K\_BC} [i])\cdot \sin (x [2]),\mathit{assume} =[0<\textit{R\_E} ,0<G ,0<\mathrm{epsilon}]),\mathit{sincos}));
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{n\_K\_BC} ; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(19)}
+\left[\begin{array}{c}
+u_{2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \left(\epsilon  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{1}\! \left(\theta ,\phi ,t \right)\right)+\gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right)\right) \sin \! \left(\theta \right)+
+\\
+u_{3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \left(\epsilon  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{1}\! \left(\theta ,\phi ,t \right)\right)+\gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right)\right)-
+\\
+\epsilon  u_{1}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right) \left(h_{1}\! \left(\theta ,\phi ,t \right) \epsilon +\gamma  h_{2}\! \left(\theta ,\phi \right)+1\right)=
+\\
+-\sin \! \left(\theta \right) \left(h_{1}\! \left(\theta ,\phi ,t \right) \epsilon +\gamma  h_{2}\! \left(\theta ,\phi \right)+1\right) \epsilon  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}h_{1}\! \left(\theta ,\phi ,t \right)\right) 
+\\
+ \sin \! \left(\theta \right) \epsilon  \left(\gamma  h_{2}\! \left(\theta ,\phi \right)+1\right) u_{1}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right)-
+\\
+\gamma  
+\\
+\left(u_{2}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right)+u_{3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right)\right)=
+\\
+0 
+\end{array}\right]
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{D\_BC} \coloneqq \mathit{Vector} (1..2)\colon \textit{D\_BC} [1]\coloneqq \mathit{subs} (x [1]=H [1],\mathit{simplify} (\frac{P .N [1]}{\mathit{VectorCalculus} [\mathit{Norm}](N [1])},\mathit{assume} =[0<x [1],\sin (x [2])>0]))\colon 
+\\
+ \textit{D\_BC} [2]\coloneqq \mathit{subs} (x [1]=H [2],\mathit{simplify} (\frac{P .N [2]}{\mathit{VectorCalculus} [\mathit{Norm}](N [2])},\mathit{assume} =[0<x [1],\sin (x [2])>0]))\colon 
+\\
+ \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{D\_BC} [1][i]\coloneqq \mathit{simplify} (\textit{D\_BC} [1][i]=0,\mathit{assume} =[0<x [1],\sin (x [2])>0]);\textit{D\_BC} [2][i]\coloneqq \mathit{simplify} (\textit{D\_BC} [2][i]=\mathit{Pb} [i](x [2],x [3],t)+\mathit{Fr} [i](x [2],x [3],t),\mathit{assume} =[0<x [1],\sin (x [2])>0]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon 
+\\
+ 
+\\
+ \textit{n\_D\_BC} \coloneqq \mathit{Vector} (1..2)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}2\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{n\_D\_BC} [i][j]\coloneqq \mathit{rescaling} (\textit{D\_BC} [i][j]);\textit{n\_D\_BC} [i][j]\coloneqq \mathit{nondim} (\textit{n\_D\_BC} [i][j]);\textit{n\_D\_BC} [i][j]\coloneqq \mathit{selection} (\mathit{simplify} (\textit{n\_D\_BC} [i][j],\mathit{assume} =[0<\textit{R\_E} ,0<G ,\sin (x [2])>0,H [1]>0,(1+\mathrm{gamma}\cdot H [2])>0,\mathrm{epsilon}>0]))\colon \textit{n\_D\_BC} [i][j]\coloneqq \mathit{Linearize} (\mathit{convert} (\mathit{subs} (\mathit{diff} =\mathit{Diff} ,\mathit{expand} (\mathit{subs} (\mathit{Diff} =\mathit{diff} ,\mathit{simplify} (\mathit{selection} (\textit{n\_D\_BC} [i][j])\cdot \sin (x [2]),\mathit{assume} =[0<\textit{R\_E} ,0<G ,0<\mathrm{epsilon},\sin (x [2])>0])))),\mathit{sincos}),\mathrm{epsilon},1);\textit{n\_D\_BC} [i][j]\coloneqq \mathit{expand} (\mathit{subs} ({\{x [1]=H [i],\sqrt{\gamma^{2} h_{2}(\theta ,\phi)^{2} \sin (\theta)^{2}+\gamma^{2} (\mathit{Diff} (h_{2}(\theta ,\phi),\theta))^{2} \sin (\theta)^{2}+\gamma^{2} (\mathit{Diff} (h_{2}(\theta ,\phi),\phi))^{2}+2 \gamma  h_{2}(\theta ,\phi) \sin (\theta)^{2}+\sin (\theta)^{2}}=K (x [2],x [3])\}},\textit{n\_D\_BC} [i][j]))\colon 
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{n\_D\_BC} [1][1];\textit{n\_D\_BC} [1][2];\textit{n\_D\_BC} [1][3];\textit{n\_D\_BC} [2][1];\textit{n\_D\_BC} [2][2];\textit{n\_D\_BC} [2][3]; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+p_{1,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{1}\! \left(\theta ,\phi ,t \right)\right) \epsilon +p_{1,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right) \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right)+p_{1,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{1}\! \left(\theta ,\phi ,t \right)\right) \epsilon +p_{1,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right)-h_{1}\! \left(\theta ,\phi ,t \right) p_{1,1}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \epsilon  \sin \! \left(\theta \right)-h_{2}\! \left(\theta ,\phi \right) p_{1,1}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \gamma  \sin \! \left(\theta \right)-p_{1,1}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right)=0
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+p_{2,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{1}\! \left(\theta ,\phi ,t \right)\right) \epsilon +p_{2,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right) \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right)+\delta  p_{2,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{1}\! \left(\theta ,\phi ,t \right)\right) \epsilon +\delta  p_{2,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right)-h_{1}\! \left(\theta ,\phi ,t \right) p_{1,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \epsilon  \sin \! \left(\theta \right)-\gamma  h_{2}\! \left(\theta ,\phi \right) p_{1,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right)-p_{1,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right)=0
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+p_{2,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{1}\! \left(\theta ,\phi ,t \right)\right) \epsilon +p_{2,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right) \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right)+p_{3,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{1}\! \left(\theta ,\phi ,t \right)\right) \epsilon +p_{3,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right)-h_{1}\! \left(\theta ,\phi ,t \right) p_{1,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \epsilon  \sin \! \left(\theta \right)-\gamma  h_{2}\! \left(\theta ,\phi \right) p_{1,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right)-p_{1,3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \sin \! \left(\theta \right)=0
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+-\gamma  p_{1,2}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right) \delta  \sin \! \left(\theta \right)+\gamma  p_{1,1}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) h_{2}\! \left(\theta ,\phi \right) \sin \! \left(\theta \right)-\gamma  p_{1,3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right) \delta +p_{1,1}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right)=K \! \left(\theta ,\phi \right) \mathit{Fr}_{1}\! \left(\theta ,\phi ,t \right) \delta +K \! \left(\theta ,\phi \right) \mathit{Pb}_{1}\! \left(\theta ,\phi ,t \right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+\gamma  p_{1,2}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) h_{2}\! \left(\theta ,\phi \right) \delta  \sin \! \left(\theta \right)-\gamma  p_{2,2}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right) \sin \! \left(\theta \right)-\gamma  p_{2,3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right) \delta +\delta  p_{1,2}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right)=K \! \left(\theta ,\phi \right) \mathit{Fr}_{2}\! \left(\theta ,\phi ,t \right) \delta +K \! \left(\theta ,\phi \right) \mathit{Pb}_{2}\! \left(\theta ,\phi ,t \right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(20)}
+p_{1,3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \gamma  h_{2}\! \left(\theta ,\phi \right) \delta  \sin \! \left(\theta \right)-p_{2,3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right) \delta  \sin \! \left(\theta \right)+\delta  p_{1,3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \sin \! \left(\theta \right)-p_{3,3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right)=K \! \left(\theta ,\phi \right) \mathit{Fr}_{3}\! \left(\theta ,\phi ,t \right) \delta +K \! \left(\theta ,\phi \right) \mathit{Pb}_{3}\! \left(\theta ,\phi ,t \right)
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+\textcolor[RGB]{51,153,102}{Depth Averaging:}
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{DA\_cont} \coloneqq \textit{Call\_Diff} (\textit{local\_integrate} (\textit{n\_cont}));\textit{DA\_cont} \coloneqq \mathit{boundary} (\textit{DA\_cont} ,0);\textit{DA\_cont} \coloneqq \mathit{algsubs} (1+\mathrm{gamma}\cdot h [2]=\mathrm{lambda},\mathit{Linearize} (\textit{Final\_form} (\textit{DA\_cont}),\mathrm{epsilon},1))\mathrm{assuming}\sin (x [2])>0; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath*}
+\textit{DA\_cont} \coloneqq u_{1}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right) \epsilon -u_{1}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)^{2} \sin \! \left(\theta \right) \epsilon +\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(\lambda \! \left(\theta ,\phi \right) \left(\int_{\gamma  h_{2}\! \left(\theta ,\phi \right)+1}^{h_{1}\left(\theta ,\phi ,t \right) \epsilon +\gamma  h_{2}\left(\theta ,\phi \right)+1}u_{3}\! \left(r ,\theta ,\phi ,t \right)d r \right)\right)+\left(-\epsilon  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{1}\! \left(\theta ,\phi ,t \right)\right)-\gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right)\right) u_{3}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right)+u_{3}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}h_{2}\! \left(\theta ,\phi \right)\right) \gamma  \lambda \! \left(\theta ,\phi \right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(\lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right) \left(\int_{\gamma  h_{2}\! \left(\theta ,\phi \right)+1}^{h_{1}\left(\theta ,\phi ,t \right) \epsilon +\gamma  h_{2}\left(\theta ,\phi \right)+1}u_{2}\! \left(r ,\theta ,\phi ,t \right)d r \right)\right)+\left(-\epsilon  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{1}\! \left(\theta ,\phi ,t \right)\right)-\gamma  \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right)\right) u_{2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right)+u_{2}\! \left(h_{2}\! \left(\theta ,\phi \right),\theta ,\phi ,t \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}h_{2}\! \left(\theta ,\phi \right)\right) \gamma  \lambda \! \left(\theta ,\phi \right) \sin \! \left(\theta \right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath*}
+\textit{DA\_cont} \coloneqq \frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(h_{2}\! \left(\theta ,\phi \right) \gamma  \left(\int_{\gamma  h_{2}\! \left(\theta ,\phi \right)+1}^{h_{1}\left(\theta ,\phi ,t \right) \epsilon +\gamma  h_{2}\left(\theta ,\phi \right)+1}u_{3}\! \left(r ,\theta ,\phi ,t \right)d r \right)+\int_{\gamma  h_{2}\! \left(\theta ,\phi \right)+1}^{h_{1}\left(\theta ,\phi ,t \right) \epsilon +\gamma  h_{2}\left(\theta ,\phi \right)+1}u_{3}\! \left(r ,\theta ,\phi ,t \right)d r \right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(\left(\gamma  h_{2}\! \left(\theta ,\phi \right)+1\right) \sin \! \left(\theta \right) \left(\int_{\gamma  h_{2}\! \left(\theta ,\phi \right)+1}^{h_{1}\left(\theta ,\phi ,t \right) \epsilon +\gamma  h_{2}\left(\theta ,\phi \right)+1}u_{2}\! \left(r ,\theta ,\phi ,t \right)d r \right)\right)+\epsilon^{2} \sin \! \left(\theta \right) \left(-\gamma  h_{2}\! \left(\theta ,\phi \right)-1\right) h_{1}\! \left(\theta ,\phi ,t \right) u_{1}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right)+\sin \! \left(\theta \right) \left(\epsilon^{2} \left(\gamma  h_{2}\! \left(\theta ,\phi \right)+1\right) h_{1}\! \left(\theta ,\phi ,t \right)+\gamma^{2} \epsilon  h_{2}\! \left(\theta ,\phi \right)^{2}+2 \gamma  \epsilon  h_{2}\! \left(\theta ,\phi \right)+\epsilon \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}h_{1}\! \left(\theta ,\phi ,t \right)\right)
+\end{dmath*}
+\vspace{-\bigskipamount}
+% \mapleresult
+\begin{dmath}\label{(21)}
+\textit{DA\_cont} \coloneqq \sin \! \left(\theta \right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}h_{1}\right) \epsilon  \,\lambda^{2}+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left({\overline{u}}_{3} \epsilon  h_{1} \lambda \right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(\sin \! \left(\theta \right) \epsilon  h_{1} {\overline{u}}_{2} \lambda \right)
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \textit{DA\_mom} \coloneqq \mathit{Vector} (1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\textit{DA\_mom} [i]\coloneqq \textit{Call\_Diff} (\textit{local\_integrate} (\textit{n\_mom} [i]))\colon \textit{DA\_mom} [i]\coloneqq \mathit{boundary} (\textit{DA\_mom} [i],i)\colon \textit{DA\_mom} [i]\coloneqq \mathit{simplify} (\textit{Final\_form} (\textit{DA\_mom} [i]),\mathit{assume} =[\sin (x [2])>0,H [1]>0])\colon 
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon 
+\\
+ \textit{DA\_mom} [2]; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(22)}
+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(\left(\gamma  h_{2}+1\right)^{2} \sin \! \left(\theta \right) \epsilon  h_{1} \overline{u}_{2}^{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(\left(\gamma  h_{2}+1\right)^{2} \epsilon  h_{1} {\overline{u}}_{3} {\overline{u}}_{2}\right)+\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}\left(\sin \! \left(\theta \right) \left(\gamma  h_{2}+1\right)^{3} \epsilon  h_{1} {\overline{u}}_{2}\right)+\cos \! \left(\theta \right) \left(-h_{2}^{2} \gamma^{2}-2 \gamma  h_{2}-1\right) \epsilon  h_{1} \overline{u}_{3}^{2}+h_{1} \sin \! \left(\theta \right) \epsilon^{2} \left(\left(-h_{2}^{2} \gamma^{2}-2 \gamma  h_{2}-1\right) u_{1}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right)+\left(h_{2}^{2} \gamma^{2}+2 \gamma  h_{2}+1\right) \left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}t}h_{1}\right)\right) u_{2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right)=\left(-\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\theta}\left(\left(\gamma  h_{2}+1\right)^{2} \sin \! \left(\theta \right) \epsilon  h_{1} {\overline{p}}_{2,2}\right)-\left(\frac{\textcolor{gray}{\partial}}{\textcolor{gray}{\partial}\phi}\left(\left(\gamma  h_{2}+1\right)^{2} \epsilon  h_{1} {\overline{p}}_{2,3}\right)\right) \delta +\left(h_{1} p_{1,2}\! \left(h_{1}\! \left(\theta ,\phi ,t \right),\theta ,\phi ,t \right) \delta  \epsilon  \sin \! \left(\theta \right)+K \! \left(\theta ,\phi \right) \left(\mathit{Fr}_{2} \delta +\mathit{Pb}_{2}\right)+h_{1} \left({\overline{\mathit{BF}}}_{2} \left(\gamma  h_{2}+1\right) \sin \! \left(\theta \right)+\cos \! \left(\theta \right) {\overline{p}}_{3,3} \epsilon \right)\right) \left(\gamma  h_{2}+1\right)^{2}\right) \epsilon 
+\end{dmath}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\mathit{Fr} [i]\coloneqq \mathit{simplify} (-\frac{(U [i]-\frac{\mathit{DotProduct} (U ,\frac{N [2]}{\mathit{VectorCalculus} [\mathit{Norm}](N [2])},\mathit{conjugate} =\mathit{false})\cdot N [2][i]}{\mathit{VectorCalculus} [\mathit{Norm}](N [2])})}{\mathit{VectorCalculus} [\mathit{Norm}](U -\frac{\mathit{DotProduct} (U ,\frac{N [2]}{\mathit{VectorCalculus} [\mathit{Norm}](N [2])},\mathit{conjugate} =\mathit{false})\cdot N [2]}{\mathit{VectorCalculus} [\mathit{Norm}](N [2])})}\cdot \frac{\mathit{DotProduct} (P .N [2],N [2],\mathit{conjugate} =\mathit{false})}{\mathit{VectorCalculus} [\mathit{Norm}](N [2])^{2}}\cdot \mathrm{delta},\mathit{assume} =[0<x [1],\sin (x [2])>0,H [2]>0,H [1]>0]);\mathit{Pb} [i]\coloneqq \mathit{simplify} (\frac{\mathit{DotProduct} (P .N [2],N [2],\mathit{conjugate} =\mathit{false})N [2][i]}{\mathit{VectorCalculus} [\mathit{Norm}](N [2])^{3}},\mathit{assume} =[0<x [1],\sin (x [2])>0,H [2]>0,H [1]>0]);\mathit{BF} [i]\coloneqq B [i]-2\cdot \mathit{corr} [i]-\textit{A\_acc} [i];\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon 
+\\
+ 
+\\
+  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{BF} [1]; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(23)}
+b_{1}\! \left(r ,\theta ,\phi \right)+r \sin \! \left(\theta \right)^{2} \omega_{3}\! \left(t \right)^{2}+2 \omega_{3}\! \left(t \right) \sin \! \left(\theta \right) u_{3}\! \left(r ,\theta ,\phi ,t \right)
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle \boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\mathit{Fr} [j]\coloneqq \mathit{rescaling} (\mathit{Fr} [j]);\mathit{Fr} [j]\coloneqq \mathit{simplify} (\frac{\mathit{nondim} (\mathit{Fr} [j])}{\mathrm{delta}\cdot \mathrm{epsilon}\cdot G \cdot \textit{R\_E} \cdot \mathrm{rho}});\mathit{Fr} [j]\coloneqq \mathit{simplify} (\mathit{convert} (\mathit{series} (\mathit{Fr} [j],\mathrm{epsilon},2),\mathit{polynom}));\mathit{Fr} [j]\coloneqq \mathit{simplify} (\mathit{collect} (\mathit{subs} (x [1]=H [2],\mathit{Fr} [j]),\mathrm{epsilon}),\mathit{assume} =[0<\textit{R\_E} ,0<G ,\sin (x [2])>0])\colon \mathit{Pb} [j]\coloneqq \mathit{rescaling} (\mathit{Pb} [j]);\mathit{Pb} [j]\coloneqq \mathit{simplify} (\frac{\mathit{nondim} (\mathit{Pb} [j])}{\mathrm{epsilon}\cdot G \cdot \textit{R\_E} \cdot \mathrm{rho}});\mathit{Pb} [j]\coloneqq \mathit{simplify} (\mathit{convert} (\mathit{series} (\mathit{Pb} [j],\mathrm{epsilon},2),\mathit{polynom}));\mathit{Pb} [j]\coloneqq \mathit{simplify} (\mathit{collect} (\mathit{subs} (x [1]=H [2],\mathit{Pb} [j]),\mathrm{epsilon}),\mathit{assume} =[0<\textit{R\_E} ,0<G ,\sin (x [2])>0])\colon 
+\\
+ \mathit{BF} [j]\coloneqq \mathit{rescaling} (\mathit{BF} [j]);
+\\
+ \mathit{BF} [j]\coloneqq \mathit{simplify} (\mathit{nondim} (\mathit{BF} [j]),\mathit{assume} =[H [1]-H [2]>0,\textit{R\_E} >0,G >0]);\mathit{BF} [j]\coloneqq \mathit{simplify} (\mathit{convert} (\mathit{series} (\mathit{BF} [j],\mathrm{epsilon},2),\mathit{polynom}));\mathit{BF} [j]\coloneqq \textit{local\_integrate} (\mathit{BF} [j])\colon \mathit{BF} [j]\coloneqq \mathit{simplify} (\frac{\textit{Final\_form} (\mathit{BF} [j])}{G},\mathit{assume} =[H [1]-H [2]>0,\textit{R\_E} >0,G >0])\colon 
+\\
+ \mathit{BF} [j]\coloneqq \mathit{simplify} (\mathit{BF} [j],\mathit{assume} =[0<\textit{R\_E} ,G >0]);
+\\
+ \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon  $}
+\end{Maple Normal}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{BF} [1]; $}
+\end{Maple Normal}
+% \mapleresult
+\begin{dmath}\label{(24)}
+\epsilon  h_{1} \left({\overline{b}}_{1}+\lambda  \sin \! \left(\theta \right)^{2} \omega_{3}\! \left(t \right)^{2}+2 \omega_{3}\! \left(t \right) \sin \! \left(\theta \right) {\overline{u}}_{3}\right)
+\end{dmath}
+\begin{Maple Normal}
+{$ \displaystyle \mathit{Dev} \coloneqq \mathit{Matrix} (1..3,1..3)\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\mathit{Dev} [i ,j]\coloneqq \mathit{simplify} (\frac{\mathit{diff} (\mathrm{sqrt}(M [i ,i])\cdot U [i],x [j])}{\mathrm{sqrt}(M [i ,i]\cdot M [j ,j])}-\frac{\mathit{add} (R [i ,j ,k]\cdot \mathrm{sqrt}(M [k ,k])\cdot U [k],k =1..3)}{\mathrm{sqrt}(M [i ,i]\cdot M [j ,j])},\mathit{assume} =[x [1]>0,\sin (x [2])>0]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon \mathit{Dev} \coloneqq \frac{1}{2}\cdot (\mathit{Dev} +\mathit{LinearAlgebra} [\mathit{Transpose}](\mathit{Dev}))\colon \mathit{Dev} \coloneqq \mathit{simplify} (\frac{\mathit{Dev}}{\mathrm{sqrt}(\frac{1}{2}\cdot \mathit{LinearAlgebra} [\mathit{Trace}](\mathit{Dev} .\mathit{Dev}))},\mathit{assume} =[x [1]>0,\sin (x [2])>0])\colon \boldsymbol{\mathrm{for}}i \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\boldsymbol{\mathrm{for}}j \boldsymbol{\mathrm{from}}1\boldsymbol{\mathrm{to}}3\boldsymbol{\mathrm{do}}\mathit{Dev} [i ,j]\coloneqq \mathit{rescaling} (\mathit{Dev} [i ,j]);\mathit{Dev} [i ,j]\coloneqq \mathit{simplify} (\mathit{nondim} (\mathit{Dev} [i ,j]),\mathit{assume} =[0<\textit{R\_E} ,0<G ,\sin (x [2])>0,\mathrm{epsilon}>0]);\mathit{Dev} [i ,j]\coloneqq \mathit{simplify} (\mathit{convert} (\mathit{series} (\mathit{Dev} [i ,j],\mathrm{epsilon},1),\mathit{polynom}),\mathit{assume} =[\sin (x [2])>0]);\boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon \boldsymbol{\mathrm{end}}\boldsymbol{\mathrm{do}}\colon \mathit{Dev} ; $}
+\end{Maple Normal}
+\newpage
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\begin{Maple Normal}
+
+\end{Maple Normal}
+\end{document}
