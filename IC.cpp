@@ -23,6 +23,7 @@ const double radius=par["radius"];
 const double past_time=par["time"];
 const double dia=par["dia"];
 const double min_h=pow(dx,4);
+const double gamma=par["gamma"];
 
 void Grid(vector<double> & x)
 {

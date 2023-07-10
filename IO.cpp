@@ -77,3 +77,27 @@ bool Parameters()
     myfile.close();
     return true;
 }
+
+// Function to read a 2D array from a file
+void Read_grav( vector<Grav>& g, const string& file)
+{
+    std::ifstream f(file);
+    std::vector<double> row;
+    if (!f) Error("Can't open file", "grav.txt");
+    double num;
+    int i=2;
+    while (f >> num)
+    {
+        row.push_back(num);
+
+        // Check if the row is complete
+        if (row.size() == 2) 
+        {
+            g[i].X1=row[0];
+            g[i].X2=row[1];
+            g[i].X3=0;
+            row.clear();
+            i++;
+        }
+    }
+}

@@ -6,16 +6,19 @@
 int main()
 {	chrono::steady_clock sc;
 	auto start = sc.now();
+
+	std::string file="output/files_"+to_string(delta)+"_"+to_string(omega_initial);
+	cout<<file<<endl;
+
 	vector<Grav> g(res);
-	Grav_sph(g);
+	Init_grav(g,file);
 	
     
 	vector<double> x(res);
 	Grid(x);
 	vector<CV> w;
 
-	std::string file="output/files_"+to_string(delta)+"_"+to_string(omega_initial);
-	cout<<file<<endl;
+	
 
 	//uncomment only for the solo run
 
