@@ -1,0 +1,11 @@
+*.[oa]
+*~
+.DS_Store
+output/
+.vscode/
+Info Files/
+inputs/
+*.nb
+test.dSYM/
+data/
+images/
