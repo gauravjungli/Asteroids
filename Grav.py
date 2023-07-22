@@ -8,12 +8,10 @@ from scipy.special import ellipk, ellipe,elliprf,elliprj
 from scipy.interpolate import make_interp_spline
 from scipy.constants import gravitational_constant
 import numpy as np
-from mpmath import ellippi
 import math
 import matplotlib.pyplot as plt
 import time
 import multiprocessing 
-from itertools import repeat
 import glob
 
 
@@ -113,16 +111,10 @@ def main():
     
 if __name__=="__main__":
     
-    
-
     start_time=time.time()
-    
-    print(res)
-
 
     multiprocessing.freeze_support()
     main()
-
 
     end_time=time.time()
     elapsed_time=end_time-start_time

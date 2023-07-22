@@ -8,26 +8,33 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
-
+import os
+import re
 import glob
 
 parameters={}
-# reading the data from the file
-with open('parameters') as f:
-    for line in f:
-        fields = line.split("    ")
-        #print(fields)
-        parameters[fields[0]]=float(fields[1])
+dir = os.getcwd()
+inputfile = os.path.join(dir, "parameters")
+with open(inputfile, "r") as file:
+    for line in file:
+        line = line.strip()
+        if '--' in line:
+            continue
+        if line:
+            values = re.split(r"\s+",line)
+            key = values[0]
+            value = values[1]
+            parameters[key] = value
       
         
 
 #%%
 
 
-omega=parameters["omega_initial"]
-delta=parameters["delta"]
+omega=float(parameters["omega_in"])
+delta=float(parameters["delta"])
 slides=int(parameters["slides"])
-res=int(parameters["res"]-4)
+res=int(parameters["res"])-4
 epsilon=parameters["epsilon"]
 file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
 
