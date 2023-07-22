@@ -10,13 +10,11 @@ void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, doubl
 		FS hl= Hx(wr[j-1],wl[j]);
 		FS hr= Hx(wr[j],wl[j+1]);
 		
-		FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1], om, alpha );
+		FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1]);
 		w[j].Modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
     	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);	
 	}
-
-	om=om+alpha*dt;
 }
 
 // corrector step for interior
@@ -30,14 +28,12 @@ void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_ini
 	{
 	FS hr= Hx(wr[j],wl[j+1]);
 	FS hl= Hx(wr[j-1],wl[j]);
-	FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1], om, alpha);	
+	FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1]);	
 	w[j].Modify ( w_init[j].p * weight + (1 - weight) * (wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt)
 	, w_init[j].q * weight + (1 - weight) * (wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt)
 	,  w_init[j].r * weight + (1 - weight) * (wtemp[j].r - ((hr.r - hl.r) / dx - source.r) * dt));
 	
-	}
-	om=om_init*weight+(1-weight)*(om+ alpha*dt);
-	
+	}	
 }
 
 double March (vector<CV>& w, double final_t)
