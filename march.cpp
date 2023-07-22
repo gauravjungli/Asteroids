@@ -5,8 +5,6 @@ void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, doubl
 {  	
 	vector<CV> wtemp(w);
 	
-
-
 	for (int j = 2; j < res-2; j++)
 	{	
 		FS hl= Hx(wr[j-1],wl[j]);
@@ -15,8 +13,7 @@ void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, doubl
 		FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1], om, alpha );
 		w[j].Modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
-    	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);
-		
+    	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);	
 	}
 
 	om=om+alpha*dt;
@@ -67,7 +64,7 @@ double March (vector<CV>& w, double final_t)
 		{
 			string file1=file+string("/field_")+to_string(int((slides)*1000+timesteps/dump))+string(".csv");
 			Write(w, file1);
-		    file1=string("output/files_")+to_string(delta)+string("_")+to_string(omega_initial)+string("/omega.txt");
+		   file1=string("output/files_")+to_string(delta)+string("_")+to_string(omega_initial)+string("/omega.txt");
 			Write(omega+epsilon*om,t,file1);
 		}
 		if (t>check_t)
@@ -80,13 +77,13 @@ double March (vector<CV>& w, double final_t)
 			}
 			if (max_u<5e-4)
 			{
-				par["time"]=past_time+t;
+				par["time"]=to_string(past_time+t);
 				return omega+epsilon*om;
 			}
 			check_t++;
 		}
 		vector<CV> w_init(w);
-		double om_init=om;
+	double om_init=om;
 		
 		BC(w);
 		Edge(w,wl,wr);
@@ -121,28 +118,24 @@ double March (vector<CV>& w, double final_t)
 
 		double sum=0;
 		for (int i=2;i<res-2;i++)
-			sum+=w[i].h*(1+2*epsilon*w[i].lambda)*sin(w[i].x);
+			sum+=w[i].r*dx;
 
 
-		cout<<std::setprecision(18)<<t<<"  "<<sum-sum1<<endl;
+		cout<<std::setprecision(18)<<t<<"  "<<sum<<endl;
 		sum1=sum;
 		
 	}
-	par["time"]=past_time+t;
+	par["time"]=to_string(past_time+t);
 	return omega+epsilon*om;
 }
 
 
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps)
 {	
-	
 	CFL(wl,wr,dt);
-
 	// time updation
 	t = t + dt;
-	
 	timesteps = timesteps + 1;
-
 }
 
 void CFL(vector<CV>& wl,vector<CV>& wr, double & dt)
@@ -158,5 +151,4 @@ void CFL(vector<CV>& wl,vector<CV>& wr, double & dt)
 	}
 	//cout<<maxspeed<<endl;
 	dt = min(dx/4,dx/4/maxspeed);
-
 }

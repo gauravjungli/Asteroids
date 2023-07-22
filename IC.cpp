@@ -1,29 +1,27 @@
 #include "gauravlib.h"
 
-std::map <std::string, double> par;
+std::map <std::string, string> par;
 bool set_parameter=Parameters();
-const int res= (int) round(par["res"]);
+const int res= (int) round(stod(par["res"]));
 const double PI= M_PI;
-const int dump= int(par["dump"]);
-const double offset= par["offset"];
+const int dump= int(stod(par["dump"]));
+const double offset= stod(par["offset"]);
 const double xmax=   PI;
 const double xmin=   0;
-const double weight= par["weight"]; 
-const double uni_h= par["uni_h"];
-const double finalt= par["finalt"];
-const double delta= par["delta"]; 
-const double theta= par["theta"]; 
-const double slides= par["slides"];
-const double epsilon= par["epsilon"]; 
-const double omega= par["omega"];
-const double omega_initial=par["omega_initial"];
+const double weight= stod(par["weight"]); 
+const double uni_h= stod(par["uni_h"]);
+const double finalt= stod(par["finalt"]);
+const double delta= stod(par["delta"]); 
+const double theta= stod(par["theta"]); 
+const double slides= stod(par["slides"]);
+const double epsilon= stod(par["epsilon"]); 
+const double omega= stod(par["omega"]);
+const double omega_initial=stod(par["omega_in"]);
 const double dx= (xmax-xmin-2*offset)/res;
-const int layers= par["layers"];
-const double radius=par["radius"];
-const double past_time=par["time"];
-const double dia=par["dia"];
+const double past_time=stod(par["time"]);
+const double dia=stod(par["dia"]);
 const double min_h=pow(dx,4);
-const double gamma=par["gamma"];
+const double gamma=stod(par["gamma"]);
 
 void Grid(vector<double> & x)
 {
@@ -49,8 +47,8 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string fil
     } */
     
 
-    if (slides>1)
-        Base(b,file);
+
+    Base(b,x,file);
     
     if (w.empty())
     {
@@ -87,21 +85,21 @@ void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
         
 }
 
-void Base ( vector<double>& b,string file)
+void Base ( vector<double>& b,vector<double>& x, string file)
 {
-ifstream myfile(file);
+ifstream myfile(file+"/base.txt");
 
 string line;
-int i=2;
+int i=0;
 while(getline(myfile,line))
 {
 	istringstream iss(line);
-    string word1,temp,word2;
-	getline(iss, temp, ',');  
+    string word1,word2;
     getline(iss, word1, ',');
     getline(iss, word2, ',');       
 
-	b[i]=(1+epsilon*(stod(word1)+stod(word2))-radius)/epsilon;
+    x[i]=stod(word1);
+	b[i]=stod(word2);
 	i++;
 }
 myfile.close();

@@ -67,7 +67,7 @@ double Diff(vector<double> w, double dt)
 
 double AMB_corrector (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, bool height)
 {
-	double multiplier=0;
+	double multiplier=1;
 	if (height)
 	{
 		for (int i=2;i<res-2;i++)
@@ -79,7 +79,8 @@ double AMB_corrector (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, bool height
 	{
 		for (int i=2;i<res-2;i++)
 		{
-			multiplier+=dx/6*((wl[i].b)*pow(sin(wl[i].x),3)+4*(w[i].b)*pow(sin(w[i].x),3)+(wr[i].b)*pow(sin(wr[i].x),3));
+			multiplier+=3.0/4*dx/6*((pow(wl[i].lambda,5)-1+5*epsilon*pow(wl[i].lambda,4)*wl[i].h)*pow(sin(wl[i].x),3)+4*(pow(w[i].lambda,5)-1
+                        +5*epsilon*pow(w[i].lambda,4)*wl[i].h)*pow(sin(w[i].x),3)+(pow(wr[i].lambda,5)-1+5*epsilon*pow(wr[i].lambda,4)*wl[i].h)*pow(sin(wr[i].x),3));
 		}
 
 	}
@@ -93,9 +94,9 @@ double Inertia(vector<CV>& w, int no)
 	double integral2=8*PI/15.0;
 	for (int i=0;i<res;i++)
 	{
-	integral1+=2*PI/5*(pow(1+epsilon*w[i].b+epsilon*w[i].h,5)-1)*pow(sin(w[i].x),3)*dx; 
+	integral1+=2*PI/5*(pow(1+gamma*w[i].b+epsilon*w[i].h,5)-1)*pow(sin(w[i].x),3)*dx; 
 	
-	integral2+=PI/5*(pow(1+epsilon*w[i].b+epsilon*w[i].h,5)-1)*(2-pow(sin(w[i].x),2))*sin(w[i].x)*dx; 
+	integral2+=PI/5*(pow(1+gamma*w[i].b+epsilon*w[i].h,5)-1)*(2-pow(sin(w[i].x),2))*sin(w[i].x)*dx; 
 	}
 
 	if (no==1)

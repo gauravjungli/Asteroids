@@ -9,3 +9,5 @@ inputs/
 test.dSYM/
 data/
 images/
+__pycache__/
+.empty/

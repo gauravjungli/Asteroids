@@ -8,6 +8,7 @@ myfile<<std::setprecision(18)<<past_time+t<<" "<<om<< endl;
 myfile.close();
 }
 
+
 void Write ( const double om, string file)
 {
 ofstream myfile(file,std::ofstream::out);
@@ -16,25 +17,43 @@ myfile<<std::setprecision(18)<<" "<<om<< endl;
 myfile.close();
 }
 
+
 void Write (const vector<CV>& w, string file)
 {
 ofstream myfile(file);
-if (!myfile) Error("Can't open output file field_%f",file);
+if (!myfile) Error("Can't open output file field",file);
 for (int i=2;i<res-2;i++)
-		myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<","<<dia<<"\n";
+		myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].q<<","<<w[i].r<<","<<w[i].psi<<","<<dia<<"\n";
 myfile.close();
 }
 
-void Write ( std::map <std::string, double> par, string file)
+void Write (const vector<double>& x, const vector<CV>& w, string file)
+{
+ofstream myfile(file+"/base.txt");
+if (!myfile) Error("Can't open output file field",file);
+for (int i=0;i<res;i++)
+		myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/gamma*w[i].h)<<"\n";
+myfile.close();
+}
+
+void Write ( std::map <std::string, string> par, string file)
 {
 ofstream myfile(file,std::ofstream::out);
-if (!myfile) Error("Can't open the file","parameters");
+if (!myfile) 
+{
+    Error("Can't open the file","parameters");
+    return;
+}
 
-	for (auto i = par.begin(); i != par.end(); i++)
-		myfile << i->first << "    " << i->second << " "<<endl;
-
+for (auto i = par.begin(); i != par.end(); i++)
+    {
+        myfile<<std::string(50,'-')<<"\n";
+		myfile<<left<<std::setw(25)<< i->first << i->second<<endl;
+    }
+myfile<<std::string(50,'-')<<"\n";
 myfile.close();
 }
+
 
 void Read ( vector<double>& v,string file)
 {
@@ -46,16 +65,19 @@ while(myfile>>inp)
 myfile.close();
 }
 
+
 void Error (string s1, string s2)
 {
 	cout<< s1<<" "<<s2<<endl;
 }
+
 
 void deleteDirectoryContents(const std::string& dir_path)
 {
     for (const auto& entry : std::filesystem::directory_iterator(dir_path)) 
         std::filesystem::remove_all(entry.path());
 }
+
 
 bool Parameters()
 {
@@ -64,6 +86,8 @@ bool Parameters()
 	string line;
 	while (getline(myfile, line))  
     {
+        if (line.find("--")!=std::string::npos)
+            continue;
         istringstream iss(line);
         string word1;
         if (!(iss >> word1))
@@ -72,11 +96,14 @@ bool Parameters()
         if (!(iss >> word2))
             continue;  // line only had one word
 
-		par[word1]=stod(word2);
+		par[word1]= word2;
+     
+    
     }
     myfile.close();
     return true;
 }
+
 
 // Function to read a 2D array from a file
 void Read_grav( vector<Grav>& g, const string& file)

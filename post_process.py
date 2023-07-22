@@ -6,12 +6,18 @@ from pathlib import Path
 import glob
 import os
 import re
-
+from gaurav import Parameter
 #from mpl_toolkits.mplot3d import Axes3D
-omega=0.8
-delta=20
-slides=13
-epsilon=0.005
+parameters=Parameter()
+omega=float(parameters["omega_in"])
+delta=float(parameters["delta"])
+slides=int(parameters["slides"])
+epsilon=float(parameters["epsilon"])
+gamma=float(parameters["gamma"])
+res=int(parameters["res"])
+offset=float(parameters["offset"])
+dx=(math.pi-2*offset)/res
+
 file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
 omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
 plt.clf()
@@ -27,8 +33,8 @@ for count in range(slides):
    # if count!=slides-1 and count!=0:
     #    continue
     #plt.clf()
-    x=np.sin(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
-    y=np.cos(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
+    x=np.sin(w[:,0])*(1+(epsilon*w[:,1]+gamma*w[:,2]))
+    y=np.cos(w[:,0])*(1+(epsilon*w[:,1]+gamma*w[:,2]))
     plt.clf()
     plt.axis('equal')
     plt.plot(x,y,'-b')
@@ -43,6 +49,9 @@ fig = plt.figure(figsize=(6,6))
 dirFiles = os.listdir(file1+"/data") #list of directory files
 dirFiles.sort(key=lambda f: int(re.sub('\D', '', f)))
 os.chdir(file1+"/data")
+ang_mom=[]
+lin_mom=[]
+count=0
 for file in dirFiles:
 
     
@@ -52,20 +61,19 @@ for file in dirFiles:
     plt.clf()
     x=(w[:,0])
     y=(w[:,3]*w[:,1])
+    ang_mom.append([count,sum(w[:,4])*dx])
+    lin_mom.append([count,sum(w[:,3])*dx])
+    count +=1
   #  if count%50!=0:
     #     continue
-    plt.plot(x,y)
-    plt.title("Time="+str(count))
-    plt.pause(0.1)  
-    print(w[0,1])
-   # print(sum(w[:,1]))
-    
-from resource import getrusage, RUSAGE_SELF
-print(getrusage(RUSAGE_SELF).ru_maxrss)
-    
-    
-    
-    
+    #plt.plot(x,y)
+    #plt.title("Time="+str(count))
+    #plt.pause(0.1)  
+   # print(sum(w[:,1]))  
+ang_mom=np.array(ang_mom)
+plt.plot(ang_mom[:,0],ang_mom[:,1])
+lin_mom=np.array(lin_mom)
+plt.plot(lin_mom[:,0],lin_mom[:,1])
     
 # for count in range(len(omega)):
 
@@ -82,87 +90,4 @@ print(getrusage(RUSAGE_SELF).ru_maxrss)
 #     plt.title("Time="+str(count))
 #     plt.pause(0.1)  
 #plt.close()  
-
-
-
-# #plt.plot(datas,datak,'-')
-
-# #axh.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.2e'))
-# #axh.plot(x,datahi)
-# #len(dath)/no of avalanches/xres
-    
-# fig = plt.figure(figsize=(8,4))
-
-# c=0
-# for i in range(len(dath)):#len(dath1)-xres*10,
-#     datah[i%xres]=float(dath[i][0])
-#     datau[i%xres]=float(datu[i][0])
-#     datav[i%xres]=float(datv[i][0])
-    
-#     if (i%xres==(xres-1) and i!=0):
-#         c=c+1
-#         if (c%4040==0):
-#             '''
-#             axh = fig.add_axes([0.15,0.8,0.3,0.15],xlim=(0,1))
-# #            plt.title("$\Omega$=2,  $\delta$=25$^\circ$,  timesteps="+str(c*20))
-#             plt.ylabel('h')
-#             axu = fig.add_axes([0.15,0.5,0.3,0.15],xlim=(0,1))
-#             plt.ylabel('u')
-#             axv = fig.add_axes([0.15,0.2,0.3,0.15],xlim=(0,1))
-#             plt.xlabel('s')
-#             plt.ylabel('v')
-#             axh.plot(x,datah)
-#             axu.plot(x,datau)
-#             axv.plot(x,datav)
-#             axomega = fig.add_axes([0.6,0.65,0.3,0.15])
-#             plt.ylabel('$\Omega$')
-#             axmass = fig.add_axes([0.6,0.3,0.3,0.15])
-#             plt.ylabel('mass')
-#             plt.xlabel('t')
-#             axmass.plot(datas[0:c-1],datam[0:c-1],'-')
-#             axomega.plot(datas[0:c-1],datao[0:c-1])
-#             plt.draw()
-#             plt.pause(0.01)
-# #            plt.clf()
-            
-#             '''
-#             axh = fig.add_axes([0.1,0.2,0.3,0.75],xlim=(0,0.99))
-#             #axh = fig.add_axes([0.1,0.2,0.3,0.75],xlim=(0.925,1.025),ylim=(-0.01,0.01))
-#             #axh.grid();
-#             plt.ylabel('h')
-#             plt.xlabel('s')
-#             axh.plot(x,datah)
-#             # axomega = fig.add_axes([0.5,0.2,0.45,0.35])
-#             # plt.ylabel('$\Omega$')
-#             # plt.xlabel('t')
-#             # axomega.plot(datas[0:c-1],datao[0:c-1])
-#             # axmass = fig.add_axes([0.5,0.6,0.45,0.35])
-#             # plt.ylabel('mass')
-#             # axmass.plot(datas[0:c-1],datam[0:c-1],'-')
-#             plt.draw()
-#             plt.pause(0.25)
-#             #plt.clf()
-#             # if (c>2550):
-#             #     break
-
-# #fig = plt.figure(figsize=(5,5))
-# #axh = fig.add_axes([0.1,0.1,0.7,0.7],xlim=(0,1))
-# #plt.ylabel('h')
-# #plt.xlabel('s')
-# #axh.plot(x,datah)
-# #plt.axis('equal')
-
-# axomega = fig.add_axes([0.5,0.2,0.45,0.35])
-# plt.ylabel('$\Omega$')
-# plt.xlabel('t')
-# axomega.plot(datas[0:c-1],datao[0:c-1])
-# axmass = fig.add_axes([0.5,0.6,0.45,0.35])
-# plt.ylabel('mass')
-# axmass.plot(datas[0:c-1],datam[0:c-1],'-')
-# plt.draw()
-
-# #fig = plt.figure(figsize=(2.5,1))
-# #axp = fig.add_axes([0.20,0.25,0.7,0.65])
-# #axp.plot(datas[0:c-1],datam[0:c-1],'-')
-
 

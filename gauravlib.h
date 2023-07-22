@@ -16,7 +16,7 @@
 #include <sys/types.h>
 using namespace std;
 
-extern std::map <std::string, double> par;
+extern std::map <std::string, string> par;
 
 extern const  int res;
 extern const double PI;
@@ -46,7 +46,7 @@ extern const double gamma;
 class Grav{
     public:
         double X1, X2, X3;
-        Grav(): X1(0), X2(0), X3(0)
+        Grav(): X1(-1), X2(0), X3(0)
         {}
         
 };
@@ -93,9 +93,10 @@ class FS
 
 //To write files 
 void Write(const vector<CV> & w, string file  );
+void Write (const vector<double>& x, const vector<CV>& w, string file);
 void Write( const double om, string file );
 void Write( const double om, const double t, string file );
-void Write ( std::map <std::string, double> par, string file);
+void Write ( std::map <std::string, string> par, string file);
 
 //To read files
 void Read ( vector<double>&, string file );
@@ -136,7 +137,7 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string fil
 void Grid(vector<double> & x);
 //To incorporate topography 
 void Base(vector<CV>& w, vector<double> & b,vector<double>& h);
-void Base ( vector<double>& v,string file);
+void Base( vector<double>& b,vector<double>& x, string file);
 //-------------------------------------------------------------------------
 
 ////////////// solver.cpp
