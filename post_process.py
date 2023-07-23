@@ -23,9 +23,9 @@ offset=float(parameters["offset"])
 dx=(math.pi-2*offset)/res
 
 file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
-omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
-plt.clf()
-plt.plot(omega[:,0],omega[:,1])
+# omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
+# plt.clf()
+# plt.plot(omega[:,0],omega[:,1])
 
 #plt.close()
 #%%    
@@ -64,15 +64,15 @@ for file in dirFiles:
     
     plt.clf()
     x=(w[:,0])
-    y=(w[:,3]*w[:,1])
+    y=(w[:,4])
     ang_mom.append([count,sum(w[:,4])*dx])
     lin_mom.append([count,sum(w[:,3])*dx])
     count +=1
   #  if count%50!=0:
     #     continue
-    #plt.plot(x,y)
-    #plt.title("Time="+str(count))
-    #plt.pause(0.1)  
+    plt.plot(x,y)
+    plt.title("Time="+str(count))
+    plt.pause(0.1)  
    # print(sum(w[:,1]))  
 ang_mom=np.array(ang_mom)
 plt.plot(ang_mom[:,0],ang_mom[:,1])
