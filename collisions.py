@@ -18,10 +18,12 @@ import time
 #%%
 
 
+
 if __name__=="__main__":
     
+    parameters={}
     start_time=time.time()
-    parameters=Parameter()
+    Parameter(parameters)
     target=Target(parameters)
     cumdistr=Cumdistr(parameters)
     Initialize(parameters,target)
@@ -42,7 +44,7 @@ if __name__=="__main__":
                
         #print(istuff[i].d)
         oldtime = istuff[i].impacttime
-        #print(oldtime)
+        print("Total time till now",oldtime)
     
     Yorp(target,parameters,tmaxby,oldtime,myomega)
     ExportOmega(myomega,parameters)

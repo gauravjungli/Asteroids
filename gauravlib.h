@@ -178,7 +178,7 @@ void Balancing (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, int i);
 /////// march.cpp
 
 //To be used in the time marching
-void March (vector<CV>& w, double final_t);
+void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed);
 void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt);
 void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double dt);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
@@ -194,7 +194,7 @@ double Inertia(vector<CV>& w, int no);
 ///////// pressure_shed.cpp
 
 //mass shedding and pressure
-void Shed(vector<CV>& w);
+void Shed(vector<CV>& w, ofstream& myfile, double& Ang_Shed);
 double Psi(CV w);
 
 

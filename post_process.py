@@ -64,7 +64,7 @@ for file in dirFiles:
     
     plt.clf()
     x=(w[:,0])
-    y=(w[:,4])
+    y=(w[:,1]+gamma/epsilon*w[:,2])
     ang_mom.append([count,sum(w[:,4])*dx])
     lin_mom.append([count,sum(w[:,3])*dx])
     count +=1

@@ -82,27 +82,44 @@ class Impactor:
 
 #%%
 
+def Nondimensionalize(parameters,w,r):
+    
+    dia=float(parameters["dia"])
+    jinertia=float(parameters["jinertia"])
+    jinertia1=float(parameters["jinertia1"])
+    parameters["dia"]=dia*r
+    parameters["jinertia"]=jinertia/r**5
+    parameters["jinertia1"]=jinertia1/r**5
+    w[:,1]=w[:,1]/r
+    
+#%%
+
 def Fit(parameters):
     
-    res=int(parameters["res"])
+    
     gamma=float(parameters["gamma"])
-    dia=float(parameters["dia"])
+    
     
     try:
         w,file=Shape(parameters)
     except:
         print("cannot import shape")
         return
-    x=np.sin(w[:,0])*(1+gamma*w[:,1])
-    y=np.cos(w[:,0])*(1+gamma*w[:,1])
+    
+    #uncomment for the special fit
+    #res=int(parameters["res"])
+    #x=np.sin(w[:,0])*(1+gamma*w[:,1])
+    #y=np.cos(w[:,0])*(1+gamma*w[:,1])
      
-    point = []
-    for i in range(res):
-        point.append([x[i],y[i]])
-        point.append([-x[i],y[i]])
-    xc, yc, r, sigma = taubinSVD(point)
-    parameters["dia"]=dia*r
+    #point = []
+    #for i in range(res):
+     #   point.append([x[i],y[i]])
+     #   point.append([-x[i],y[i]])
+    #xc, yc, r, sigma = taubinSVD(point)
+    
+    r=1+gamma*(min(w[:,1])+max(w[:,1]))/2
     w[:,1]=((1+gamma*w[:,1])-r)/gamma
+    Nondimensionalize(parameters,w,r)
     Exparameter(parameters)
     np.savetxt(file+"/base.txt",w,delimiter=",")
     print ("The best fit value of r is ", r)
@@ -124,8 +141,7 @@ def Shape(parameters):
  
 #%%   Verified
 
-def Parameter():
-    parameters={}
+def Parameter(parameters):
     dir = os.getcwd()
     inputfile = os.path.join(dir, "parameters")
     with open(inputfile, "r") as file:
@@ -166,7 +182,7 @@ def Initialize(parameters,target):
     for i in range(res):
         base[i,0] = offset + dx * (i+ 0.5)
     np.savetxt(mydir+"/base.txt",base,delimiter=",")
-    Gravitycalc(parameters)
+   # Gravitycalc(parameters)
 
 #%%  Verified
 
@@ -209,7 +225,7 @@ def Gravitycalc(parameters):
     num_processes = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=num_processes)
     
-    arguments=[(R[i]+rad*epsilon*np.sin(w[i,0]),Z[i]+ rad*epsilon*np.cos(w[i,0]),r,z) for i in range(int(Res/2))]
+    arguments=[(R[i]+epsilon*np.sin(w[i,0]),Z[i]+ epsilon*np.cos(w[i,0]),r,z) for i in range(int(Res/2))]
     
     grav = pool.starmap(Gravity, arguments)
     grav=np.array(grav)
@@ -247,7 +263,8 @@ def Gravity(R, Z,r,z):
         else:
             eps = 0.5
         if (k>=1 or m>=1):
-            print("k = ",k," m = ",m,Z,z[i],i)
+            print("k = ",k," m = ",m,Z,z[i],a,R)
+            m=min(m,1-1e-6)
         ks = ellipk(k**2)
         es = ellipe(k**2)
         pi=elliprf(0,1-k**2,1)+1/3*m**2*elliprj(0,1-k**2,1,1-m**2)
@@ -279,7 +296,8 @@ def Landslides(target,parameters,impacttime,myomega):
     parameters["omega"] = target.omega[2] / (G * (4/3) * math.pi * target.dens)**0.5
     parameters["slides"] = int(parameters["slides"])+1
     parameters["dia"] = target.d
-
+    parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
+    parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
     try:
         Exparameter(parameters)
     except IOError:
@@ -292,10 +310,9 @@ def Landslides(target,parameters,impacttime,myomega):
     else:
         print("Ran successfully slide", parameters["slides"])
     
-    parameters=Parameter()
+    Parameter(parameters)
     Fit(parameters)
-    parameters = Parameter()
-    
+    Parameter(parameters)
     
     target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
     target.d = float( parameters["dia"])
@@ -304,7 +321,7 @@ def Landslides(target,parameters,impacttime,myomega):
     target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
     target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
-    Gravitycalc(parameters)
+   # Gravitycalc(parameters)
     
     myomega.append([impacttime, target.omega[2]])
     print("Omega after the Landslides", target.omega[2])
