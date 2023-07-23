@@ -108,6 +108,7 @@ void Error(string , string );
 
 //to delete files
 void deleteDirectoryContents(const std::string& dir_path);
+std::string to_string(double value, int precision);
 
 //----------------------------------------------------------------------------------------
 ///// bc.cpp
@@ -155,12 +156,12 @@ FS Hx( CV wl, CV wr);
 FS Flux( CV w );
 
 //To compute source terms
-FS Source( CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha);
+FS Source( CV w, CV w1, CV w2, CV w3, CV w4);
 FS Eigen(CV w );
 
 FS Friction (CV w, FS bf);
 
-FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha);
+FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4);
 //---------------------------------------------------------------------------------
 
 ///////// characteristics.cpp
@@ -177,24 +178,16 @@ void Balancing (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, int i);
 /////// march.cpp
 
 //To be used in the time marching
-double March (vector<CV>& w, double final_t);
-void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double& om, double alpha, double dt);
-void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double& om, double alpha, double om_init, double dt);
+void March (vector<CV>& w, double final_t);
+void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt);
+void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double dt);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
 void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 
 //------------------------------------------------------------------------------------------------------------
 
-///////// Angular_mom.cpp
+///////// Omega.cpp
 //To update omega
-void Ang_mom(AMB& amb, double integral1, double integral2, bool replace);
-double Alpha_sys( double& om , double dt, AMB amb, double inertia );
-void Integrals(double& integral1, double& integral2, vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
-double Int_B(CV w);
-double Int_A(CV wl, CV w, CV wr);
-double Diff(vector<double> w, double dt);
-double AMB_corrector (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, bool height);
-void Alpha_fric(vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double om, double& alpha);
 double Inertia(vector<CV>& w, int no);
 //--------------------------------------------------------------------------------------------------------------
 

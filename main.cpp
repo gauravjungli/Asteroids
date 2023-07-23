@@ -28,10 +28,11 @@ int main()
 	string file2=file+string("/log.txt");	
 	Uniform_IC(w,x,g,file);
 	
-	par["omega"]=to_string(March(w,finalt));
-	par["jinertia"]=to_string(Inertia(w,1));
-	par["jinertia1"]=to_string(Inertia(w,2));
-	
+	double Ang_mom=stod(par["jinertia"])*omega;
+	March(w,finalt);
+	par["jinertia"]=to_string(Inertia(w,1),15);
+	par["jinertia1"]=to_string(Inertia(w,2),15);
+	par["omega"]=to_string(Ang_mom/stod(par["jinertia"]),15);
 	Write(w,file1);
 	Write(x,w,file);
 	Write (par,"parameters");

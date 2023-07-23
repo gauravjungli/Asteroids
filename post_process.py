@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import math
 import matplotlib.pyplot as plt
@@ -7,6 +10,7 @@ import glob
 import os
 import re
 from gaurav import Parameter
+
 #from mpl_toolkits.mplot3d import Axes3D
 parameters=Parameter()
 omega=float(parameters["omega_in"])

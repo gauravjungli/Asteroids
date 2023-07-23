@@ -8,6 +8,11 @@ myfile<<std::setprecision(18)<<past_time+t<<" "<<om<< endl;
 myfile.close();
 }
 
+std::string to_string(double value, int precision) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(precision) << value;
+    return oss.str();
+}
 
 void Write ( const double om, string file)
 {

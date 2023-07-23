@@ -49,10 +49,10 @@ FS Flux( CV w )
 }
 
 
-FS Source( CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha)
+FS Source( CV w, CV w1, CV w2, CV w3, CV w4)
 {
 	FS source;
-	FS bf=Body_force( w,  w1,  w2, w3,  w4, om, alpha);
+	FS bf=Body_force( w,  w1,  w2, w3,  w4);
 	FS fr=Friction(w,bf);
 	
 
@@ -104,7 +104,7 @@ FS Friction (CV w, FS bf)
 	return fr;
 }
 
-FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha)
+FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4)
 {
 	FS bf;
 	bf.q=(omega*omega*sin(w.x)*cos(w.x))*pow(w.lambda,4)+(2*omega*cos(w.x)*w.v+w.g.X2)*pow(w.lambda,3);
@@ -116,7 +116,6 @@ FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4,  double om, double alpha)
 }
 
 FS Eigen(CV w)
-
 {
 	double root,base;
 	FS e;
@@ -127,5 +126,4 @@ FS Eigen(CV w)
 		e.r = (base-root);
 
 		return e;
-	
 }
