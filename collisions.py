@@ -33,9 +33,7 @@ if __name__=="__main__":
     
     for i in range(len(istuff)):
         
-
-        if istuff[i].d>1:
-            Yorp(target,parameters,istuff[i].impacttime,oldtime,myomega)
+        Yorp(target,parameters,istuff[i].impacttime,oldtime,myomega)
         
         Collision(target,istuff[i])
         

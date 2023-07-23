@@ -292,12 +292,10 @@ def Landslides(target,parameters,impacttime,myomega):
     else:
         print("Ran successfully slide", parameters["slides"])
     
+    parameters=Parameter()
     Fit(parameters)
-    try:
-        parameters = Parameter()
-    except FileNotFoundError:
-        print("Failed in importing the data")
-        return
+    parameters = Parameter()
+    
     
     target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
     target.d = float( parameters["dia"])
