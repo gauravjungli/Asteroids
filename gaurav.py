@@ -182,7 +182,7 @@ def Initialize(parameters,target):
     for i in range(res):
         base[i,0] = offset + dx * (i+ 0.5)
     np.savetxt(mydir+"/base.txt",base,delimiter=",")
-   # Gravitycalc(parameters)
+    Gravitycalc(parameters)
 
 #%%  Verified
 
@@ -292,7 +292,7 @@ def ExportOmega(myomega,parameters):
 
 def Landslides(target,parameters,impacttime,myomega):
     
-    target.d = target.d / (1 + float(parameters["uni_h"]) * float(parameters["epsilon"]))
+   # target.d = target.d / (1 + float(parameters["uni_h"]) * float(parameters["epsilon"]))
     parameters["omega"] = target.omega[2] / (G * (4/3) * math.pi * target.dens)**0.5
     parameters["slides"] = int(parameters["slides"])+1
     parameters["dia"] = target.d
@@ -321,7 +321,7 @@ def Landslides(target,parameters,impacttime,myomega):
     target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
     target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
-   # Gravitycalc(parameters)
+    Gravitycalc(parameters)
     
     myomega.append([impacttime, target.omega[2]])
     print("Omega after the Landslides", target.omega[2])

@@ -12,7 +12,8 @@ import re
 from gaurav import Parameter
 
 #from mpl_toolkits.mplot3d import Axes3D
-parameters=Parameter()
+parameters={}
+Parameter(parameters)
 omega=float(parameters["omega_in"])
 delta=float(parameters["delta"])
 slides=int(parameters["slides"])
@@ -30,7 +31,7 @@ file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
 #plt.close()
 #%%    
 fig = plt.figure(figsize=(6,6))
-for count in range(slides):
+for count in range(1,slides):
     file=glob.glob(file1+"/field_"+str(count+1)+".csv",recursive=True)
     w=np.loadtxt(file[0],delimiter=",",dtype=float)
     print(file)
@@ -42,7 +43,7 @@ for count in range(slides):
     plt.clf()
     plt.axis('equal')
     plt.plot(x,y,'-b')
-    x=-np.sin(w[:,0])*(1+epsilon*(w[:,1]+w[:,2]))
+    x=-np.sin(w[:,0])*(1+(epsilon*w[:,1]+gamma*w[:,2]))
     plt.plot(x,y,'-b')
     plt.title("lanslide number="+str(count+1))
     plt.pause(0.2)
@@ -65,6 +66,7 @@ for file in dirFiles:
     plt.clf()
     x=(w[:,0])
     y=(w[:,1]+gamma/epsilon*w[:,2])
+   # y=(w[:,3])
     ang_mom.append([count,sum(w[:,4])*dx])
     lin_mom.append([count,sum(w[:,3])*dx])
     count +=1
@@ -78,6 +80,11 @@ ang_mom=np.array(ang_mom)
 plt.plot(ang_mom[:,0],ang_mom[:,1])
 lin_mom=np.array(lin_mom)
 plt.plot(lin_mom[:,0],lin_mom[:,1])
+
+#%%
+grav=np.loadtxt("grav.txt")
+plt.plot(x,grav[2:198,0])
+plt.plot(x,grav[2:198,1])
     
 # for count in range(len(omega)):
 

@@ -28,7 +28,7 @@ void Write (const vector<CV>& w, string file)
 ofstream myfile(file);
 if (!myfile) Error("Can't open output file field",file);
 for (int i=2;i<res-2;i++)
-		myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].q<<","<<w[i].r<<","<<w[i].psi<<","<<dia<<"\n";
+	myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<","<<dia<<"\n";
 myfile.close();
 }
 

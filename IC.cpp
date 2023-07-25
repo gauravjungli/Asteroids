@@ -38,17 +38,25 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string fil
     vector <double> h(res,uni_h), u(res,0),v(res,0);
     
 //Uncomment this one only if you want special initial conditions
-  /*  for (int j=0;j<res;j++)
+    
+    Base(b,x,file);
+
+    for (int j=0;j<res;j++)
     {
         
-        b[j]=sin(x[j]);
-        h[j]=uni_h-b[j];
+        // if (b[j]<-1)
+        // {
+        //     h[j]=min_h;
+        //     b[j]=b[j]+epsilon/gamma*uni_h;
+        // }
+
+        // if (b[j]>1)
+        // {
+        //     h[j]=gamma/epsilon*(b[j]-1);
+        //     b[j]=1;
+        // }
         
-    } */
-    
-
-
-    Base(b,x,file);
+    } 
     
     if (w.empty())
     {
@@ -99,7 +107,7 @@ while(getline(myfile,line))
     getline(iss, word2, ',');       
 
     x[i]=stod(word1);
-	b[i]=stod(word2);
+	b[i]=stod(word2)-epsilon/gamma*uni_h;
 	i++;
 }
 myfile.close();
