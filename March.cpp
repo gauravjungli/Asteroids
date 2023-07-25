@@ -37,11 +37,11 @@ void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_ini
 	}	
 }
 
-void March (vector<CV>& w, double final_t)
+void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 {	
 	double dt = dx / 4;
 	static int timesteps=0;
-	double sum1=0;
+	double sum1=0,sum=0;
 	vector<CV> wl(w),wr(w);
 	
 	string file=string("output/files_")+to_string(delta)+string("_")+to_string(omega_initial)+string("/data");
@@ -49,7 +49,7 @@ void March (vector<CV>& w, double final_t)
 		filesystem::create_directory(file);
 	static double t=0;
 	int check_t=1; 
-	while(t<final_t)
+	while(t<finalt)
 	{
 		if(timesteps%dump==0)
 		{
@@ -62,23 +62,30 @@ void March (vector<CV>& w, double final_t)
 		
 		Predictor(w,wl,wr,dt);
 		Corrector(w, wl, wr, w_init, dt);
-		Shed(w);
+		Shed(w,myfile, Ang_Shed);
 		Time_step(wl,wr,dt,t,timesteps);
 
-		double sum=0;
+		sum=0;
 		for (int i=2;i<res-2;i++)
-			sum+=w[i].r*dx;
+			sum+=PI/2*(w[i].v*(pow(1+gamma*w[i].b+epsilon*w[i].h,4)-pow(1+gamma*w[i].b,4)))*dx;
 		if (t>check_t)
 		{	
-			if (sum<0.1*epsilon)
-				return;
+			if (abs(sum)<0.01*epsilon )
+			{	
+				break;
+			}
+			sum1=sum;
 			check_t++;
 		}
 		cout<<std::setprecision(18)<<t<<"  "<<sum<<endl;
-		sum1=sum;
 		
+
 	}
-		par["time"]=to_string(past_time+t);
+	myfile<<"Simulation ran for time --> " <<t<<endl;
+	myfile<<"Residual Angular Momentum --> " <<sum<<endl;
+	myfile<<"Rate of change of Angular Momentum -->"<<sum1-sum<<endl;
+	Ang_Shed+=sum;
+	
 }
 
 
