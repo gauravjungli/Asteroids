@@ -29,16 +29,14 @@ int main()
 	ofstream myfile(file2,std::ofstream::app);
 
 	myfile<<"Impact number "<<slides<<endl;
-	myfile<<"Initial omega --> "<<omega<<endl<<" Initial Inertia from the parameters--> "<<par["jinertia"]<<endl ;
+	myfile<<"Initial omega --> "<<omega<<endl<<" Initial Inertia --> "<<par["jinertia"]<<endl ;
+	myfile<<"Uniform height --> "<<uni_h<<endl;
 
 	Uniform_IC(w,x,g,file);
 
 	par["jinertia"]=to_string(Inertia(w,1),15);
 	par["jinertia1"]=to_string(Inertia(w,2),15);
 	double Ang_Mom=stod(par["jinertia"])*omega;
-
-	myfile<<" Initial Inertia from the calculation--> "<<par["jinertia"]<<endl ;
-
 
 	March(w,myfile,Ang_Shed);
 	
@@ -49,7 +47,7 @@ int main()
 	Write(w,file1);
 	Write(x,w,file);
 	Write (par,"parameters");
-	myfile<<"Initial Angular Momentum --> "<<stod(par["jinertia"])*omega<<endl<<" Total Angular Momentum Shed --> "<<Ang_Shed<<endl ;
+	myfile<<"Initial Angular Momentum --> "<<Ang_Mom<<endl<<" Total Angular Momentum Shed --> "<<Ang_Shed<<endl ;
 	myfile<<"Final omega --> "<<par["omega"]<<endl<<" Final Inertia--> "<<par["jinertia"]<<endl ;
 
 	auto end = sc.now();

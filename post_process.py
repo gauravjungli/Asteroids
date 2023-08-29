@@ -66,26 +66,27 @@ for file in dirFiles:
     plt.clf()
     x=(w[:,0])
     y=(w[:,1]+gamma/epsilon*w[:,2])
-   # y=(w[:,3])
+    # y=(w[:,3])
     ang_mom.append([count,sum(w[:,4])*dx])
     lin_mom.append([count,sum(w[:,3])*dx])
     count +=1
-  #  if count%50!=0:
-    #     continue
+    if count%10!=0:
+          continue
     plt.plot(x,y)
     plt.title("Time="+str(count))
     plt.pause(0.1)  
-   # print(sum(w[:,1]))  
-ang_mom=np.array(ang_mom)
-plt.plot(ang_mom[:,0],ang_mom[:,1])
-lin_mom=np.array(lin_mom)
-plt.plot(lin_mom[:,0],lin_mom[:,1])
-
+    # print(sum(w[:,1]))  
+# ang_mom=np.array(ang_mom)
+# plt.plot(ang_mom[:,0],ang_mom[:,1])
+# lin_mom=np.array(lin_mom)
+# plt.plot(lin_mom[:,0],lin_mom[:,1])
+os.chdir("..")
 #%%
-grav=np.loadtxt("grav.txt")
-plt.plot(x,grav[2:198,0])
-plt.plot(x,grav[2:198,1])
-    
+x=w[:,0]
+grav=np.loadtxt(file1+"/grav.txt")
+plt.plot(x,grav[2:-2,0])
+plt.plot(x,grav[2:-2,1])
+plt.grid()
 # for count in range(len(omega)):
 
 #     file=glob.glob(file1+"/data/field_"+str(count)+".csv",recursive=True)
@@ -102,3 +103,13 @@ plt.plot(x,grav[2:198,1])
 #     plt.pause(0.1)  
 #plt.close()  
 
+#%%
+
+omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+#plt.clf()
+#plt.plot(omega[:,0],(2*math.pi/omega[:,1]/3600),linewidth=2)
+plt.plot(omega[:,0],(2*math.pi/omega[:,2]/3600),linewidth=2)
+plt.plot(omega[:,0],(2*math.pi/omega[:,3]/3600),linewidth=2)
+
+#plt.plot(omega[:,0],(omega[:,1]),linewidth=2)
+#plt.plot(omega[:,0],(omega[:,2]),linewidth=2)

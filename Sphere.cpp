@@ -2,14 +2,14 @@
 
 CV::CV(double h, double u, double v, double b, Grav g, double x )
 {	
-	if (h<min_h) 
+	if (h<=min_h) 
 	{  if (h<0) cout<<"Much smaller values encountered "<<h<<"  "<<x<< endl;
 	h=min_h;
 	u=0; v=0;
 	}
     this->h=h;this->u=u;this->v=v;this->b=b;
-	this->g=g;this->x=x;this->psi=Psi(*this); this->w=h+b;
 	lambda= (1+gamma*b);
+	this->g=g;this->x=x;this->psi=Psi(*this); this->w=h+gamma/epsilon*b;
     this->p=h*sin(x)*pow(lambda,2); 
 	this->q=h*u*sin(x)*pow(lambda,3); 
 	this->r=h*(v)*sin(x)*sin(x)*pow(lambda,3); 
@@ -55,9 +55,7 @@ FS Source( CV w, CV w1, CV w2, CV w3, CV w4)
 	FS bf=Body_force( w,  w1,  w2, w3,  w4);
 	FS fr=Friction(w,bf);
 	
-
 	source.p=0;
-
 
 	double grad_b= gamma*((w3.b-w1.b)/dx)*((w1.h+w2.h+w3.h+w4.h)/4)*((w1.psi+w2.psi+w3.psi+w4.psi)/4)*(sin(w3.x)+sin(w1.x))/2*((pow((w1.lambda+w2.lambda)/2,3)+pow((w3.lambda+w4.lambda)/2,3))/2);
 
@@ -119,7 +117,7 @@ FS Eigen(CV w)
 {
 	double root,base;
 	FS e;
-		root =sqrt(epsilon*w.psi*w.p/sin(w.x))/pow(w.lambda,2);
+		root =sqrt(epsilon*std::max(w.psi,0.0)*w.p/sin(w.x))/pow(w.lambda,2);
 		base= w.q/(w.p*pow(w.lambda,2));
 		e.p = base;
 		e.q = (base+root);

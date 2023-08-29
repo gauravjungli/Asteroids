@@ -138,7 +138,7 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string fil
 void Grid(vector<double> & x);
 //To incorporate topography 
 void Base(vector<CV>& w, vector<double> & b,vector<double>& h);
-void Base( vector<double>& b,vector<double>& x, string file);
+void Base ( vector<double>& b,vector<double>& h,vector<double>& x, string file);
 //-------------------------------------------------------------------------
 
 ////////////// solver.cpp

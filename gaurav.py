@@ -17,8 +17,9 @@ import os
 from scipy.special import ellipk, ellipe,elliprf,elliprj
 import matplotlib.pyplot as plt
 import multiprocessing 
-from functions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf
+from functions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf,qstarf
 import scipy.stats
+from scipy.integrate import simps
 
 #%%  Verified
 
@@ -50,6 +51,7 @@ class Target:
         self.kvg=0.3
         self.grav=G*self.M/(self.d/2)**2
         self.obliq=float(parameters["obliq"])
+        self.dstarave=qstarf(self, math.pi / 4, velave)[2]
         
 
 class Impactor:
@@ -183,6 +185,40 @@ def Initialize(parameters,target):
         base[i,0] = offset + dx * (i+ 0.5)
     np.savetxt(mydir+"/base.txt",base,delimiter=",")
     Gravitycalc(parameters)
+    
+ #%%   
+
+def Height(parameters,target,impactor):
+    
+    dir = os.getcwd()
+    mydir="output/files_"+str(format(target.delta,".6f"))+"_"+str(format(float(parameters["omega_in"]),".6f"))
+    mydir=os.path.join(dir,mydir)
+    res=int(parameters["res"])
+    offset=float(parameters["offset"])
+    gamma=float(parameters["gamma"])
+    epsilon=float(parameters["epsilon"])
+    base=np.loadtxt(mydir+"/base.txt",delimiter=",",dtype=float)
+    
+    def gaussian(x, mean, std_dev):
+        return np.exp(-((x - mean)**2) / (2 * std_dev**2)) / (std_dev * np.sqrt(2 * np.pi))
+    if impactor!=None:
+        mean = impactor.Phi        # Mean of the distribution in degrees
+        std_dev =   math.pi/10     # Standard deviation of the distribution in degrees
+    
+        gaussian_values = gaussian(base[:,0], mean, std_dev)
+    
+        dx=(math.pi-2*offset)/res
+        area_under_curve = sum(gaussian_values*np.sin(base[:,0])*dx)
+        scaling_factor = min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*math.pi / area_under_curve
+        #height = gaussian_values * scaling_factor
+        height= min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*np.ones(res)
+        
+    else:
+        #height=[ max(0.1,0.20*gamma/epsilon*b[1]) for b in base]
+        height=np.ones(res)
+    base[:,1]=base[:,1]-epsilon/gamma*height
+    base=np.column_stack((base,height))
+    np.savetxt(mydir+"/base.txt",base,delimiter=",")
 
 #%%  Verified
 
@@ -225,7 +261,7 @@ def Gravitycalc(parameters):
     num_processes = multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=num_processes)
     
-    arguments=[(R[i]+epsilon*np.sin(w[i,0]),Z[i]+ epsilon*np.cos(w[i,0]),r,z) for i in range(int(Res/2))]
+    arguments=[(R[i]+epsilon/2*rad*np.sin(w[i,0]),Z[i]+ epsilon/2*rad*np.cos(w[i,0]),r,z) for i in range(int(Res/2))]
     
     grav = pool.starmap(Gravity, arguments)
     grav=np.array(grav)
@@ -290,7 +326,7 @@ def ExportOmega(myomega,parameters):
 
 #%%
 
-def Landslides(target,parameters,impacttime,myomega):
+def Landslides(target,target1,target2,parameters,impacttime,myomega):
     
    # target.d = target.d / (1 + float(parameters["uni_h"]) * float(parameters["epsilon"]))
     parameters["omega"] = target.omega[2] / (G * (4/3) * math.pi * target.dens)**0.5
@@ -298,6 +334,7 @@ def Landslides(target,parameters,impacttime,myomega):
     parameters["dia"] = target.d
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
     parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
+
     try:
         Exparameter(parameters)
     except IOError:
@@ -323,12 +360,12 @@ def Landslides(target,parameters,impacttime,myomega):
     
     Gravitycalc(parameters)
     
-    myomega.append([impacttime, target.omega[2]])
+    myomega.append([impacttime, target1.omega[2],target2.omega[2],target.omega[2]])
     print("Omega after the Landslides", target.omega[2])
 
 #%% Verified
 
-def Yorp(target,parameters,impacttime,oldtime,myomega):
+def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
     
     wobblecalcf(target,impacttime,oldtime)  #which omega to use because it is being changed by the yorp
     while impacttime > oldtime + 10:
@@ -363,13 +400,21 @@ def Yorp(target,parameters,impacttime,oldtime,myomega):
             return
         omegaLimit = (G*4/3* math.pi*target.dens)**0.5
         index = min(round((impacttime - oldtime) / 50), 2000)
+        temp=target.omega[2]
         target.omega[2] = 2 * math.pi / (float(omegOrb[index][1]) * 3600)
+        target1.omega[2]=target1.omega[2]+target.omega[2]-temp
+        target2.omega[2]=target2.omega[2]+target.omega[2]-temp
         target.obliq = float(omegOrb[index][2])
-        if target.omega[2] > 0.90 * omegaLimit:
-            print("Too fast spinning causing landslides")
-            Landslides(target,parameters,impacttime,myomega)
         oldtime = oldtime + 10**5
-        myomega.append([impacttime, target.omega[2]])
+        myomega.append([min(impacttime,oldtime), target.omega[2],target1.omega[2],target2.omega[2]])
+        if target2.omega[2] > 0.9*omegaLimit:
+            print("Too fast spinning causing landslides")
+            #parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
+            #print(parameters["uni_h"])
+            Height(parameters,target2,impactor=None)
+            Landslides(target2,target,target1,parameters,min(impacttime,oldtime),myomega)
+        
+        
     print("Omega after the yorp effect:", target.omega[2])
 
 
@@ -386,19 +431,17 @@ def Cumdistr(parameters):
 
 
 def Istuff(target,tmaxby,cumdistr):
-    dstarave = qstarf(target, math.pi / 4, velave)[2]
-    print("dstar", dstarave)
     prob = probi * tmaxby * (target.d/2) ** 2
 
-    numgtd = round(astnum(dstarave,cumdistr)[0])
+    numgtd = round(astnum(target.d,cumdistr)[0])#restore it to dstarave
     dialittle = cumdistr[-1][0]
-    dexplicit = max(dialittle, 0.05 * dstarave)
+    dexplicit = max(1.1*dialittle, 0.025 * target.dstarave)#restore it to 0.025
     binexplicit = astnum(dexplicit,cumdistr)[1]
     dexplicit = cumdistr[binexplicit + 1][0]
     nexplicit = round(astnum(dexplicit,cumdistr)[0])
 
     nexpimpactors = round(prob * nexplicit)
-    dimplicit =  0.1 * dexplicit
+    dimplicit =  max(0.05 * dexplicit,1.1*dialittle)
     binimplicit = astnum(dimplicit,cumdistr)[1]
 
     istuff=[]
@@ -406,8 +449,8 @@ def Istuff(target,tmaxby,cumdistr):
         istuff.append(Impactor(tmaxby,numgtd,nexplicit,cumdistr,True))
 
 
-    for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
-        istuff.append(Impactor(tmaxby,cumdistr[j,0],cumdistr[j+1,0],cumdistr,False))
+    #for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
+     #   istuff.append(Impactor(tmaxby,cumdistr[j,0],cumdistr[j+1,0],cumdistr,False))
 
     istuff.sort(key=lambda x: x.impacttime)
     return istuff

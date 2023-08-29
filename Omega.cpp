@@ -10,7 +10,9 @@ double Inertia(vector<CV>& w, int no)
 	4*(pow(1+gamma*w[i].b+epsilon*w[i].h,5)-1)*pow(sin(w[i].x),3)+
 	(pow(1+gamma*w[i+1].b+epsilon*w[i+1].h,5)-1)*pow(sin(w[i+1].x),3)); 
 	
-	integral2+=PI/5*(pow(1+gamma*w[i].b+epsilon*w[i].h,5)-1)*(2-pow(sin(w[i].x),2))*sin(w[i].x)*dx; 
+	integral2+=PI/5*2*dx/6*((pow(1+gamma*w[i-1].b+epsilon*w[i-1].h,5)-1)*(2-pow(sin(w[i-1].x),2))*sin(w[i-1].x)+
+	4*(pow(1+gamma*w[i].b+epsilon*w[i].h,5)-1)*(2-pow(sin(w[i].x),2))*sin(w[i].x)+
+	(pow(1+gamma*w[i+1].b+epsilon*w[i+1].h,5)-1)*(2-pow(sin(w[i+1].x),2))*sin(w[i+1].x)); 
 	}
 
 	if (no==1)

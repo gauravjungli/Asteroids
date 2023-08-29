@@ -28,7 +28,7 @@ def astnum(dia,cumdistr):
 
 #%%  verified
 
-def Collision(target,impactor):
+def Collision(target,target1,target2,impactor,myomega):
     
     zeta = zetaf(impactor.phi, target.d, target.atype)
     delamomentum = target.d/2 * impactor.M * impactor.vel * math.sin(impactor.phi) * zeta * np.array([-math.sin(impactor.theta)
@@ -36,13 +36,12 @@ def Collision(target,impactor):
                             -math.sin(impactor.theta) * math.sin(impactor.Theta) * math.cos(impactor.Phi) + math.cos(impactor.theta) *
                             math.cos(impactor.Theta),math.sin(impactor.theta) * math.sin(impactor.Phi)])
     delomega = np.divide(delamomentum , target.jinertia)  
-    qstar = qstarf(target, impactor.phi, impactor.vel)[0]
-    qq = (impactor.M / 2) * impactor.vel ** 2 / target.M
-    qratio = qq / qstar
-    delomegdrain =  omegdrainf(target,impactor) if qratio < 0.5 else [0, 0, 0]  # 3 components, parallel to omeg negative in function
+
+    delomegdrain =  omegdrainf(target,impactor)
     delomega = delomega + [0,0,delomegdrain]
     target.omega = target.omega + delomega
-    
+    target2.omega=target2.omega + delomega
+    myomega.append([impactor.impacttime,target1.omega[2], target.omega[2],target2.omega[2]])
     print("Omega after the collision", target.omega[2])
         
 #%%  Verified
@@ -57,7 +56,7 @@ def getdiaf(num,cumdistr):
 
 #%% verified
 
-def omegdrainf(target,impactor): #need to find Y upon distribution of size
+def omegdrainf(target,impactor):
 
     pi2=target.grav*impactor.d/2/impactor.vel**2
     pi3=target.Y0/(target.dens*impactor.vel**2)

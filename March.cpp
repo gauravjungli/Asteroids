@@ -59,10 +59,11 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 		
 		vector<CV> w_init(w);
 		
-		
-		Predictor(w,wl,wr,dt);
-		Corrector(w, wl, wr, w_init, dt);
 		Shed(w,myfile, Ang_Shed);
+		Predictor(w,wl,wr,dt);
+		Shed(w,myfile, Ang_Shed);
+		Corrector(w, wl, wr, w_init, dt);
+		
 		Time_step(wl,wr,dt,t,timesteps);
 
 		sum=0;
@@ -70,7 +71,7 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 			sum+=PI/2*(w[i].v*(pow(1+gamma*w[i].b+epsilon*w[i].h,4)-pow(1+gamma*w[i].b,4)))*dx;
 		if (t>check_t)
 		{	
-			if (abs(sum)<0.01*epsilon )
+			if (abs(sum)<epsilon*epsilon )
 			{	
 				break;
 			}
@@ -78,9 +79,9 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 			check_t++;
 		}
 		cout<<std::setprecision(18)<<t<<"  "<<sum<<endl;
-		
 
 	}
+	Shed(w,myfile, Ang_Shed);
 	myfile<<"Simulation ran for time --> " <<t<<endl;
 	myfile<<"Residual Angular Momentum --> " <<sum<<endl;
 	myfile<<"Rate of change of Angular Momentum -->"<<sum1-sum<<endl;

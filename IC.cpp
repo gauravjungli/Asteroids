@@ -38,25 +38,25 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string fil
     vector <double> h(res,uni_h), u(res,0),v(res,0);
     
 //Uncomment this one only if you want special initial conditions
-    
-    Base(b,x,file);
 
-    for (int j=0;j<res;j++)
-    {
-        
-        // if (b[j]<-1)
-        // {
-        //     h[j]=min_h;
-        //     b[j]=b[j]+epsilon/gamma*uni_h;
-        // }
+    Base(b,h,x,file);
 
-        // if (b[j]>1)
-        // {
-        //     h[j]=gamma/epsilon*(b[j]-1);
-        //     b[j]=1;
-        // }
+    // for (int j=0;j<res;j++)
+    // {
+    //     double max_h=1;
+    //     if (b[j]<-max_h)
+    //     {
+    //         h[j]=min_h;
+    //         b[j]=b[j]+epsilon/gamma*uni_h;
+    //     }
+
+    //     if (b[j]>max_h)
+    //     { 
+    //         h[j]=h[j]+gamma/epsilon*(b[j]-max_h);
+    //         b[j]=max_h;
+    //     }
         
-    } 
+    // } 
     
     if (w.empty())
     {
@@ -93,7 +93,7 @@ void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
         
 }
 
-void Base ( vector<double>& b,vector<double>& x, string file)
+void Base ( vector<double>& b,vector<double>& h,vector<double>& x, string file)
 {
 ifstream myfile(file+"/base.txt");
 
@@ -102,12 +102,14 @@ int i=0;
 while(getline(myfile,line))
 {
 	istringstream iss(line);
-    string word1,word2;
+    string word1,word2,word3;
     getline(iss, word1, ',');
-    getline(iss, word2, ',');       
+    getline(iss, word2, ','); 
+    getline(iss, word3, ',');        
 
     x[i]=stod(word1);
-	b[i]=stod(word2)-epsilon/gamma*uni_h;
+	b[i]=stod(word2);
+    h[i]=stod(word3);
 	i++;
 }
 myfile.close();
