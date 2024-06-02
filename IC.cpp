@@ -11,7 +11,7 @@ const double xmin=   0;
 const double weight= stod(par["weight"]); 
 const double uni_h= stod(par["uni_h"]);
 const double finalt= stod(par["finalt"]);
-const double delta= stod(par["delta"]); 
+const double Delta= stod(par["delta"]); 
 const double theta= stod(par["theta"]); 
 const double slides= stod(par["slides"]);
 const double epsilon= stod(par["epsilon"]); 
@@ -22,7 +22,7 @@ const double past_time=stod(par["time"]);
 const double dia=stod(par["dia"]);
 const double min_h=pow(dx,4);
 const double gamma=stod(par["gamma"]);
-
+double delta=Delta;
 void Grid(vector<double> & x)
 {
     for (int i=0;i<res;i++)

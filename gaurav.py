@@ -334,6 +334,7 @@ def Landslides(target,target1,target2,parameters,impacttime,myomega):
     parameters["dia"] = target.d
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
     parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
+    parameters["time"]=impacttime
 
     try:
         Exparameter(parameters)
@@ -412,7 +413,7 @@ def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
             #parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
             #print(parameters["uni_h"])
             Height(parameters,target2,impactor=None)
-            Landslides(target2,target,target1,parameters,min(impacttime,oldtime),myomega)
+            #Landslides(target2,target,target1,parameters,min(impacttime,oldtime),myomega)
         
         
     print("Omega after the yorp effect:", target.omega[2])

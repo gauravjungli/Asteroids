@@ -17,9 +17,14 @@ import math
 
 #%%
 
-
+# while(True):
+#     istuff = Istuff(target,tmaxby,cumdistr)
+#     if max(node.d for node in istuff)>1:
+#         break
 
 #%%
+
+
 
 if __name__=="__main__":
     
@@ -37,8 +42,9 @@ if __name__=="__main__":
     fig = plt.figure(figsize=(10,6))
     while(True):
         istuff = Istuff(target,tmaxby,cumdistr)
-        if max(node.d for node in istuff)>1:
+        if max(node.d for node in istuff)>target.dstarave:
             break
+
     oldtime = 0
     myomega=[[0,target.omega[2],target1.omega[2],target2.omega[2]]]
     
@@ -52,7 +58,7 @@ if __name__=="__main__":
         
         if istuff[i].explicit:
             Height(parameters,target2,istuff[i])
-            Landslides(target2,target,target1,parameters,istuff[i].impacttime,myomega)
+            #Landslides(target2,target,target1,parameters,istuff[i].impacttime,myomega)
                
         print(istuff[i].d)
         oldtime = istuff[i].impacttime

@@ -30,10 +30,11 @@ density=float(parameters["density"])
 rad=float(parameters["dia"])/2
 omega=0.80
 delta=20
-slides=4
+slides=[4,10,13,19,23,27]
 epsilon=0.003
 file1="output/saved_data/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
-file=glob.glob(file1+"/field_"+str(slides)+".csv",recursive=True)
+
+file=glob.glob(file1+"/field_"+str(slides[5])+".csv",recursive=True)
 w=np.loadtxt(file[0],delimiter=",",dtype=float)
 
 #Ellippi = np.loadtxt('I.txt')
