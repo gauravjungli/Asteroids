@@ -27,7 +27,7 @@ extern const double xmin;
 extern const double weight;
 extern const double uni_h;
 extern const double finalt;
-extern const double delta;
+extern const double Delta;
 extern const double theta;
 extern const double slides;
 extern const double epsilon;
@@ -38,7 +38,7 @@ extern const double past_time;
 extern const double dia;
 extern const double min_h;
 extern const double Gamma;
-
+extern double delta;
 //------------------------------------------------------------------------------
 
 //Class for storing a 2D gravity field

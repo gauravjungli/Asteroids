@@ -44,7 +44,7 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 	double sum1=0,sum=0;
 	vector<CV> wl(w),wr(w);
 	
-	string file=string("output/files_")+to_string(delta)+string("_")+to_string(omega_initial)+string("/data");
+	string file=string("output/files_")+to_string(Delta)+string("_")+to_string(omega_initial)+string("/data");
 	if(!filesystem::exists(file))
 		filesystem::create_directory(file);
 	static double t=0;
@@ -58,7 +58,7 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 		}
 		
 		vector<CV> w_init(w);
-		
+		//delta=std::min(Delta*t,Delta);
 		Shed(w,myfile, Ang_Shed);
 		Predictor(w,wl,wr,dt);
 		Shed(w,myfile, Ang_Shed);

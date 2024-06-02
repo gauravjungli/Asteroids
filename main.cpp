@@ -8,7 +8,7 @@ int main()
 	chrono::steady_clock sc;
 	auto start = sc.now();
 	double Ang_Shed=0;
-	std::string file="output/files_"+std::to_string(delta)+"_"+std::to_string(omega_initial);
+	std::string file="output/files_"+std::to_string(Delta)+"_"+std::to_string(omega_initial);
 	std::cout<<file<<endl;
 	
 	vector<Grav> g(res);
@@ -29,6 +29,7 @@ int main()
 	ofstream myfile(file2,std::ofstream::app);
 
 	myfile<<"Impact number "<<slides<<endl;
+	myfile<<"Impact time "<<past_time<<endl;
 	myfile<<"Initial omega --> "<<omega<<endl<<" Initial Inertia --> "<<par["jinertia"]<<endl ;
 	myfile<<"Uniform height --> "<<uni_h<<endl;
 

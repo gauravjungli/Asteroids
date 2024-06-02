@@ -332,6 +332,7 @@ def Landslides(target,target1,target2,parameters,impacttime,myomega):
     parameters["dia"] = target.d
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
     parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
+    parameters["time"]=impacttime
 
     try:
         Exparameter(parameters)

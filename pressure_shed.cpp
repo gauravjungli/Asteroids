@@ -5,7 +5,7 @@ void Shed(vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 for ( int j = 2; j < res-2; j++)
 {
 	w[j].psi=w[j].psi/(1-w[j].u*tan(delta)*Gamma*max((w[j].b-w[j-1].b),(w[j+1].b-w[j].b))/dx);
- 	if (w[j].psi <= epsilon ) 
+ 	if (w[j].psi <= pow(epsilon,1) ) 
 	{	
 		Ang_Shed=Ang_Shed+(PI/2*(w[j].v*(pow(1+Gamma*w[j].b+epsilon*w[j].h,4)-pow(1+Gamma*w[j].b,4)))+2*PI/5*(
 					omega*(pow(1+Gamma*w[j].b+epsilon*w[j].h,5)-pow(1+Gamma*w[j].b,5))))*dx;
