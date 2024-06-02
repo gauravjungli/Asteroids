@@ -8,7 +8,7 @@ Created on Tue Jul 18 11:13:39 2023
 import random
 import math
 import subprocess
-from scipy.interpolate import make_interp_spline
+from scipy.interpolate import make_interp_spline, CubicSpline
 import numpy as np
 import glob
 from circle_fit import taubinSVD
@@ -20,12 +20,27 @@ import multiprocessing
 from functions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf,qstarf
 import scipy.stats
 from scipy.integrate import simps
-
+import time
 #%%  Verified
 
 class Target:
     
+    """Represents a target object with physical properties and dynamics."""
+
     def __init__(self, parameters):
+        """Initializes a Target object.
+
+        Args:
+            parameters (dict): A dictionary of parameters including:
+                - dia_in: Diameter (in meters)
+                - atype: Type of target ("S-Type" or "C-Type")
+                - delta: friction angle
+                - omega_in: Angular velocity
+                - K: Thermal conductivity
+                - obliq: Obliquity
+                - sma: Semi-major axis
+        """
+
         self.d=float(parameters["dia_in"])
         self.atype=parameters["atype"]
         self.delta=float(parameters["delta"])
@@ -49,9 +64,16 @@ class Target:
         self.jinertia= [2/5 * self.M * (self.d/2)**2]*3
         self.omega=[0,0, (G * 4 / 3 * math.pi * self.dens) ** 0.5* float(parameters[ "omega_in"])]
         self.kvg=0.3
+        self.K=float(parameters["K"])
         self.grav=G*self.M/(self.d/2)**2
         self.obliq=float(parameters["obliq"])
         self.dstarave=qstarf(self, math.pi / 4, velave)[2]
+        # Set the seed for NumPy's random number generator
+        np.random.seed(int(time.time()))
+        self.coeff_f,self.coeff_g=shape_gen(self.K)
+        self.sma= float(parameters["sma"])
+        self.f_spline, self.g_spline = read_f_g_spline(parameters)
+
         
 
 class Impactor:
@@ -82,36 +104,24 @@ class Impactor:
         d=np.random.randint(low=low, high=high)
         return getdiaf(d,cumdistr)
 
-#%%
-
-def Nondimensionalize(parameters,w,r):
-    
-    dia=float(parameters["dia"])
-    jinertia=float(parameters["jinertia"])
-    jinertia1=float(parameters["jinertia1"])
-    parameters["dia"]=dia*r
-    parameters["jinertia"]=jinertia/r**5
-    parameters["jinertia1"]=jinertia1/r**5
-    w[:,1]=w[:,1]/r
     
 #%%
 
 def Fit(parameters):
     
     
-    gamma=float(parameters["gamma"])
-    
-    
+    Gamma=float(parameters["Gamma"])
+    file=Output_File(parameters,"output",["base.txt"])
     try:
-        w,file=Shape(parameters)
+        w=np.loadtxt(file,dtype=float,delimiter=",")
     except:
         print("cannot import shape")
         return
     
     #uncomment for the special fit
     #res=int(parameters["res"])
-    #x=np.sin(w[:,0])*(1+gamma*w[:,1])
-    #y=np.cos(w[:,0])*(1+gamma*w[:,1])
+    #x=np.sin(w[:,0])*(1+Gamma*w[:,1])
+    #y=np.cos(w[:,0])*(1+Gamma*w[:,1])
      
     #point = []
     #for i in range(res):
@@ -119,33 +129,20 @@ def Fit(parameters):
      #   point.append([-x[i],y[i]])
     #xc, yc, r, sigma = taubinSVD(point)
     
-    r=1+gamma*(min(w[:,1])+max(w[:,1]))/2
-    w[:,1]=((1+gamma*w[:,1])-r)/gamma
-    Nondimensionalize(parameters,w,r)
+    r=1+Gamma*(min(w[:,1])+max(w[:,1]))/2
+    w[:,1]=((1+Gamma*w[:,1])-r)/(Gamma*r)
+    parameters["dia"]=float(parameters["dia"])*r
+    parameters["jinertia"]=float(parameters["jinertia"])/r**5
+    parameters["jinertia1"]=float(parameters["jinertia1"])/r**5
     Exparameter(parameters)
-    np.savetxt(file+"/base.txt",w,delimiter=",")
+    np.savetxt(file,w,delimiter=",")
     print ("The best fit value of r is ", r)
 
-#%%
 
-def Shape(parameters):
-     
-     omega=float(parameters["omega_in"])
-     delta=float(parameters["delta"])
-     
-     file=os.path.join(os.getcwd(),"output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f")))
-     try:
-         w=np.loadtxt(file+"/base.txt",dtype=float,delimiter=",")
-     except:
-         print("No file available for the fit")
-         return None, file
-     return w,file
- 
 #%%   Verified
 
 def Parameter(parameters):
-    dir = os.getcwd()
-    inputfile = os.path.join(dir, "parameters")
+    inputfile = Output_File(parameters, "input" ,["parameters"])
     with open(inputfile, "r") as file:
         for line in file:
             line = line.strip()
@@ -162,9 +159,7 @@ def Parameter(parameters):
 
 def Initialize(parameters,target):
     
-    dir = os.getcwd()
-    mydir="output/files_"+str(format(target.delta,".6f"))+"_"+str(format(float(parameters["omega_in"]),".6f"))
-    mydir=os.path.join(dir,mydir)
+    mydir=Output_File (parameters,"output")
     if os.path.exists(mydir):
         subprocess.run(["rm", "-r", mydir])
     else:
@@ -188,20 +183,20 @@ def Initialize(parameters,target):
     
  #%%   
 
-def Height(parameters,target,impactor):
+def Height(parameters,target,impactor=None,profile=None):
     
-    dir = os.getcwd()
-    mydir="output/files_"+str(format(target.delta,".6f"))+"_"+str(format(float(parameters["omega_in"]),".6f"))
-    mydir=os.path.join(dir,mydir)
+    mydir=Output_File (parameters,"output",["base.txt"])
     res=int(parameters["res"])
     offset=float(parameters["offset"])
-    gamma=float(parameters["gamma"])
+    Gamma=float(parameters["Gamma"])
     epsilon=float(parameters["epsilon"])
-    base=np.loadtxt(mydir+"/base.txt",delimiter=",",dtype=float)
+    base=np.loadtxt(mydir,delimiter=",",dtype=float)
     
     def gaussian(x, mean, std_dev):
         return np.exp(-((x - mean)**2) / (2 * std_dev**2)) / (std_dev * np.sqrt(2 * np.pi))
-    if impactor!=None:
+    if profile=="gaussian":
+        
+        #for Gaussian profiles
         mean = impactor.Phi        # Mean of the distribution in degrees
         std_dev =   math.pi/10     # Standard deviation of the distribution in degrees
     
@@ -210,21 +205,24 @@ def Height(parameters,target,impactor):
         dx=(math.pi-2*offset)/res
         area_under_curve = sum(gaussian_values*np.sin(base[:,0])*dx)
         scaling_factor = min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*math.pi / area_under_curve
-        #height = gaussian_values * scaling_factor
+        height = gaussian_values * scaling_factor
+        
+    elif profile=="uniform":#for uniform profiles
         height= min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*np.ones(res)
         
     else:
-        #height=[ max(0.1,0.20*gamma/epsilon*b[1]) for b in base]
+        #height=[ max(0.1,0.20*Gamma/epsilon*b[1]) for b in base]
         height=np.ones(res)
-    base[:,1]=base[:,1]-epsilon/gamma*height
+    base[:,1]=base[:,1]-epsilon/Gamma*height
     base=np.column_stack((base,height))
-    np.savetxt(mydir+"/base.txt",base,delimiter=",")
+    np.savetxt(mydir,base,delimiter=",")
 
 #%%  Verified
 
 def Exparameter(parameters):
-        
-    with open("parameters","w") as f:
+       
+    mydir=Output_File (parameters,"input",["parameters"])
+    with open(mydir,"w") as f:
         for key in parameters.keys():
             f.writelines(["-"*50,"\n"])
             f.writelines(f"{key.ljust(25)}{parameters[key]}\n")
@@ -236,18 +234,20 @@ def Gravitycalc(parameters):
     
     Res=int(parameters["res"])
     epsilon=float(parameters["epsilon"])
-    gamma=float(parameters["gamma"])
+    Gamma=float(parameters["Gamma"])
     density=float(parameters["density"])
     rad=float(parameters["dia"])/2
     
+    file=Output_File(parameters,"output",["base.txt"])
+
     try:
-        w,file=Shape(parameters)
-    except TypeError:
-        print("No shape avialable to calulate gravity,calculating for the spherical body")
-        return
+        w=np.loadtxt(file,dtype=float,delimiter=",")
+    except:
+            print("No file available for the fit")
+    return
         
-    R=rad*np.sin(w[:,0])*(1+gamma*(w[:,1]))
-    Z=rad*np.cos(w[:,0])*(1+gamma*(w[:,1]))
+    R=rad*np.sin(w[:,0])*(1+Gamma*(w[:,1]))
+    Z=rad*np.cos(w[:,0])*(1+Gamma*(w[:,1]))
     
     fR=make_interp_spline(w[:,0],R)
     fZ=make_interp_spline(w[:,0],Z)
@@ -274,7 +274,8 @@ def Gravitycalc(parameters):
    # plt.plot(w[:,0],t_grav)
     print("gravity updated")
     grav=np.hstack((r_grav.reshape(-1,1),t_grav.reshape(-1,1)))
-    np.savetxt(file+"/grav.txt",grav)
+    file=Output_File(parameters,"output",["grav.txt"])
+    np.savetxt(file,grav)
     
     pool.close()
     pool.join()       
@@ -311,15 +312,12 @@ def Gravity(R, Z,r,z):
     
 #%% verified
 
-def ExportOmega(myomega,parameters):
+def ExportOmega(myomega,parameters,filename):
     
-    omega=float(parameters["omega_in"])
-    delta=float(parameters["delta"])
-    mydir=os.getcwd()
-    file=os.path.join(mydir,"output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))+"/omega_T.txt")
+    mydir=Output_File(parameters,"output",[filename])
     
     resultExport = ""
-    with open(file, "w") as file:
+    with open(mydir, "w") as file:
         resultExport = file.write("\n".join(["\t".join(map(str, omega)) for omega in myomega]))
     if resultExport == -1:
         print("Failed in exporting the data")
@@ -365,15 +363,17 @@ def Landslides(target,target1,target2,parameters,impacttime,myomega):
 
 #%% Verified
 
+#old version of YORP which uses orbit9, a fortran code, Please use the newer version of the YORP implemented in YORP.py
+
 def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
     
     wobblecalcf(target,impacttime,oldtime)  #which omega to use because it is being changed by the yorp
     while impacttime > oldtime + 10:
-        subprocess.run(["make"], cwd="/Users/kumargaurav/Documents/OrbFit/tests/gaurav",stdout=subprocess.DEVNULL,
+        subprocess.run(["make"], cwd="../OrbFit/tests/gaurav",stdout=subprocess.DEVNULL,
     stderr=subprocess.STDOUT)
         try:
             yark = []
-            with open("/Users/kumargaurav/Documents/OrbFit/tests/gaurav/yarkovsky.in", "r") as file:
+            with open("../OrbFit/tests/gaurav/yarkovsky.in", "r") as file:
                 yark = [list( line.strip().split()) for line in file]
         except FileNotFoundError:
             print("Failed in importing the data from yarkovsky.in")
@@ -381,19 +381,19 @@ def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
         yark[0][5] = target.obliq
         yark[0][6] = 2 * math.pi / (target.omega[2] * 3600)
         try:
-            with open("/Users/kumargaurav/Documents/OrbFit/tests/gaurav/yarkovsky.in", "w") as file:
+            with open("../OrbFit/tests/gaurav/yarkovsky.in", "w") as file:
                 for row in yark:
                     file.write("\t".join(map(str, row)) + "\n")
         except IOError:
             print("Failed in exporting the yarkovsky.in")
             return
-        exitcode = subprocess.run(["./orbit9.x"], cwd="/Users/kumargaurav/Documents/OrbFit/tests/gaurav").returncode
+        exitcode = subprocess.run(["./orbit9.x"], cwd="../OrbFit/tests/gaurav").returncode
         if exitcode != 0:
             print("Failed in running orbit9")
             return
         try:
             omegOrb = []
-            with open("/Users/kumargaurav/Documents/OrbFit/tests/gaurav/clo0.yorp", "r") as file:
+            with open("../OrbFit/tests/gaurav/clo0.yorp", "r") as file:
                 omegOrb = [list( line.strip().split()) for line in file]
         except FileNotFoundError:
             print("Failed in importing the data from orbit9")
@@ -411,7 +411,7 @@ def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
             print("Too fast spinning causing landslides")
             #parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
             #print(parameters["uni_h"])
-            Height(parameters,target2,impactor=None)
+            Height(parameters,target2)
             Landslides(target2,target,target1,parameters,min(impacttime,oldtime),myomega)
         
         
@@ -421,8 +421,8 @@ def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
 #%% Verified
 
 def Cumdistr(parameters):
-    mydir=os.getcwd()
-    pathcum = os.path.join(mydir, "cumpopulation", f"{parameters['cumdistr']}.txt")
+    
+    pathcum = Output_File(parameters,"input",["cumpopulation", f"{parameters['cumdistr']}.txt"])
     cumdistr = np.loadtxt(pathcum)
     cumdistr[:,0]=cumdistr[:,0]*1000
     return cumdistr
@@ -449,10 +449,118 @@ def Istuff(target,tmaxby,cumdistr):
         istuff.append(Impactor(tmaxby,numgtd,nexplicit,cumdistr,True))
 
 
-    #for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
-     #   istuff.append(Impactor(tmaxby,cumdistr[j,0],cumdistr[j+1,0],cumdistr,False))
+    for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
+        istuff.append(Impactor(tmaxby,cumdistr[j,0],cumdistr[j+1,0],cumdistr,False))
 
     istuff.sort(key=lambda x: x.impacttime)
     return istuff
 
+
+#%%
+
+def Output_File (parameters,filetype="",filenames=[]):
+    
+    dir = os.getcwd()
+    if filetype=="output":
+        mydir="files_"+str(format(float(parameters["delta"]),".6f"))+"_"+str(format(float(parameters["omega_in"]),".6f"))
+        filenames.insert(0,mydir)
+    return os.path.join(dir,filetype,*filenames)
+#%%
+
+def read_f_g_spline(parameters):
+    """
+    Reads data from files, creates spline interpolations for f and g functions.
+
+    This function assumes the following file structure:
+
+    - input/yorp_f.txt: Contains gamma (in degrees) and corresponding f values.
+    - input/yorp_g.txt: Contains gamma (in degrees) and corresponding g values.
+
+    Returns:
+        tuple: Two CubicSpline objects representing the spline interpolations for f and g.
+    """
+
+    # --- Read data for the f function ---
+    f = []
+    mydir=Output_File(parameters,"input",["yorp_f.txt"])
+    with open(mydir, 'r') as file:
+        for line in file:
+            x, y = map(float, line.split(","))
+            f.append([x,y])
+          
+    f=np.array(f)
+
+    # Create cubic spline interpolation for f
+    f_spline = CubicSpline(f[:,0], f[:,1])
+
+    g= []
+    mydir=Output_File(parameters,"input",["yorp_g.txt"])
+    with open(mydir, 'r') as file:
+        for line in file:
+            x, y = map(float, line.split(","))
+            g.append([x,y])
+    
+    g=np.array(g)
+
+    # Create cubic spline interpolation for g
+    g_spline= CubicSpline(g[:,0], g[:,1])
+
+    return f_spline, g_spline
+
+
+#%%
+
+def shape_gen(K):
+    """
+    generate random coefficients to determine the functions f,g. To
+    this purpose, we use the statistics presented in Capek & Vokrouhlicky 2004
+
+    Args:
+        K (float): Input value used for determining probabilities.
+
+    Returns:
+        tuple: A tuple containing the generated values of coeff1 and coeff2.
+    """
+
+    # Parameters (same as in Fortran code)
+    K_t = 0.005
+    max_g = 1.8 / 1.1
+    min_g = 0.4 / 1.1
+    std_g = abs(1.1 - 1.8 / 1.1) / 3.0
+    max_f = 3.0 / 2.0
+    min_f = -3.0 / 2.0
+    std_f = 0.5**2.0
+
+    if K <= K_t:
+        # 80% probability to reach 0/180 (g, coeff2)
+        # 40% probability to accelerate (f, coeff1)
+        coeff2 = np.random.normal(1.0, std_g)
+        coeff2 = np.clip(coeff2, min_g, max_g)  # Ensure coeff2 is within bounds
+
+        if np.random.rand() > 0.8:
+            coeff2 = -coeff2  # Switch to reaching 90 degrees
+
+        # ! If the asymptotic state is 90 (i.e. coeff2 < 0), then we always decelerate
+        # ! the rotation rate! See Capek & Vokrouhlicky 2004, Fig 7.
+        if coeff2 < 0.0:
+            # Always decelerate if asymptotic state is 90
+            sgn = -1.0
+        else:
+            # 60/40 probability to decelerate/accelerate for 0/180
+            sgn = 1.0 if np.random.rand() <= 0.6 else -1.0 
+
+        coeff1 = sgn * (np.random.normal(1.0, std_f))
+        coeff1 = np.clip(coeff1, min_f, max_f)
+
+    else:  # K > K_t
+        # 100% probability to reach 0/180 (g, coeff2)
+        # 50% probability to accelerate (f, coeff1)
+        sgn = 1.0 if np.random.rand() > 0.5 else -1.0  # Choose sign for coeff1
+        coeff1 = sgn * (np.random.normal(1.0, std_f))
+        coeff1 = np.clip(coeff1, min_f, max_f)
+       
+        coeff2 = np.random.normal(1.0, std_g)
+        coeff2 = np.clip(coeff2, min_g, max_g)
+
+    return coeff1, coeff2
 

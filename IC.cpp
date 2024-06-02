@@ -21,7 +21,7 @@ const double dx= (xmax-xmin-2*offset)/res;
 const double past_time=stod(par["time"]);
 const double dia=stod(par["dia"]);
 const double min_h=pow(dx,4);
-const double gamma=stod(par["gamma"]);
+const double Gamma=stod(par["Gamma"]);
 
 void Grid(vector<double> & x)
 {
@@ -47,12 +47,12 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string fil
     //     if (b[j]<-max_h)
     //     {
     //         h[j]=min_h;
-    //         b[j]=b[j]+epsilon/gamma*uni_h;
+    //         b[j]=b[j]+epsilon/Gamma*uni_h;
     //     }
 
     //     if (b[j]>max_h)
     //     { 
-    //         h[j]=h[j]+gamma/epsilon*(b[j]-max_h);
+    //         h[j]=h[j]+Gamma/epsilon*(b[j]-max_h);
     //         b[j]=max_h;
     //     }
         
@@ -95,23 +95,24 @@ void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
 
 void Base ( vector<double>& b,vector<double>& h,vector<double>& x, string file)
 {
-ifstream myfile(file+"/base.txt");
+    std::string  file1=file +"/base.txt";
+    ifstream myfile(file1);
 
-string line;
-int i=0;
-while(getline(myfile,line))
-{
-	istringstream iss(line);
-    string word1,word2,word3;
-    getline(iss, word1, ',');
-    getline(iss, word2, ','); 
-    getline(iss, word3, ',');        
+    std::string line;
+    int i=0;
+    while(getline(myfile,line))
+    {
+        istringstream iss(line);
+        string word1,word2,word3;
+        getline(iss, word1, ',');
+        getline(iss, word2, ','); 
+        getline(iss, word3, ',');        
 
-    x[i]=stod(word1);
-	b[i]=stod(word2);
-    h[i]=stod(word3);
-	i++;
-}
-myfile.close();
+        x[i]=stod(word1);
+        b[i]=stod(word2);
+        h[i]=stod(word3);
+        i++;
+    }
+    myfile.close();
 
 }

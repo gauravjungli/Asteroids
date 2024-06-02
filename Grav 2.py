@@ -27,7 +27,7 @@ omega=parameters["omega_initial"]
 delta=parameters["delta"]
 slides=int(parameters["slides"])
 epsilon=parameters["epsilon"]
-gamma=parameters["gamma"]
+Gamma=parameters["Gamma"]
 density=parameters["density"]
 rad=parameters["dia"]*1000/2
 
@@ -38,8 +38,8 @@ w=np.loadtxt(file[0],delimiter=",",dtype=float)
 #Ellippi = np.loadtxt('I.txt')
 
 
-R=rad*np.sin(w[:,0])*(1+gamma*(w[:,1])+epsilon*w[:,2])
-Z=rad*np.cos(w[:,0])*(1+gamma*(w[:,1])+epsilon*w[:,2])
+R=rad*np.sin(w[:,0])*(1+Gamma*(w[:,1])+epsilon*w[:,2])
+Z=rad*np.cos(w[:,0])*(1+Gamma*(w[:,1])+epsilon*w[:,2])
 
 fR=make_interp_spline(w[:,0],R)
 fZ=make_interp_spline(w[:,0],Z)

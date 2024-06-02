@@ -14,7 +14,7 @@ int main() {
     int precision = 15;
 
     std::string result = doubleToStringWithPrecision(num, precision);
-    std::cout << "Result: " << result << std::endl;
+    std::std::cout << "Result: " << result << std::endl;
 
     return 0;
 }

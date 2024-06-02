@@ -18,7 +18,7 @@ omega=float(parameters["omega_in"])
 delta=float(parameters["delta"])
 slides=int(parameters["slides"])
 epsilon=float(parameters["epsilon"])
-gamma=float(parameters["gamma"])
+Gamma=float(parameters["Gamma"])
 res=int(parameters["res"])
 offset=float(parameters["offset"])
 dx=(math.pi-2*offset)/res
@@ -38,12 +38,12 @@ for count in range(1,slides):
    # if count!=slides-1 and count!=0:
     #    continue
     #plt.clf()
-    x=np.sin(w[:,0])*(1+(epsilon*w[:,1]+gamma*w[:,2]))
-    y=np.cos(w[:,0])*(1+(epsilon*w[:,1]+gamma*w[:,2]))
+    x=np.sin(w[:,0])*(1+(epsilon*w[:,1]+Gamma*w[:,2]))
+    y=np.cos(w[:,0])*(1+(epsilon*w[:,1]+Gamma*w[:,2]))
     plt.clf()
     plt.axis('equal')
     plt.plot(x,y,'-b')
-    x=-np.sin(w[:,0])*(1+(epsilon*w[:,1]+gamma*w[:,2]))
+    x=-np.sin(w[:,0])*(1+(epsilon*w[:,1]+Gamma*w[:,2]))
     plt.plot(x,y,'-b')
     plt.title("lanslide number="+str(count+1))
     plt.pause(0.2)
@@ -65,7 +65,7 @@ for file in dirFiles:
     
     plt.clf()
     x=(w[:,0])
-    y=(w[:,1]+gamma/epsilon*w[:,2])
+    y=(w[:,1]+Gamma/epsilon*w[:,2])
     # y=(w[:,3])
     ang_mom.append([count,sum(w[:,4])*dx])
     lin_mom.append([count,sum(w[:,3])*dx])

@@ -37,7 +37,7 @@ extern const double dx;
 extern const double past_time;
 extern const double dia;
 extern const double min_h;
-extern const double gamma;
+extern const double Gamma;
 
 //------------------------------------------------------------------------------
 
@@ -199,7 +199,7 @@ double Psi(CV w);
 
 
 ////////
-double sin(double x);
+//double sin(double x);
 
 
 #endif

@@ -8,9 +8,9 @@ int main()
 	chrono::steady_clock sc;
 	auto start = sc.now();
 	double Ang_Shed=0;
-	std::string file="output/files_"+to_string(delta)+"_"+to_string(omega_initial);
-	cout<<file<<endl;
-
+	std::string file="output/files_"+std::to_string(delta)+"_"+std::to_string(omega_initial);
+	std::cout<<file<<endl;
+	
 	vector<Grav> g(res);
 	Init_grav(g,file);
 	

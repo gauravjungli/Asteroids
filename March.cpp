@@ -68,7 +68,7 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 
 		sum=0;
 		for (int i=2;i<res-2;i++)
-			sum+=PI/2*(w[i].v*(pow(1+gamma*w[i].b+epsilon*w[i].h,4)-pow(1+gamma*w[i].b,4)))*dx;
+			sum+=PI/2*(w[i].v*(pow(1+Gamma*w[i].b+epsilon*w[i].h,4)-pow(1+Gamma*w[i].b,4)))*dx;
 		if (t>check_t)
 		{	
 			if (abs(sum)<epsilon*epsilon )
@@ -78,7 +78,7 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 			sum1=sum;
 			check_t++;
 		}
-		cout<<std::setprecision(18)<<t<<"  "<<sum<<endl;
+		std::cout<<std::setprecision(18)<<t<<"  "<<sum<<endl;
 
 	}
 	Shed(w,myfile, Ang_Shed);
@@ -109,6 +109,6 @@ void CFL(vector<CV>& wl,vector<CV>& wr, double & dt)
 		if (maxspeed < eig)
 			maxspeed = eig;
 	}
-	//cout<<maxspeed<<endl;
+	//std::cout<<maxspeed<<endl;
 	dt = min(dx/4,dx/4/maxspeed);
 }

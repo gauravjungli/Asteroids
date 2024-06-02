@@ -3,13 +3,13 @@
 CV::CV(double h, double u, double v, double b, Grav g, double x )
 {	
 	if (h<=min_h) 
-	{  if (h<0) cout<<"Much smaller values encountered "<<h<<"  "<<x<< endl;
+	{  if (h<0) std::cout<<"Much smaller values encountered "<<h<<"  "<<x<< endl;
 	h=min_h;
 	u=0; v=0;
 	}
     this->h=h;this->u=u;this->v=v;this->b=b;
-	lambda= (1+gamma*b);
-	this->g=g;this->x=x;this->psi=Psi(*this); this->w=h+gamma/epsilon*b;
+	lambda= (1+Gamma*b);
+	this->g=g;this->x=x;this->psi=Psi(*this); this->w=h+Gamma/epsilon*b;
     this->p=h*sin(x)*pow(lambda,2); 
 	this->q=h*u*sin(x)*pow(lambda,3); 
 	this->r=h*(v)*sin(x)*sin(x)*pow(lambda,3); 
@@ -19,13 +19,13 @@ CV::CV(double h, double u, double v, double b, Grav g, double x )
 void CV::Modify(double p, double q, double r)
 {	h=p/sin(x)/pow(lambda,2);
 	if (h<min_h)
-	{  if (h<0) cout<<"Much smaller values encountered in Modify "<<h<<"  "<<x<< endl;
+	{  if (h<0) std::cout<<"Much smaller values encountered in Modify "<<h<<"  "<<x<< endl;
 	h=min_h;
 	p=h*sin(x)*pow(lambda,2);
 	q=0;
 	r=0;
 	}
-	this->p=p; this->q=q; this->r=r; w=epsilon/gamma*h+b;
+	this->p=p; this->q=q; this->r=r; w=epsilon/Gamma*h+b;
 	u=q/(lambda*p);
 	
 	v=r/(p*lambda*sin(x));
@@ -57,7 +57,7 @@ FS Source( CV w, CV w1, CV w2, CV w3, CV w4)
 	
 	source.p=0;
 
-	double grad_b= gamma*((w3.b-w1.b)/dx)*((w1.h+w2.h+w3.h+w4.h)/4)*((w1.psi+w2.psi+w3.psi+w4.psi)/4)*(sin(w3.x)+sin(w1.x))/2*((pow((w1.lambda+w2.lambda)/2,3)+pow((w3.lambda+w4.lambda)/2,3))/2);
+	double grad_b= Gamma*((w3.b-w1.b)/dx)*((w1.h+w2.h+w3.h+w4.h)/4)*((w1.psi+w2.psi+w3.psi+w4.psi)/4)*(sin(w3.x)+sin(w1.x))/2*((pow((w1.lambda+w2.lambda)/2,3)+pow((w3.lambda+w4.lambda)/2,3))/2);
 
 	double pressure=(((pow((w1.v+w2.v)/2,2)+pow((w3.v+w4.v)/2,2))/2)*((pow((w1.lambda+w2.lambda)/2,2)+pow((w3.lambda+w4.lambda)/2,2))/2)
 					*((w1.h+w2.h+w3.h+w4.h)/4))*(sin(w3.x)-sin(w1.x))/dx;
@@ -89,7 +89,7 @@ FS Friction (CV w, FS bf)
 
 	if (pow(pow(w.u,2)+pow(w.v,2),0.5)>1e-4) 
 	{	
-		//cout<<"Inside the if of r"<<endl;
+		//std::cout<<"Inside the if of r"<<endl;
 		fr.r=mu*(w.psi)*w.v/pow(pow(w.u,2)+pow(w.v,2),0.5)*pow(w.lambda,3)*w.h*pow(sin(w.x),2);
 	}
 	else 

@@ -40,7 +40,7 @@ void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr)
 		wr[i-1]=CV(  wr[i-1].h,wr[i-1].u,wr[i-1].v,wr[i-1].b,wr[i-1].g,wr[i-1].x);
 	//	wr[i].Modify(wr[i].p,wr[i].q,wr[i].r);	
 	//if (w[i-1].w<wr[i-1].b || w[i-1].w<wl[i-1].b)
-	//		cout<<"Partially filled cells "<< i-1<<  endl;
+	//		std::cout<<"Partially filled cells "<< i-1<<  endl;
 
 	 }
 }

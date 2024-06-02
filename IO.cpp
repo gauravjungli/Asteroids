@@ -37,7 +37,7 @@ void Write (const vector<double>& x, const vector<CV>& w, string file)
 ofstream myfile(file+"/base.txt");
 if (!myfile) Error("Can't open output file field",file);
 for (int i=0;i<res;i++)
-		myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/gamma*w[i].h)<<"\n";
+		myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/Gamma*w[i].h)<<"\n";
 myfile.close();
 }
 
@@ -73,7 +73,7 @@ myfile.close();
 
 void Error (string s1, string s2)
 {
-	cout<< s1<<" "<<s2<<endl;
+	std::cout<< s1<<" "<<s2<<endl;
 }
 
 
@@ -112,12 +112,12 @@ bool Parameters()
 
 // Function to read a 2D array from a file
 void Read_grav( vector<Grav>& g, const string& file)
-{
+{ 
     std::ifstream f(file);
     std::vector<double> row;
     if (!f) Error("Can't open file", "grav.txt");
     double num;
-    int i=2;
+    int i=0;
     while (f >> num)
     {
         row.push_back(num);
