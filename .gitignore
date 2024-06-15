@@ -11,3 +11,4 @@ data/
 images/
 __pycache__/
 .empty/
+build/

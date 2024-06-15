@@ -12,16 +12,16 @@ from functions import G, wobblecalcf
 import math
 
 
-def YORP(target, target1, target2, parameters, impacttime, oldtime, myomega):
-
+def YORP(target, parameters, impacttime, oldtime, myomega):
+    
+    if  not target.YORP:
+        return
     # which omega to use because it is being changed by the yorp
     wobblecalcf(target, impacttime, oldtime)
 
     t_yorp = oldtime
     file = Output_File(parameters, "output", ["output.yorp"])
-    with open(file, "w") as output_file:  # Overwrites existing files
-        output_file.write(
-            f"{t_yorp :12.6e} {(2*np.pi / target.omega[2])/3600:12.8e} {target.obliq:12.8e}\n")
+    
 
     h_yorp = float(parameters["h_yorp"])
     while impacttime > t_yorp+1:
@@ -38,7 +38,6 @@ def YORP(target, target1, target2, parameters, impacttime, oldtime, myomega):
                 spin_state_new(target)
                 target.coeff_f, target.coeff_g = shape_gen(target.K)
 
-        temp = target.omega[2]
         rk4(parameters, target)
 
         with open(file, "a") as output_file:
@@ -46,16 +45,14 @@ def YORP(target, target1, target2, parameters, impacttime, oldtime, myomega):
 
         omegaLimit = (G*4/3 * math.pi*target.dens)**0.5
         
-        target1.omega[2] = target1.omega[2]+target.omega[2]-temp
-        target2.omega[2] = target2.omega[2]+target.omega[2]-temp
-        myomega.append([t_yorp, target.omega[2],target1.omega[2], target2.omega[2]])
-        if target2.omega[2] > 0.9*omegaLimit:
+       
+        if target.omega[2] > 0.9*omegaLimit:
             print("Too fast spinning causing landslides")
             # parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
             # print(parameters["uni_h"])
-            Height(parameters, target2)
-            Landslides(target2,target,target1,parameters,t_yorp,myomega)
-
+            Height(parameters, target)
+            Landslides(target, parameters,t_yorp,myomega)
+    myomega.append([t_yorp, target.omega[2]])
     print("Omega after the yorp effect:", target.omega[2])
 
 # %%

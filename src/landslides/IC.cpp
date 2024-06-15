@@ -1,28 +1,6 @@
 #include "gauravlib.h"
 
-std::map <std::string, string> par;
-bool set_parameter=Parameters();
-const int res= (int) round(stod(par["res"]));
-const double PI= M_PI;
-const int dump= int(stod(par["dump"]));
-const double offset= stod(par["offset"]);
-const double xmax=   PI;
-const double xmin=   0;
-const double weight= stod(par["weight"]); 
-const double uni_h= stod(par["uni_h"]);
-const double finalt= stod(par["finalt"]);
-const double Delta= stod(par["delta"]); 
-const double theta= stod(par["theta"]); 
-const double slides= stod(par["slides"]);
-const double epsilon= stod(par["epsilon"]); 
-const double omega= stod(par["omega"]);
-const double omega_initial=stod(par["omega_in"]);
-const double dx= (xmax-xmin-2*offset)/res;
-const double past_time=stod(par["time"]);
-const double dia=stod(par["dia"]);
-const double min_h=pow(dx,4);
-const double Gamma=stod(par["Gamma"]);
-double delta=Delta;
+
 void Grid(vector<double> & x)
 {
     for (int i=0;i<res;i++)
@@ -32,14 +10,14 @@ void Grid(vector<double> & x)
 }
 
 
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string file)
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g)
 {   
     vector<double>  b(res,0);
-    vector <double> h(res,uni_h), u(res,0),v(res,0);
+    vector <double> h(res,1), u(res,0),v(res,0);
     
 //Uncomment this one only if you want special initial conditions
 
-    Base(b,h,x,file);
+    Base(b,h,x);
 
     // for (int j=0;j<res;j++)
     // {
@@ -76,7 +54,7 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string fil
 	    
 }
 
-void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
+/* void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
 {   
     if (w.empty())
     {
@@ -91,11 +69,11 @@ void Base(vector<CV>& w, vector<double> & b, vector<double>& h)
          }
     }
         
-}
+} */
 
-void Base ( vector<double>& b,vector<double>& h,vector<double>& x, string file)
+void Base ( vector<double>& b,vector<double>& h,vector<double>& x)
 {
-    std::string  file1=file +"/base.txt";
+    std::string  file1=folder +"/base.txt";
     ifstream myfile(file1);
 
     std::string line;

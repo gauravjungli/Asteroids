@@ -19,7 +19,7 @@ colors=sns.color_palette("rocket",7)
 parameters={}
 Parameter(parameters)
 omega=float(parameters["omega_in"])
-delta=float(parameters["delta"])
+delta=float(parameters["Friction angle"])
 slides=int(parameters["slides"])
 epsilon=float(parameters["epsilon"])
 Gamma=float(parameters["Gamma"])
@@ -28,8 +28,8 @@ offset=float(parameters["offset"])
 dx=(math.pi-2*offset)/res
 #omega=0.65
 #delta=30
-#file1="output/saved_data/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
-file1="output/omega_15_0.65_0.002"
+file1="/home/g/Asteroids/output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
+#file1="output/omega_15_0.65_0.002"
 # omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
 #%%
 
@@ -49,7 +49,7 @@ for count in range(0,slides):
     x=-np.sin(w[:,0])*(1+(epsilon*w[:,1]+Gamma*w[:,2]))
     plt.plot(x,y,'-r',linewidth=4)
     plt.title("lanslide number="+str(count+1))
-    plt.pause(0.2)
+    plt.pause(0.5)
     plt.savefig(file1+"/img_"+str(count+1)+".svg",dpi=300,bbox_inches="tight")
     
 #plt.close()

@@ -1,5 +1,6 @@
 #include "gauravlib.h"
 
+
 void Write ( const double om, const double t, string file)
 {
 ofstream myfile(file,std::ofstream::app);
@@ -37,13 +38,13 @@ void Write (const vector<double>& x, const vector<CV>& w, string file)
 ofstream myfile(file+"/base.txt");
 if (!myfile) Error("Can't open output file field",file);
 for (int i=0;i<res;i++)
-		myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/Gamma*w[i].h)<<"\n";
+		myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/Gamma*w[i].h)<<","<<0<<"\n";
 myfile.close();
 }
 
-void Write ( std::map <std::string, string> par, string file)
+void Write ( std::map <std::string, string> par)
 {
-ofstream myfile(file,std::ofstream::out);
+ofstream myfile(par_add,std::ofstream::out);
 if (!myfile) 
 {
     Error("Can't open the file","parameters");
@@ -86,7 +87,7 @@ void deleteDirectoryContents(const std::string& dir_path)
 
 bool Parameters()
 {
-	ifstream myfile("parameters");
+	ifstream myfile(par_add);
 	if (!myfile) Error("Can't open file", "parameters");
 	string line;
 	while (getline(myfile, line))  

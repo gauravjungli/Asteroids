@@ -15,6 +15,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 using namespace std;
+namespace fs = std::filesystem;
 
 extern std::map <std::string, string> par;
 
@@ -25,20 +26,24 @@ extern const double offset;
 extern const double xmax;
 extern const double xmin;
 extern const double weight;
-extern const double uni_h;
+
 extern const double finalt;
 extern const double Delta;
 extern const double theta;
 extern const double slides;
 extern const double epsilon;
 extern const double omega;
-extern const double  omega_initial;
 extern const double dx;
 extern const double past_time;
 extern const double dia;
 extern const double min_h;
 extern const double Gamma;
 extern double delta;
+extern const string par_add;
+extern const string fric_type;
+extern const string folder;
+extern const string verbose_dir;
+extern const string verbose;
 //------------------------------------------------------------------------------
 
 //Class for storing a 2D gravity field
@@ -96,7 +101,7 @@ void Write(const vector<CV> & w, string file  );
 void Write (const vector<double>& x, const vector<CV>& w, string file);
 void Write( const double om, string file );
 void Write( const double om, const double t, string file );
-void Write ( std::map <std::string, string> par, string file);
+void Write ( std::map <std::string, string> par);
 
 //To read files
 void Read ( vector<double>&, string file );
@@ -134,11 +139,10 @@ FS Minmod(FS w, FS v);
 //////////  IC.cpp
 
 //To initialize the simulation
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g, string file);
+void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g);
 void Grid(vector<double> & x);
 //To incorporate topography 
-void Base(vector<CV>& w, vector<double> & b,vector<double>& h);
-void Base ( vector<double>& b,vector<double>& h,vector<double>& x, string file);
+void Base ( vector<double>& b,vector<double>& h,vector<double>& x);
 //-------------------------------------------------------------------------
 
 ////////////// solver.cpp
@@ -178,7 +182,7 @@ void Balancing (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, int i);
 /////// march.cpp
 
 //To be used in the time marching
-void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed);
+void March (vector<CV>& w, double& Ang_Shed);
 void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt);
 void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double dt);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
@@ -194,7 +198,7 @@ double Inertia(vector<CV>& w, int no);
 ///////// pressure_shed.cpp
 
 //mass shedding and pressure
-void Shed(vector<CV>& w, ofstream& myfile, double& Ang_Shed);
+void Shed(vector<CV>& w, double& Ang_Shed);
 double Psi(CV w);
 
 

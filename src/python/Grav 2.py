@@ -22,11 +22,11 @@ Parameter(parameters)
         
 Res=int(parameters["res"])-4
 omega=float(parameters["omega_in"])
-delta=float(parameters["delta"])
+delta=float(parameters["Friction angle"])
 slides=int(parameters["slides"])
 epsilon=float(parameters["epsilon"])
-gamma=float(parameters["gamma"])
-density=float(parameters["density"])
+Gamma=float(parameters["gamma"])
+density=float(parameters["Density"])
 rad=float(parameters["dia"])/2
 omega=0.80
 delta=20

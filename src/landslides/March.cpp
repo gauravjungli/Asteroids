@@ -37,31 +37,32 @@ void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_ini
 	}	
 }
 
-void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
+void March (vector<CV>& w, double& Ang_Shed)
 {	
 	double dt = dx / 4;
 	static int timesteps=0;
 	double sum1=0,sum=0;
 	vector<CV> wl(w),wr(w);
 	
-	string file=string("output/files_")+to_string(Delta)+string("_")+to_string(omega_initial)+string("/data");
-	if(!filesystem::exists(file))
-		filesystem::create_directory(file);
+	string file1=par["verbose_dir"];
+	if(!filesystem::exists(file1))
+		filesystem::create_directory(file1);
 	static double t=0;
 	int check_t=1; 
 	while(t<finalt)
 	{
-		if(timesteps%dump==0)
+		if(timesteps%dump==0 && (par["verbose"]=="True"|| par["verbose"]=="true" ))
 		{
-			string file1=file+string("/field_")+to_string(int((slides)*1000+timesteps/dump))+string(".csv");
-			Write(w, file1);
+			string file2=file1+string("/field_")+to_string(int(timesteps/dump))+string(".csv");
+			Write(w, file2);
 		}
 		
 		vector<CV> w_init(w);
-		//delta=std::min(Delta*t,Delta);
-		Shed(w,myfile, Ang_Shed);
+		if (fric_type!="constant" && fric_type!="Constant")
+			delta=std::min(Delta*t,Delta);
+		Shed(w, Ang_Shed);
 		Predictor(w,wl,wr,dt);
-		Shed(w,myfile, Ang_Shed);
+		Shed(w, Ang_Shed);
 		Corrector(w, wl, wr, w_init, dt);
 		
 		Time_step(wl,wr,dt,t,timesteps);
@@ -78,10 +79,12 @@ void March (vector<CV>& w, ofstream& myfile, double& Ang_Shed)
 			sum1=sum;
 			check_t++;
 		}
-		std::cout<<std::setprecision(18)<<t<<"  "<<sum<<endl;
+		std::cout<<std::setprecision(18)<<t<<"  "<<sum<<"  "<<delta<<endl;
 
 	}
-	Shed(w,myfile, Ang_Shed);
+	string file2=folder+string("/log.txt");	
+	ofstream myfile(file2,std::ofstream::app);
+	Shed(w, Ang_Shed);
 	myfile<<"Simulation ran for time --> " <<t<<endl;
 	myfile<<"Residual Angular Momentum --> " <<sum<<endl;
 	myfile<<"Rate of change of Angular Momentum -->"<<sum1-sum<<endl;

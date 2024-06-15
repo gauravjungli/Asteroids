@@ -21,8 +21,30 @@ from functions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf,qstarf
 import scipy.stats
 from scipy.integrate import simps
 import time
-#%%  Verified
+import shutil
+import copy
+from openpyxl import Workbook, load_workbook
+from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+from GUI_asteroid import GUI
+import xlwings as xw
 
+#%%
+
+class InputField:
+    def __init__(self, Name, Value=None, Type="str", Options=None, Help=None):
+        self.Name = Name
+        self.Value = Value
+        self.Type = Type
+        self.Options = Options  # Ensure options is always a list
+        self.Help= Help
+
+    def __str__(self):
+        return f"InputField(name='{self.name}', value='{self.value}', type='{self.type}', options={self.options}, help_text='{self.help_text}')"
+
+
+
+
+#%%
 class Target:
     
     """Represents a target object with physical properties and dynamics."""
@@ -41,12 +63,15 @@ class Target:
                 - sma: Semi-major axis
         """
 
-        self.d=float(parameters["dia_in"])
+        self.d=float(parameters["Diameter"])
         self.atype=parameters["atype"]
-        self.delta=float(parameters["delta"])
+        self.delta=float(parameters["Friction angle"])
+        self.landslide = True if parameters["Landslide"].lower()=='yes' else False
+        self.YORP = True if parameters["YORP"].lower()=='yes' else False
+        self.collision = True if parameters["Collision"].lower()=='yes' else False
         if self.atype == "S-Type":
             self.mu = 0.55
-            self.dens = 2500
+            self.dens = parameters["Density"]
             self.Y0, self.d0strength   =  1.44e7, 0.1
             self.nsize = 3  # strength decreases with size as 1/nsize
             self.qconst1, self.qconst2 =  1e3, 1e6
@@ -54,7 +79,7 @@ class Target:
         else:
             # otherwise - C-Type
             self.mu = 0.41
-            self.dens = 1500
+            self.dens = parameters["Density"]
             self.Y0, self.d0strength   = 1e5,  0.1
             self.nsize = 3  
             self.qconst1, self.qconst2 = 2e3, 4e5 
@@ -141,52 +166,182 @@ def Fit(parameters):
 
 #%%   Verified
 
-def Parameter(parameters):
-    inputfile = Output_File(parameters, "input" ,["parameters"])
-    with open(inputfile, "r") as file:
-        for line in file:
-            line = line.strip()
-            if '--' in line:
-                continue
-            if line:
-                values = re.split(r"\s+",line)
-                key = values[0]
-                value = values[1]
-                parameters[key] = value
-    return parameters
-                
-#%%    Verified
-
-def Initialize(parameters,target):
-    
-    mydir=Output_File (parameters,"output")
-    if os.path.exists(mydir):
-        subprocess.run(["rm", "-r", mydir])
+def Parameter(parameters,filetype):
+    if filetype=="input":
+        inputfile = Output_File(parameters, filetype ,["parameters.xlsx"])
+        data_dict=read_xlsx_to_input_field_dict(inputfile)
+        gui=GUI(parameters,data_dict)
+        gui.root.mainloop()
+        #write_input_fields_to_xlsx(data_dict, inputfile)
     else:
-        print("No directory exists")
-    os.mkdir(mydir)
+        inputfile = Output_File(parameters, filetype ,["parameters"])
+        with open(inputfile, "r") as file:
+            for line in file:
+                line = line.strip()
+                if '--' in line:
+                    continue
+                if line:
+                    values = re.split(r"\s+",line)
+                    key = values[0]
+                    value = values[1]
+                    parameters[key] = value
+    return parameters
+              
+#%% 
+
+def read_xlsx_to_input_field_dict(filename):
+    """
+    Reads an XLSX file with multiple sheets and returns a dictionary
+    where keys are sheet names and values are lists of InputField objects.
+    """
+
+    wb = load_workbook(filename, data_only=True)
+    #wb.data_only=True
+    data_dict = {}
+
+    # Iterate over each sheet in the workbook
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]  # Get the worksheet object
+        input_fields = []  # List to store InputFields for this sheet
+        header = [cell.value for cell in ws[1]]
+        # Iterate over data rows, starting from the second row
+        for row in ws.iter_rows(min_row=2):
+            values = [cell.value for cell in row]
+            input_field = InputField(
+                Name=values[header.index("Name")],    Type=values[header.index("Type")], 
+                        Value=values[header.index("Value")],
+                        Options=values[header.index("Options")].split(",") if values[header.index("Options")] else [],
+                        Help=values[header.index("Help")]
+            )
+            # Strip leading/trailing spaces from options
+            input_field.Options = [option.strip() for option in input_field.Options]
+
+            input_fields.append(input_field)
+
+        # Add the list of InputFields to the dictionary using the sheet name as the key
+        data_dict[sheet_name] = input_fields
+
+    return data_dict
+#%%   
+ 
+def write_input_fields_to_xlsx(data_dict, filename):
+    """Writes InputField data to an XLSX workbook, each sheet named after a dictionary key, 
+    with custom column widths."""
+
+    try:
+       wb = load_workbook(filename)
+    except FileNotFoundError:
+       wb = Workbook()  # Create new workbook if file doesn't exist
+
+    
+    column_widths = {
+        "Options": 30,
+        "Help": 60,
+        "Type": 15
+    }
+
+    for sheet_name, input_fields in data_dict.items():
+
+        if sheet_name in wb.sheetnames:  
+            ws = wb[sheet_name]
+            ws.delete_rows(2, ws.max_row) 
+        else:
+            ws = wb.create_sheet(sheet_name)
+
+        # Header Styling
+        header_font = Font(bold=True)
+        header_fill = PatternFill(start_color="00FF00", end_color="00FF00", fill_type="solid")
+        thin_border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'), bottom=Side(style='thin'))
+
+        # Write header and set column widths
+        header_attributes = ["Name", "Type", "Value", "Options","Help"] 
+        for col_num, attr in enumerate(header_attributes, 1):  
+            cell = ws.cell(row=1, column=col_num, value=attr.capitalize())
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = thin_border
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+
+            # Set column width based on header attribute
+            column_letter = ws.cell(row=1, column=col_num).column_letter
+            ws.column_dimensions[column_letter].width = column_widths.get(attr.capitalize(), 20)  # Default 15 if not in dict
+
+        # Write data
+        for row_num, field in enumerate(input_fields, 2): 
+            for col_num, attr in enumerate(header_attributes, 1):
+                value = getattr(field, attr, "")
+                cell_value = ", ".join(value) if isinstance(value, list) else value  # Handle lists
+                cell = ws.cell(row=row_num, column=col_num, value=cell_value)
+                cell.alignment = Alignment(wrapText=True, horizontal='center', vertical='center')
+                cell.border = thin_border
+                lines_needed = 5
+                ws.row_dimensions[row_num].height = lines_needed * 12.75  # 12.75 is a rough approximation 
+        
+
+    # Remove the default sheet created by openpyxl
+    #del wb["Sheet"]
+    
+    # Save workbook
+    wb.save(filename)
+
+
+#%%
+
+def Initialize(parameters,target,run):
+    
+
     parameters['jinertia1'] = target.jinertia[0] / (target.d / 2)**5 / target.dens
     parameters['jinertia'] = target.jinertia[2] / (target.d / 2)**5 / target.dens
     parameters['slides'] = 0
     parameters['time'] = 0
     parameters['omega'] = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5
     parameters['dia']=target.d
+    parameters['run']=run
+    
+    mydir=Output_File (parameters,"output")
+    if os.path.exists(mydir):
+        subprocess.run(["rm", "-r", mydir])
+    else:
+        print("No directory exists")
+    os.makedirs(mydir, exist_ok=True) 
+    os.makedirs(os.path.join(mydir,"data"), exist_ok=True) 
+    parameters['folder']=mydir
+    
     Exparameter(parameters)
-    res=int(parameters["res"])
-    base=np.zeros((res,2))
-    offset=float(parameters["offset"])
-    dx=(math.pi-2*offset)/res
-    for i in range(res):
-        base[i,0] = offset + dx * (i+ 0.5)
-    np.savetxt(mydir+"/base.txt",base,delimiter=",")
-    Gravitycalc(parameters)
+    file = Output_File(parameters, "output", ["output.yorp"])
+    with open(file, "w") as output_file:  # Overwrites existing files
+        output_file.write(
+            f"{0 :12.6e} {(2*np.pi / target.omega[2])/3600:12.8e} {target.obliq:12.8e}\n")
+    if target.landslide:
+        res=int(parameters["Resolution"])
+        base=np.zeros((res,3))
+        base[:,2]=1
+        offset=float(parameters["offset"])
+        dx=(math.pi-2*offset)/res
+        for i in range(res):
+            base[i,0] = offset + dx * (i+ 0.5)
+        np.savetxt(mydir+"/base.txt",base,delimiter=",")
+        Gravitycalc(parameters)
+
+        executable_file=Output_File(parameters,"build",parameters["executable"])
+        
+        try:
+            shutil.copy(executable_file, mydir)
+            print("Files copied successfully.")
+        except FileNotFoundError:
+            print("Source/executable file not found.")
+        except PermissionError:
+            print("Permission denied.")
+        except Exception as e:  
+            print("An error occurred:", e)
+
     
  #%%   
 
-def Height(parameters,target,impactor=None,profile=None):
+def Height(parameters,target,impactor=None):
     
     mydir=Output_File (parameters,"output",["base.txt"])
-    res=int(parameters["res"])
+    res=int(parameters["Resolution"])
     offset=float(parameters["offset"])
     Gamma=float(parameters["Gamma"])
     epsilon=float(parameters["epsilon"])
@@ -194,7 +349,7 @@ def Height(parameters,target,impactor=None,profile=None):
     
     def gaussian(x, mean, std_dev):
         return np.exp(-((x - mean)**2) / (2 * std_dev**2)) / (std_dev * np.sqrt(2 * np.pi))
-    if profile=="gaussian":
+    if parameters['profile']=="Gaussian":
         
         #for Gaussian profiles
         mean = impactor.Phi        # Mean of the distribution in degrees
@@ -207,21 +362,22 @@ def Height(parameters,target,impactor=None,profile=None):
         scaling_factor = min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*math.pi / area_under_curve
         height = gaussian_values * scaling_factor
         
-    elif profile=="uniform":#for uniform profiles
+    elif parameters['profile']=="Uniform" or parameters['profile']=="uniform":#for uniform profiles
         height= min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*np.ones(res)
         
     else:
         #height=[ max(0.1,0.20*Gamma/epsilon*b[1]) for b in base]
         height=np.ones(res)
     base[:,1]=base[:,1]-epsilon/Gamma*height
-    base=np.column_stack((base,height))
+    base[:,2]=height[:]
+    #base=np.column_stack((base,height))
     np.savetxt(mydir,base,delimiter=",")
 
 #%%  Verified
 
 def Exparameter(parameters):
        
-    mydir=Output_File (parameters,"input",["parameters"])
+    mydir=Output_File (parameters,"output",["parameters"])
     with open(mydir,"w") as f:
         for key in parameters.keys():
             f.writelines(["-"*50,"\n"])
@@ -232,10 +388,10 @@ def Exparameter(parameters):
 
 def Gravitycalc(parameters):
     
-    Res=int(parameters["res"])
+    Res=int(parameters["Resolution"])
     epsilon=float(parameters["epsilon"])
     Gamma=float(parameters["Gamma"])
-    density=float(parameters["density"])
+    density=float(parameters["Density"])
     rad=float(parameters["dia"])/2
     
     file=Output_File(parameters,"output",["base.txt"])
@@ -244,7 +400,7 @@ def Gravitycalc(parameters):
         w=np.loadtxt(file,dtype=float,delimiter=",")
     except:
             print("No file available for the fit")
-    return
+            return
         
     R=rad*np.sin(w[:,0])*(1+Gamma*(w[:,1]))
     Z=rad*np.cos(w[:,0])*(1+Gamma*(w[:,1]))
@@ -312,8 +468,8 @@ def Gravity(R, Z,r,z):
     
 #%% verified
 
-def ExportOmega(myomega,parameters,filename):
-    
+def ExportOmega(myomega,parameters,target):
+    filename=f"Omega_{'C' if target.collision else ''}{'L' if target.landslide else ''}{'Y' if target.YORP else ''}.txt"
     mydir=Output_File(parameters,"output",[filename])
     
     resultExport = ""
@@ -324,8 +480,10 @@ def ExportOmega(myomega,parameters,filename):
 
 #%%
 
-def Landslides(target,target1,target2,parameters,impacttime,myomega):
+def Landslides(target,parameters,impacttime,myomega):
     
+    if  not target.landslide:
+        return
    # target.d = target.d / (1 + float(parameters["uni_h"]) * float(parameters["epsilon"]))
     parameters["omega"] = target.omega[2] / (G * (4/3) * math.pi * target.dens)**0.5
     parameters["slides"] = int(parameters["slides"])+1
@@ -333,22 +491,52 @@ def Landslides(target,target1,target2,parameters,impacttime,myomega):
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
     parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
     parameters["time"]=impacttime
-
+    if bool(parameters['verbose']):
+        parameters['verbose_dir']=Output_File(parameters,"output",['data',f"landslides_{parameters['slides']}"])
     try:
         Exparameter(parameters)
     except IOError:
         print("Failed in exporting the data")
     
-    exitcode = subprocess.run(["./gaurav"], cwd=".", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
-    if exitcode != 0:
-        print("Aborting due to error in running the executable gaurav")
-        return
-    else:
-        print("Ran successfully slide", parameters["slides"])
+   # exitcode = subprocess.run(["/home/g/Asteroids/build/asteroid"], cwd=".", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+
+
+    # 1. Ensure Executable Path & Permissions
+    executable_path=Output_File(parameters,"output",[parameters["executable"]])
+    if not os.path.isfile(executable_path) or not os.access(executable_path, os.X_OK):
+        raise FileNotFoundError(f"Executable not found or not executable: {executable_path}")
     
-    Parameter(parameters)
+    # 2. Adjust Working Directory if Necessary
+    working_directory = Output_File(parameters,"output")  # Update if the executable is elsewhere
+    if not os.path.isdir(working_directory):
+        raise NotADirectoryError(f"Working directory not found: {working_directory}")
+    
+    try:
+        # 3. Capture Output for Debugging (initially)
+        os.mkdir(parameters['verbose'])
+        result = subprocess.run([executable_path], cwd=working_directory,
+                                capture_output=True, text=True) 
+    
+        if result.returncode != 0:
+            print("Aborting due to error in running the executable gaurav")
+            raise subprocess.CalledProcessError(result.returncode, executable_path, output=result.stderr)
+            
+        else:
+            print("Ran successfully slide", parameters["slides"])
+    
+        # If successful, you can later redirect output to DEVNULL 
+        # result = subprocess.run([executable_path], cwd=working_directory, 
+        #                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        
+    except subprocess.CalledProcessError as e:
+        print(f"Error running command: {e.cmd}")
+        print(f"Return code: {e.returncode}")
+        print(f"Error output:\n{e.stderr}")  
+        
+    
+    Parameter(parameters,"output")
     Fit(parameters)
-    Parameter(parameters)
+    Parameter(parameters,"output")
     
     target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
     target.d = float( parameters["dia"])
@@ -359,14 +547,14 @@ def Landslides(target,target1,target2,parameters,impacttime,myomega):
     
     Gravitycalc(parameters)
     
-    myomega.append([impacttime, target1.omega[2],target2.omega[2],target.omega[2]])
+    myomega.append([impacttime,target.omega[2]])
     print("Omega after the Landslides", target.omega[2])
 
 #%% Verified
 
 #old version of YORP which uses orbit9, a fortran code, Please use the newer version of the YORP implemented in YORP.py
 
-def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
+def Yorp(target,parameters,impacttime,oldtime,myomega):
     
     wobblecalcf(target,impacttime,oldtime)  #which omega to use because it is being changed by the yorp
     while impacttime > oldtime + 10:
@@ -401,19 +589,16 @@ def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
             return
         omegaLimit = (G*4/3* math.pi*target.dens)**0.5
         index = min(round((impacttime - oldtime) / 50), 2000)
-        temp=target.omega[2]
         target.omega[2] = 2 * math.pi / (float(omegOrb[index][1]) * 3600)
-        target1.omega[2]=target1.omega[2]+target.omega[2]-temp
-        target2.omega[2]=target2.omega[2]+target.omega[2]-temp
         target.obliq = float(omegOrb[index][2])
         oldtime = oldtime + 10**5
-        myomega.append([min(impacttime,oldtime), target.omega[2],target1.omega[2],target2.omega[2]])
-        if target2.omega[2] > 0.9*omegaLimit:
+        myomega.append([min(impacttime,oldtime), target.omega[2]])
+        if target.omega[2] > 0.9*omegaLimit:
             print("Too fast spinning causing landslides")
             #parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
             #print(parameters["uni_h"])
-            Height(parameters,target2)
-            Landslides(target2,target,target1,parameters,min(impacttime,oldtime),myomega)
+            Height(parameters,target)
+            Landslides(target,parameters,min(impacttime,oldtime),myomega)
         
         
     print("Omega after the yorp effect:", target.omega[2])
@@ -423,7 +608,7 @@ def Yorp(target,target1,target2,parameters,impacttime,oldtime,myomega):
 
 def Cumdistr(parameters):
     
-    pathcum = Output_File(parameters,"input",["cumpopulation", f"{parameters['cumdistr']}.txt"])
+    pathcum = Output_File(parameters,"input",["cumpopulation", f"{parameters['Cummulative distribution']}.txt"])
     cumdistr = np.loadtxt(pathcum)
     cumdistr[:,0]=cumdistr[:,0]*1000
     return cumdistr
@@ -461,11 +646,17 @@ def Istuff(target,tmaxby,cumdistr):
 
 def Output_File (parameters,filetype="",filenames=[]):
     
-    dir = os.getcwd()
+    dir = os.path.dirname(os.path.dirname(os.getcwd()))
+    filenames1=copy.deepcopy(filenames)
     if filetype=="output":
-        mydir="files_"+str(format(float(parameters["delta"]),".6f"))+"_"+str(format(float(parameters["omega_in"]),".6f"))
-        filenames.insert(0,mydir)
-    return os.path.join(dir,filetype,*filenames)
+        output_folder=parameters["Output folder"]
+        mydir="files_"+str(format(float(parameters["Friction angle"]),".6f"))+"_"+str(format(float(parameters["Angular velocity"]),".6f"))
+        if int(parameters["run"])>0:
+            filenames1.insert(0,"run"+str(parameters["run"]))
+        filenames1.insert(0,output_folder)
+        filenames1.insert(0,mydir)
+        
+    return os.path.join(dir,filetype,*filenames1)
 #%%
 
 def read_f_g_spline(parameters):

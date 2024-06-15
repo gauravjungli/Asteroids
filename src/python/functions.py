@@ -28,8 +28,10 @@ def astnum(dia,cumdistr):
 
 #%%  verified
 
-def Collision(target,target1,target2,impactor,myomega):
+def Collision(target,impactor,myomega):
     
+    if  not target.collision:
+        return
     zeta = zetaf(impactor.phi, target.d, target.atype)
     delamomentum = target.d/2 * impactor.M * impactor.vel * math.sin(impactor.phi) * zeta * np.array([-math.sin(impactor.theta)
                             * math.cos(impactor.Theta) * math.cos(impactor.Phi) - math.cos(impactor.theta) * math.sin(impactor.Theta), 
@@ -40,8 +42,7 @@ def Collision(target,target1,target2,impactor,myomega):
     delomegdrain =  omegdrainf(target,impactor)
     delomega = delomega + [0,0,delomegdrain]
     target.omega = target.omega + delomega
-    target2.omega=target2.omega + delomega
-    myomega.append([impactor.impacttime,target1.omega[2], target.omega[2],target2.omega[2]])
+    myomega.append([impactor.impacttime,target.omega[2]])
     print("Omega after the collision", target.omega[2])
         
 #%%  Verified

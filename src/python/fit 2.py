@@ -32,9 +32,9 @@ with open(inputfile, "r") as file:
 
 
 omega=float(parameters["omega_in"])
-delta=float(parameters["delta"])
+delta=float(parameters["Friction angle"])
 slides=int(parameters["slides"])
-res=int(parameters["res"])-4
+res=int(parameters["Resolution"])-4
 epsilon=parameters["epsilon"]
 file1="output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
 
