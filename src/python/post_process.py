@@ -13,44 +13,47 @@ from gaurav import Parameter
 import seaborn as sns
 
 #from mpl_toolkits.mplot3d import Axes3D
-plt.rcParams.update({'font.size' : 14})
-colors=sns.color_palette("rocket",7)
-
-parameters={}
-Parameter(parameters)
-omega=float(parameters["omega_in"])
-delta=float(parameters["Friction angle"])
-slides=int(parameters["slides"])
-epsilon=float(parameters["epsilon"])
-Gamma=float(parameters["Gamma"])
-res=int(parameters["res"])
-offset=float(parameters["offset"])
-dx=(math.pi-2*offset)/res
-#omega=0.65
-#delta=30
-file1="/home/g/Asteroids/output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
+def backup():
+    plt.rcParams.update({'font.size' : 14})
+    colors=sns.color_palette("rocket",7)
+    
+    parameters={}
+    Parameter(parameters)
+    omega=float(parameters["omega_in"])
+    delta=float(parameters["Friction angle"])
+    slides=int(parameters["slides"])
+    epsilon=float(parameters["epsilon"])
+    Gamma=float(parameters["Gamma"])
+    res=int(parameters["res"])
+    offset=float(parameters["offset"])
+    dx=(math.pi-2*offset)/res
+    #omega=0.65
+    #delta=30
+    file1="/home/g/Asteroids/output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
 #file1="output/omega_15_0.65_0.002"
 # omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
 #%%
-
-fig = plt.figure(figsize=(6,6))
-for count in range(0,slides):
-    file=glob.glob(file1+"/field_"+str(count+1)+".csv",recursive=True)
-    w=np.loadtxt(file[0],delimiter=",",dtype=float)
-    print(file)
-   # if count!=slides-1 and count!=0:
-    #    continue
-    #plt.clf()
-    x=np.sin(w[:,0])*(1+(epsilon*w[:,1]+Gamma*w[:,2]))
-    y=np.cos(w[:,0])*(1+(epsilon*w[:,1]+Gamma*w[:,2]))
-    plt.clf()
-    plt.axis('equal')
-    plt.plot(x,y,'-r',linewidth=4)
-    x=-np.sin(w[:,0])*(1+(epsilon*w[:,1]+Gamma*w[:,2]))
-    plt.plot(x,y,'-r',linewidth=4)
-    plt.title("lanslide number="+str(count+1))
-    plt.pause(0.5)
-    plt.savefig(file1+"/img_"+str(count+1)+".svg",dpi=300,bbox_inches="tight")
+def show_plot(parameters):
+    fig = plt.figure(figsize=(6,6))
+    
+    for count in range(0,int(parameters["slides"])):
+        file1=parameters['Data folder']
+        file=glob.glob(file1+"/field_"+str(count+1)+".csv",recursive=True)
+        w=np.loadtxt(file[0],delimiter=",",dtype=float)
+        print(file)
+       # if count!=slides-1 and count!=0:
+        #    continue
+        #plt.clf()
+        x=np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+        y=np.cos(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+        plt.clf()
+        plt.axis('equal')
+        plt.plot(x,y,'-r',linewidth=4)
+        x=-np.sin(w[:,0])*(1+(float(parameters["Gamma"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+        plt.plot(x,y,'-r',linewidth=4)
+        plt.title("lanslide number="+str(count+1))
+        plt.pause(0.5)
+        plt.savefig(file1+"/img_"+str(count+1)+".svg",dpi=300,bbox_inches="tight")
     
 #plt.close()
  #%%   

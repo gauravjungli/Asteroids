@@ -11,9 +11,10 @@
 #include <sstream>
 #include <filesystem>
 #include <map>
-//#include "parameters.h"
+#include <regex>
 #include <sys/stat.h>
 #include <sys/types.h>
+
 using namespace std;
 namespace fs = std::filesystem;
 
@@ -41,7 +42,7 @@ extern const double Gamma;
 extern double delta;
 extern const string par_add;
 extern const string fric_type;
-extern const string folder;
+extern const string Output_folder;
 extern const string verbose_dir;
 extern const string verbose;
 //------------------------------------------------------------------------------

@@ -13,9 +13,58 @@ from PIL import Image, ImageTk  # For image loading (install Pillow if needed)
 import sys
 import os
 from datetime import datetime
+from gaurav import  Initialize_simulations
+import  subprocess
+import threading
+import queue
+from plots import show_shape, show_omega
+
+
+
+def read_output(process, progress_queue):
+    for line in iter(process.stdout.readline, ""):
+
+        progress = float(line.strip())
+        progress_queue.put(progress)
+        print(f"Output from subprocess: {line}", end="")
+
+    # Check for errors and signal completion/error to the main thread
+    returncode = process.poll()  # Poll for the return code (non-blocking)
+    while returncode is None:
+        time.sleep(0.1)  # Avoid busy-waiting; adjust the sleep duration as needed
+        returncode = process.poll()
+
+
+
+def update_progressbar(progress_bars, progress_queues, threads, root):
+    for i, myqueue in enumerate(progress_queues):
+        try:
+            progress  = myqueue.get(block=False)
+            progress_bars[i]["value"] = progress  # Update progress normally
+        except:
+            pass
+
+#edule the next update after a short delay
+    if all(not t.is_alive() for t in threads) and all(bar["value"] == 100 for bar in progress_bars):
+            ttk.Label(root, text="Simulation Complete!").pack(pady=10)
+    else:      
+
+        root.after(100, update_progressbar, progress_bars, progress_queues,threads, root)
+        
+    
+            
+
+def run_script_instance(output_folder,run,progress_queue):
+    python_path = sys.executable
+    process=subprocess.Popen([python_path, "main.py",'Output folder', output_folder, 'run', str(run)], stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE, text=True, bufsize=1)
+   # output_thread = threading.Thread(target=read_output, args=(process, progress_queue))
+    #output_thread.start()
+    read_output(process, progress_queue)
+
 
 class GUI:
-    def __init__(self, parameters, screen_options):
+    def __init__(self, screen_options):
         self.root = tk.Tk()
         self.root.protocol("WM_DELETE_WINDOW", self._quit)
         self.root.minsize(width=600, height=600)
@@ -23,7 +72,7 @@ class GUI:
         self.root.withdraw()  # Hide the root window initially
 
         self.screen_options = screen_options
-        self.parameters = parameters
+        self.parameters = {"run":0}
         self.Parameters()
         self.current_screen = 0
         self.screen_list =["welcome"] + list(self.screen_options.keys())+["preview","simulation","progress"]
@@ -41,7 +90,8 @@ class GUI:
             inputs=self.screen_options[name]
             for Input in inputs:
                 self.parameters[Input.Name]=Input.Value
-        self.parameters["Output folder"]= datetime.now()
+        now=datetime.now()
+        self.parameters['Output folder']= now.strftime("%Y-%m-%d_%H:%M")
     
     def _quit(self):
         self.root.quit()
@@ -127,9 +177,11 @@ class GUI:
             
         elif self.current_screen==7:
             self.create_progressbar_screen()
+
         else:
             ttk.Label(self.root, text="No options selected.").pack(pady=20)
-    
+
+################################################################################
     
     def center_window(self,root):
         screen_width = root.winfo_screenwidth()
@@ -140,6 +192,9 @@ class GUI:
         y = (screen_height ) // 3
 
         root.geometry(f"{width}x{height}+{x}+{y}")
+        
+        
+################################################################################
 
     def disable_all_widgets(self,widget):
        
@@ -147,9 +202,14 @@ class GUI:
             widget.state(['disabled'])  
         for child in widget.winfo_children():  # Recursively disable children
             self.disable_all_widgets(child)
+            
+            
+##################################################################################
     
     def create_buttons(self,root,packing="grid",next_button_text="Next",back_button_text="Back",row=1,column=0,columnspan=1,myfont=('Helvetica', 16)):
         button_frame = ttk.Frame(root)
+        if self.current_screen==4:
+            next_button_text="Preview"
         if packing=="grid":
             button_frame.grid(row=row, column=column,columnspan=columnspan, padx=10, pady=10, sticky="nsew")
         else:
@@ -173,6 +233,9 @@ class GUI:
         
         next_button = ttk.Button(button_frame, text=next_button_text, command=self.next_screen, style='Green.TButton')
         next_button.grid(row=0, column=2, padx=10, pady=10, sticky="ew")
+        
+        
+#######################################################################################
         
     def load_frame(self,frame,inputs):
         
@@ -212,6 +275,8 @@ class GUI:
                 var.grid(row=i, column=1, columnspan=2, padx=5, pady=5)
             self.widgets[Input.Name]=var
             i+=1
+            
+##############################################################################################
     
     def create_checklist_screen(self,name):  # Added use_entry argument
         inputs=self.screen_options[name]
@@ -234,13 +299,14 @@ class GUI:
         self.create_buttons(self.root,next_button_text="Next",back_button_text="Back")
         #self.center_window(self.root)
 
-    
+##############################################################################################    
+
     def create_simulation_screen(self):
         ttk.Label(self.root, text="Simulation running...").pack(pady=20)
         #self.center_window(self.root)
-        self.root.after(2000, self.next_screen)  # Simulate 2 seconds of running
+        self.root.after(1000, self.next_screen)  # Simulate 2 seconds of running
         
-        
+#############################################################################################       
     
     def create_preview_screen(self):
 
@@ -263,19 +329,41 @@ class GUI:
         self.create_buttons(self.root,next_button_text="Start simulation", back_button_text="Back",row=j,column=0,columnspan=2)
         #self.center_window(self.root)
  
-        
+###############################################################################################        
     
     def create_progressbar_screen(self):
-        progress = ttk.Progressbar(self.root, orient="horizontal", length=300, mode="determinate")
-        progress.pack(pady=20)
+
         #self.center_window(self.root)
-        for i in range(101):
-            progress["value"] = i
-            self.root.update_idletasks()
-            time.sleep(0.02)  # Update every 20 milliseconds (adjust for desired speed)
+        
+        parameters_list=[]
+        Initialize_simulations(parameters=self.parameters,parameters_list=parameters_list)
+        
+        
+        threads = []
+        progress_bars = []
+        progress_queues = [queue.Queue() for _ in parameters_list]
+        for i, par in enumerate(parameters_list):
+            frame = ttk.Frame(self.root)
+            frame.pack(fill="x")  # Expand horizontally
+            style = ttk.Style()
+            style.configure("Bold.TLabel", font=("Helvetica", 12, "bold")) 
+            label = ttk.Label(frame, text=f"run {par['run']}",  style="Bold.TLabel")
+            label.pack(side="left",padx=10)
+            progress_bar =  ttk.Progressbar(frame, orient="horizontal", length=300, mode="determinate")
+            progress_bar.pack(side="left",padx=5,pady=10)
+            show_plot_button = ttk.Button(frame, text="Show shape", command=lambda par=par: show_shape(par))
+            show_plot_button.pack(side="right", padx=5) 
+            show_plot_button = ttk.Button(frame, text="Show spin", command=lambda par=par: show_omega(par))
+            show_plot_button.pack(side="right", padx=5) 
+            progress_bars.append(progress_bar)
+            thread = threading.Thread(target=run_script_instance, args=(par['Output folder'],par['run'],progress_queues[i]))
+            thread.start()
+            threads.append(thread)
+            
+        update_progressbar(progress_bars, progress_queues, threads, self.root)
+
     
-        ttk.Label(self.root, text="Simulation Complete!").pack(pady=10)
-    
+##############################################################################################################
 
     
     def create_welcome_screen(self):
@@ -325,9 +413,9 @@ class GUI:
         creators_frame.pack()
         
         creators = [
-            ("Kumar Gaurav", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "gaurav.jpeg")),
-            ("Deepayan Banik", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Deepayan.jpeg")),
-            # Add more creators as needed
+            ("Gaurav", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "gaurav.jpeg")),
+            ("Deepayan", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Deepayan.jpeg")),
+           ("Gauri", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Gauri.jpg")),
         ]
         
         max_width = 100

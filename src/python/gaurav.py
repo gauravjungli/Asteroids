@@ -17,7 +17,7 @@ import os
 from scipy.special import ellipk, ellipe,elliprf,elliprj
 import matplotlib.pyplot as plt
 import multiprocessing 
-from functions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf,qstarf
+from collisions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf
 import scipy.stats
 from scipy.integrate import simps
 import time
@@ -25,8 +25,7 @@ import shutil
 import copy
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
-from GUI_asteroid import GUI
-import xlwings as xw
+
 
 #%%
 
@@ -65,13 +64,13 @@ class Target:
 
         self.d=float(parameters["Diameter"])
         self.atype=parameters["atype"]
-        self.delta=float(parameters["Friction angle"])
+        self.delta=float(parameters['Friction angle'])
         self.landslide = True if parameters["Landslide"].lower()=='yes' else False
         self.YORP = True if parameters["YORP"].lower()=='yes' else False
         self.collision = True if parameters["Collision"].lower()=='yes' else False
         if self.atype == "S-Type":
             self.mu = 0.55
-            self.dens = parameters["Density"]
+            self.dens = float(parameters["Density"])
             self.Y0, self.d0strength   =  1.44e7, 0.1
             self.nsize = 3  # strength decreases with size as 1/nsize
             self.qconst1, self.qconst2 =  1e3, 1e6
@@ -79,7 +78,7 @@ class Target:
         else:
             # otherwise - C-Type
             self.mu = 0.41
-            self.dens = parameters["Density"]
+            self.dens = float(parameters["Density"])
             self.Y0, self.d0strength   = 1e5,  0.1
             self.nsize = 3  
             self.qconst1, self.qconst2 = 2e3, 4e5 
@@ -87,16 +86,16 @@ class Target:
             
         self.M= (math.pi / 6) * self.dens * self.d**3
         self.jinertia= [2/5 * self.M * (self.d/2)**2]*3
-        self.omega=[0,0, (G * 4 / 3 * math.pi * self.dens) ** 0.5* float(parameters[ "omega_in"])]
+        self.omega=[0,0, (G * 4 / 3 * math.pi * self.dens) ** 0.5* float(parameters[ 'Angular velocity'])]
         self.kvg=0.3
         self.K=float(parameters["K"])
         self.grav=G*self.M/(self.d/2)**2
-        self.obliq=float(parameters["obliq"])
+        self.obliq=float(parameters["Obliquity"])
         self.dstarave=qstarf(self, math.pi / 4, velave)[2]
         # Set the seed for NumPy's random number generator
         np.random.seed(int(time.time()))
         self.coeff_f,self.coeff_g=shape_gen(self.K)
-        self.sma= float(parameters["sma"])
+        self.sma= float(parameters['Semi major axis'])
         self.f_spline, self.g_spline = read_f_g_spline(parameters)
 
         
@@ -167,24 +166,18 @@ def Fit(parameters):
 #%%   Verified
 
 def Parameter(parameters,filetype):
-    if filetype=="input":
-        inputfile = Output_File(parameters, filetype ,["parameters.xlsx"])
-        data_dict=read_xlsx_to_input_field_dict(inputfile)
-        gui=GUI(parameters,data_dict)
-        gui.root.mainloop()
-        #write_input_fields_to_xlsx(data_dict, inputfile)
-    else:
-        inputfile = Output_File(parameters, filetype ,["parameters"])
-        with open(inputfile, "r") as file:
-            for line in file:
-                line = line.strip()
-                if '--' in line:
-                    continue
-                if line:
-                    values = re.split(r"\s+",line)
-                    key = values[0]
-                    value = values[1]
-                    parameters[key] = value
+
+    inputfile = Output_File(parameters, filetype ,["parameters"])
+    with open(inputfile, "r") as file:
+        for line in file:
+            line = line.strip()
+            if '--' in line:
+                continue
+            if line:
+                values = re.split(r'\t+',line)
+                key = values[0].strip()
+                value = values[1].strip()
+                parameters[key] = value
     return parameters
               
 #%% 
@@ -287,7 +280,7 @@ def write_input_fields_to_xlsx(data_dict, filename):
 
 #%%
 
-def Initialize(parameters,target,run):
+def Initialize(parameters,target):
     
 
     parameters['jinertia1'] = target.jinertia[0] / (target.d / 2)**5 / target.dens
@@ -296,16 +289,10 @@ def Initialize(parameters,target,run):
     parameters['time'] = 0
     parameters['omega'] = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5
     parameters['dia']=target.d
-    parameters['run']=run
+    
     
     mydir=Output_File (parameters,"output")
-    if os.path.exists(mydir):
-        subprocess.run(["rm", "-r", mydir])
-    else:
-        print("No directory exists")
-    os.makedirs(mydir, exist_ok=True) 
-    os.makedirs(os.path.join(mydir,"data"), exist_ok=True) 
-    parameters['folder']=mydir
+
     
     Exparameter(parameters)
     file = Output_File(parameters, "output", ["output.yorp"])
@@ -323,7 +310,7 @@ def Initialize(parameters,target,run):
         np.savetxt(mydir+"/base.txt",base,delimiter=",")
         Gravitycalc(parameters)
 
-        executable_file=Output_File(parameters,"build",parameters["executable"])
+        executable_file=Output_File(parameters,"build",[parameters["executable"]])
         
         try:
             shutil.copy(executable_file, mydir)
@@ -340,6 +327,9 @@ def Initialize(parameters,target,run):
 
 def Height(parameters,target,impactor=None):
     
+    if  not target.landslide:
+        return
+    
     mydir=Output_File (parameters,"output",["base.txt"])
     res=int(parameters["Resolution"])
     offset=float(parameters["offset"])
@@ -349,7 +339,7 @@ def Height(parameters,target,impactor=None):
     
     def gaussian(x, mean, std_dev):
         return np.exp(-((x - mean)**2) / (2 * std_dev**2)) / (std_dev * np.sqrt(2 * np.pi))
-    if parameters['profile']=="Gaussian":
+    if parameters['Profile'].lower()=="gaussian":
         
         #for Gaussian profiles
         mean = impactor.Phi        # Mean of the distribution in degrees
@@ -362,7 +352,7 @@ def Height(parameters,target,impactor=None):
         scaling_factor = min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*math.pi / area_under_curve
         height = gaussian_values * scaling_factor
         
-    elif parameters['profile']=="Uniform" or parameters['profile']=="uniform":#for uniform profiles
+    elif parameters['Profile'].lower()=="uniform":#for uniform profiles
         height= min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*np.ones(res)
         
     else:
@@ -375,14 +365,14 @@ def Height(parameters,target,impactor=None):
 
 #%%  Verified
 
-def Exparameter(parameters):
+def Exparameter(parameters, filetype="output"):
        
-    mydir=Output_File (parameters,"output",["parameters"])
+    mydir=Output_File (parameters,filetype,["parameters"])
     with open(mydir,"w") as f:
         for key in parameters.keys():
-            f.writelines(["-"*50,"\n"])
-            f.writelines(f"{key.ljust(25)}{parameters[key]}\n")
-        f.writelines(["-"*50])
+            f.writelines(["-"*100,"\n"])
+            f.writelines(f'{key.ljust(40)}\t{parameters[key]}\n') 
+        f.writelines(["-"*100])
    
 #%%
 
@@ -513,9 +503,8 @@ def Landslides(target,parameters,impacttime,myomega):
     
     try:
         # 3. Capture Output for Debugging (initially)
-        os.mkdir(parameters['verbose'])
-        result = subprocess.run([executable_path], cwd=working_directory,
-                                capture_output=True, text=True) 
+        os.mkdir(parameters['verbose_dir'])
+        result = subprocess.run([executable_path], cwd=working_directory, capture_output=True, text=True) 
     
         if result.returncode != 0:
             print("Aborting due to error in running the executable gaurav")
@@ -649,12 +638,10 @@ def Output_File (parameters,filetype="",filenames=[]):
     dir = os.path.dirname(os.path.dirname(os.getcwd()))
     filenames1=copy.deepcopy(filenames)
     if filetype=="output":
-        output_folder=parameters["Output folder"]
-        mydir="files_"+str(format(float(parameters["Friction angle"]),".6f"))+"_"+str(format(float(parameters["Angular velocity"]),".6f"))
-        if int(parameters["run"])>0:
+        output_folder=parameters['Output folder']
+        if int(parameters['run'])>0:
             filenames1.insert(0,"run"+str(parameters["run"]))
         filenames1.insert(0,output_folder)
-        filenames1.insert(0,mydir)
         
     return os.path.join(dir,filetype,*filenames1)
 #%%
@@ -756,3 +743,24 @@ def shape_gen(K):
 
     return coeff1, coeff2
 
+#%%
+
+def Initialize_simulations(parameters,parameters_list):    
+    run = list(range(1, int(parameters['Number of simulations'])+1))  # List of input values
+    for i in run:
+        new_parameters={}
+        for key in parameters:
+            new_parameters[key]=parameters[key]
+        new_parameters['run']=i
+        mydir=Output_File (new_parameters,"output")
+        if os.path.exists(mydir):
+            subprocess.run(["rm", "-r", mydir])
+        else:
+            print("No directory exists")
+        os.makedirs(mydir, exist_ok=True) 
+        new_parameters['Data folder']=os.path.join(mydir,"data")
+        os.makedirs(new_parameters['Data folder'], exist_ok=True) 
+        Exparameter(new_parameters)
+        parameters_list.append(new_parameters)
+    
+    Exparameter(parameters)

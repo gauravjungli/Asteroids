@@ -73,7 +73,11 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g)
 
 void Base ( vector<double>& b,vector<double>& h,vector<double>& x)
 {
-    std::string  file1=folder +"/base.txt";
+    fs::path base_path = Output_folder;
+
+	fs::path file_name= "base.txt";
+	fs::path full_path = base_path.parent_path()/ file_name;
+	string file1=	full_path.string();
     ifstream myfile(file1);
 
     std::string line;

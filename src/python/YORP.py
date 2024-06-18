@@ -8,7 +8,7 @@ Created on Thu May 16 12:06:35 2024
 
 import numpy as np
 from gaurav import Output_File, Height, Landslides, shape_gen
-from functions import G, wobblecalcf
+from collisions import G, wobblecalcf
 import math
 
 

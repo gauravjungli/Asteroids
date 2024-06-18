@@ -34,9 +34,13 @@ myfile.close();
 }
 
 void Write (const vector<double>& x, const vector<CV>& w, string file)
-{
-ofstream myfile(file+"/base.txt");
-if (!myfile) Error("Can't open output file field",file);
+{   
+    fs::path base_path=file;
+    fs::path file_name= string("base.txt");
+	fs::path full_path = base_path / file_name;
+	string file2=full_path.string();
+ofstream myfile(file2+"/base.txt");
+if (!myfile) Error("Can't open output file field",file2);
 for (int i=0;i<res;i++)
 		myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/Gamma*w[i].h)<<","<<0<<"\n";
 myfile.close();
@@ -53,10 +57,10 @@ if (!myfile)
 
 for (auto i = par.begin(); i != par.end(); i++)
     {
-        myfile<<std::string(50,'-')<<"\n";
-		myfile<<left<<std::setw(25)<< i->first << i->second<<endl;
+        myfile<<std::string(100,'-')<<"\n";
+		myfile<<left<<std::setw(40)<< i->first<<"\t" << i->second<<endl;
     }
-myfile<<std::string(50,'-')<<"\n";
+myfile<<std::string(100,'-')<<"\n";
 myfile.close();
 }
 
@@ -94,21 +98,31 @@ bool Parameters()
     {
         if (line.find("--")!=std::string::npos)
             continue;
-        istringstream iss(line);
-        string word1;
-        if (!(iss >> word1))
-            continue;  // line had no words
-        string word2;
-        if (!(iss >> word2))
-            continue;  // line only had one word
 
-		par[word1]= word2;
+        line = regex_replace(line, regex("^\\t+|\\t+$"), ""); 
+
+        // Split the line based on multiple spaces
+        istringstream iss(line);
+        string key, value;
+
+        // Get the key (potentially with spaces)
+        getline(iss, key, '\t'); 
+         key = regex_replace(key, regex("^\\s+|\\s+$"), "");
+        // Discard multiple spaces
+        while (iss.peek() == '\t') {
+            iss.get(); 
+        }
+
+        // Get the remaining part as the value
+        getline(iss, value); 
+        par[key] = value;
      
-    
     }
     myfile.close();
     return true;
 }
+
+
 
 
 // Function to read a 2D array from a file

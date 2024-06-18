@@ -22,12 +22,12 @@ const double epsilon= stod(par["epsilon"]);
 const double omega= stod(par["omega"]);
 const double dx= (xmax-xmin-2*offset)/res;
 const double past_time=stod(par["time"]);
-const double dia=stod(par["Diameter"]);
+const double dia=stod(par["dia"]);
 const double min_h=pow(dx,4);
 const double Gamma=stod(par["Gamma"]);
 double delta=Delta;
 const string fric_type=par["Friction type"];
-const string folder=par["folder"];
+const string Output_folder=par["Data folder"];
 const string verbose_dir=par["verbose_dir"];
 const string verbose=par["verbose"];
 
@@ -37,12 +37,19 @@ int main()
 	chrono::steady_clock sc;
 	auto start = sc.now();
 	double Ang_Shed=0;
-	std::string file=folder;
-	std::cout<<file<<endl;
+	std::string file=Output_folder;
 	
+	std::ofstream outfile("c++_output.txt");  // Create or open output file
+
+	std::streambuf *coutbuf = std::cout.rdbuf(); 
+    std::streambuf *cerrbuf = std::cerr.rdbuf(); 
+    if (outfile.is_open()) {
+        std::cout.rdbuf(outfile.rdbuf()); // Redirect cout
+        std::cerr.rdbuf(outfile.rdbuf()); // Redirect cerr
+	}
 	vector<Grav> g(res);
-	
-	Init_grav(g,file);
+	fs::path base_path = file;
+	Init_grav(g,base_path.parent_path());
 	
 	vector<double> x(res);
 	//Grid(x);
@@ -55,15 +62,14 @@ int main()
 	//filesystem::create_directory(file); 
 	
 
-	fs::path base_path = file;
-	fs::path file_path = "data";
+	
 
 	fs::path file_name= string("field_")+to_string(int(slides))+string(".csv");
-	fs::path full_path = base_path / file_path/file_name;
+	fs::path full_path = base_path / file_name;
 	string file1=	full_path.string();
 
 	file_name= string("log.txt");
-	full_path = base_path / file_path/file_name;
+	full_path = base_path / file_name;
 	string file2=full_path.string();	
 	ofstream myfile(file2,std::ofstream::app);
 
@@ -85,7 +91,7 @@ int main()
 	par["omega"]=to_string((Ang_Mom-Ang_Shed)/stod(par["jinertia"]),15);
 
 	Write(w,file1);
-	Write(x,w,file);
+	Write(x,w,base_path.parent_path());
 	Write (par);
 	myfile<<"Initial Angular Momentum --> "<<Ang_Mom<<endl<<" Total Angular Momentum Shed --> "<<Ang_Shed<<endl ;
 	myfile<<"Final omega --> "<<par["omega"]<<endl<<" Final Inertia--> "<<par["jinertia"]<<endl ;
@@ -95,5 +101,9 @@ int main()
    	myfile<<"Operation took: "<<time_span.count()<<" seconds !!! "<<endl;
 	myfile<<"----------------------------------------------------------------------------"<<endl;
 	myfile<<"----------------------------------------------------------------------------"<<endl;
+	myfile.close();
+	std::cout.rdbuf(coutbuf); 
+    std::cerr.rdbuf(cerrbuf);
+	outfile.close();
 	return 0;
 }

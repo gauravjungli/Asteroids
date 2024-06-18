@@ -51,9 +51,12 @@ void March (vector<CV>& w, double& Ang_Shed)
 	int check_t=1; 
 	while(t<finalt)
 	{
-		if(timesteps%dump==0 && (par["verbose"]=="True"|| par["verbose"]=="true" ))
-		{
-			string file2=file1+string("/field_")+to_string(int(timesteps/dump))+string(".csv");
+		if(timesteps%dump==0 && (verbose=="Yes"|| verbose=="yes" ))
+		{	
+			fs::path base_path = verbose_dir;
+			fs::path file_name= string("field_")+to_string(int(timesteps/dump))+string(".csv");
+			fs::path full_path = base_path / file_name;
+			string file2=	full_path.string();
 			Write(w, file2);
 		}
 		
@@ -82,7 +85,11 @@ void March (vector<CV>& w, double& Ang_Shed)
 		std::cout<<std::setprecision(18)<<t<<"  "<<sum<<"  "<<delta<<endl;
 
 	}
-	string file2=folder+string("/log.txt");	
+	fs::path base_path = verbose_dir;
+	fs::path file_name= string("log.txt");
+	fs::path full_path = base_path / file_name;
+	string file2=	full_path.string();
+	
 	ofstream myfile(file2,std::ofstream::app);
 	Shed(w, Ang_Shed);
 	myfile<<"Simulation ran for time --> " <<t<<endl;
