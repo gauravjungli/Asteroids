@@ -28,8 +28,8 @@ void Write (const vector<CV>& w, string file)
 {
 ofstream myfile(file);
 if (!myfile) Error("Can't open output file field",file);
-for (int i=2;i<res-2;i++)
-	myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].h<<","<<w[i].b<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<","<<dia<<"\n";
+for (int i=0;i<res;i++)
+	myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].b<<","<<w[i].h<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<"\n";
 myfile.close();
 }
 
@@ -39,11 +39,15 @@ void Write (const vector<double>& x, const vector<CV>& w, string file)
     fs::path file_name= string("base.txt");
 	fs::path full_path = base_path / file_name;
 	string file2=full_path.string();
-ofstream myfile(file2+"/base.txt");
-if (!myfile) Error("Can't open output file field",file2);
-for (int i=0;i<res;i++)
-		myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/Gamma*w[i].h)<<","<<0<<"\n";
-myfile.close();
+    ofstream myfile(file2);
+    if (!myfile) 
+    {
+        Error("Can't open output file field",file2);
+        return;
+    }
+    for (int i=0;i<res;i++)
+        myfile<<std::setprecision(18)<<x[i]<<","<<(w[i].b+epsilon/Gamma*w[i].h)<<","<<0<<"\n";
+    myfile.close();
 }
 
 void Write ( std::map <std::string, string> par)

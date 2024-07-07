@@ -82,7 +82,7 @@ void March (vector<CV>& w, double& Ang_Shed)
 			sum1=sum;
 			check_t++;
 		}
-		std::cout<<std::setprecision(18)<<t<<"  "<<sum<<"  "<<delta<<endl;
+		//std::cout<<std::setprecision(18)<<t<<"  "<<sum<<"  "<<delta<<endl;
 
 	}
 	fs::path base_path = verbose_dir;

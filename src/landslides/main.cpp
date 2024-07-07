@@ -39,7 +39,7 @@ int main()
 	double Ang_Shed=0;
 	std::string file=Output_folder;
 	
-	std::ofstream outfile("c++_output.txt");  // Create or open output file
+	std::ofstream outfile("c++_output.txt",std::ofstream::app);  // Create or open output file
 
 	std::streambuf *coutbuf = std::cout.rdbuf(); 
     std::streambuf *cerrbuf = std::cerr.rdbuf(); 
@@ -73,6 +73,13 @@ int main()
 	string file2=full_path.string();	
 	ofstream myfile(file2,std::ofstream::app);
 
+	file_name= string("dia.txt");
+	full_path = base_path / file_name;
+	file2=full_path.string();	
+	ofstream dia_file(file2,std::ofstream::app);
+
+	dia_file<< past_time <<"\t"<< dia << endl;
+
 	myfile<<"Impact number "<<slides<<endl;
 	myfile<<"Impact time "<<past_time<<endl;
 	myfile<<"Initial omega --> "<<omega<<endl<<" Initial Inertia --> "<<par["jinertia"]<<endl ;
@@ -93,6 +100,7 @@ int main()
 	Write(w,file1);
 	Write(x,w,base_path.parent_path());
 	Write (par);
+
 	myfile<<"Initial Angular Momentum --> "<<Ang_Mom<<endl<<" Total Angular Momentum Shed --> "<<Ang_Shed<<endl ;
 	myfile<<"Final omega --> "<<par["omega"]<<endl<<" Final Inertia--> "<<par["jinertia"]<<endl ;
 
@@ -105,5 +113,6 @@ int main()
 	std::cout.rdbuf(coutbuf); 
     std::cerr.rdbuf(cerrbuf);
 	outfile.close();
+	dia_file.close();
 	return 0;
 }

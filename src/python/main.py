@@ -37,7 +37,9 @@ if __name__=="__main__":
 
     Parameter(parameters, "output")
     myfile=Output_File(parameters,"output",["python_log.txt"])
-    sys.stdout = open(myfile, "w") 
+    log_file=open(myfile, "w") 
+    sys.stdout = log_file
+    sys.stderr = log_file
     start_time=time.time()
     target=Target(parameters)
     cumdistr=Cumdistr(parameters)
@@ -59,31 +61,47 @@ if __name__=="__main__":
         
         
         if istuff[i].explicit:
+            print("Calling landslide")
             Height(parameters,target,istuff[i])
             Landslides(target,parameters,istuff[i].impacttime,myomega)
             if parameters["stoc_yorp"].lower()=='yes':
-                target.coeff_f, target.coeff_g = abs(shape_gen(target.K))
+                target.coeff_f, target.coeff_g = shape_gen(target.K)
                
              
         #print(istuff[i].d)
         oldtime = istuff[i].impacttime
         print(round(oldtime/tmaxby*100),file=sys.__stdout__,flush=True)
         sys.stdout.flush() 
-        ExportOmega(myomega,parameters,target) 
+        ExportOmega(myomega,parameters) 
         #plt.clf()
         #plt.plot([data[0] for data in myomega],[(2*math.pi/data[1]/3600) for data in myomega])
         #plt.show()
         #plt.pause(0.5)
-    
+    print("All collisions simulated. Final YORP simulations")
     YORP(target,parameters,tmaxby,oldtime,myomega)
-    myomega.append([tmaxby,target.omega[2]])
-    ExportOmega(myomega,parameters,target)    
+    ExportOmega(myomega,parameters)    
     print(100,file=sys.__stdout__,flush=True)
+    executable_file=Output_File(parameters,"output",[parameters["executable"]])
+    
+    try:
+        os.remove(executable_file)
+        print(f"File '{executable_file}' has been deleted successfully.")
+    except FileNotFoundError:
+        print(f"File '{executable_file}' not found.")
+    except PermissionError:
+        print(f"Permission denied: '{executable_file}'.")
+    except Exception as e:
+        print(f"Error occurred while trying to delete the file: {e}")
+
+
+
 
     end_time=time.time()
     elapsed_time=end_time-start_time
     
     print("Time taken:", elapsed_time, "seconds")
-    sys.stdout.close()  
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+    log_file.close()  
     
     

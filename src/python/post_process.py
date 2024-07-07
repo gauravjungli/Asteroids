@@ -13,6 +13,70 @@ from gaurav import Parameter
 import seaborn as sns
 
 #from mpl_toolkits.mplot3d import Axes3D
+
+def show_shape(parameters):
+    plt.close()
+    fig,ax = plt.subplots()
+    
+    for count in range(0,100):
+        
+        file1=parameters['Data folder']
+        
+        file=os.path.join(file1,f'field_{(count+1)}.csv')
+        if os.path.exists(file):
+            
+            w=np.loadtxt(file,delimiter=",",dtype=float)
+           # if count!=slides-1 and count!=0:
+            #    continue
+            #plt.clf()
+            x=np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+            y=np.cos(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+            ax.plot(x,y,'-r',linewidth=4)
+            x=-np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+            ax.plot(x,y,'-r',linewidth=2)
+            ax.set_aspect('equal')
+            title=f'landslide number={count+1}'
+            ax.set_title(title)
+            fig.canvas.draw()
+            fig.canvas.flush_events()
+            plt.show(block=False)
+            fig.canvas.draw_idle()
+            plt.pause(0.1)
+            #plt.savefig(file1+"/img_"+str(count+1)+".svg",dpi=300,bbox_inches="tight")
+        else:
+            break
+    #plt.pause(10)
+    #plt.close(fig)
+    
+
+def show_omega(parameters):
+    plt.close()
+    fig,ax = plt.subplots()
+    file2='/home/g/Asteroids/output'
+    file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
+    file=os.path.join(file2,parameters['Output folder'],f'run{parameters["run"]}',file1)
+    if os.path.exists(file):
+      
+        w=np.loadtxt(file,dtype=float)
+        x=w[:,0]
+        y=2*np.pi/w[:,1]/3600
+        ax.plot(x,y,'-r',linewidth=2)
+        title="Evolution of time period"
+        ax.set_ylabel("Time period (hrs)")
+        ax.set_xlabel("Simulation time")
+        ax.set_title(title)
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+        plt.show(block=False)
+        fig.canvas.draw_idle()
+        
+    plt.pause(0.1)
+    #plt.close(fig)
+     
+     
+
+
+
 def backup():
     plt.rcParams.update({'font.size' : 14})
     colors=sns.color_palette("rocket",7)
@@ -134,154 +198,155 @@ plt.savefig('output/Omega.svg', dpi=300,bbox_inches="tight")
 
 #%%
 #script for plot 1
-file1="output/omega_15_0.65_0.002"
-fig = plt.figure(figsize=(6,6)) 
-omega=np.loadtxt(file1+"/omega_CL.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='C')
-
-omega=np.loadtxt(file1+"/omega_CLY.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,1]/3600)),linewidth=2,markersize=8,color=colors[6],linestyle='dashed',label='Y')
-
-omega=np.loadtxt(file1+"/omega_L.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='o',mfc='w',markersize=8,color=colors[2],linestyle='None',label='L')
-
-
-omega=np.loadtxt(file1+"/omega_CLY.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,2]/3600),linewidth=2,marker='s',mfc='w',markersize=8,color=colors[3],linestyle='None',label='CY')
-
-omega=np.loadtxt(file1+"/omega_CL.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[4],linestyle='None',label='CL')
-
-omega=np.loadtxt(file1+"/omega_LY.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,markersize=8,color=colors[5],linestyle='solid',label='LY')
-
-omega=np.loadtxt(file1+"/omega_CLY.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,markersize=8,color=colors[1],linestyle='dotted',label='CLY')
-
-yticks = np.arange(2.5,4.6,0.5)
-#plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
-plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
-plt.yticks(yticks)
-plt.xlabel('Time (Myr)')
-plt.ylabel('Time Period (hr)')
-plt.xlim([0,1])
-plt.ylim([2.48,4.5])
-plt.minorticks_on()
-plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
-plt.tick_params(labelsize=14)
-plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
-plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
-plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
-plt.legend(loc='best')
-plt.legend(fontsize=14) 
-plt.savefig('output/Omega.svg', dpi=300,bbox_inches="tight")
+def plot1():
+    file1="output/omega_15_0.65_0.002"
+    fig = plt.figure(figsize=(6,6)) 
+    omega=np.loadtxt(file1+"/omega_C.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='C')
+    
+    omega=np.loadtxt(file1+"/omega_Y.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,1]/3600)),linewidth=2,markersize=8,color=colors[6],linestyle='dashed',label='Y')
+    
+    omega=np.loadtxt(file1+"/omega_L.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='o',mfc='w',markersize=8,color=colors[2],linestyle='None',label='L')
+    
+    
+    omega=np.loadtxt(file1+"/omega_CY.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,2]/3600),linewidth=2,marker='s',mfc='w',markersize=8,color=colors[3],linestyle='None',label='CY')
+    
+    omega=np.loadtxt(file1+"/omega_CL.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[4],linestyle='None',label='CL')
+    
+    omega=np.loadtxt(file1+"/omega_LY.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,markersize=8,color=colors[5],linestyle='solid',label='LY')
+    
+    omega=np.loadtxt(file1+"/omega_CLY.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,markersize=8,color=colors[1],linestyle='dotted',label='CLY')
+    
+    yticks = np.arange(2.5,4.6,0.5)
+    #plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
+    plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
+    plt.yticks(yticks)
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('Time Period (hr)')
+    plt.xlim([0,1])
+    plt.ylim([2.48,4.5])
+    plt.minorticks_on()
+    plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
+    plt.tick_params(labelsize=14)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
+    plt.legend(loc='best')
+    plt.legend(fontsize=14) 
+    plt.savefig('output/Omega.svg', dpi=300,bbox_inches="tight")
 
 #%%
 
 #script for plot 2
-
-file1="output/saved_data/files_15.000000_0.200000"
-
-fig = plt.figure(figsize=(6,6)) 
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='CY')
-
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,3]/3600)),linewidth=2,marker='o',mfc='w',markersize=8,color=colors[6],linestyle='None',label='CLY')
-
-
-file1="output/saved_data/files_15.000000_0.800000"
-
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[1],linestyle='solid',label='CY')
-
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,3]/3600)),linewidth=2,markersize=8,color=colors[4],linestyle='dotted',label='CLY')
-
-
-yticks = [2.5,3,4,6,8,10,12,14]
-#plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
-plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
-plt.yticks(yticks)
-plt.xlabel('Time (Myr)')
-plt.ylabel('Time Period (hr)')
-plt.xlim([0,1])
-plt.ylim([2.3,14])
-plt.minorticks_on()
-plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
-plt.tick_params(labelsize=14)
-plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
-plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
-plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
-plt.legend(loc='best')
-plt.legend(fontsize=14) 
-plt.savefig('output/Omega_1.svg', dpi=300,bbox_inches="tight")
-
-
-#%%
-
-#script for plot 3
-
-file1="/Users/kumargaurav/Asteroid_data/saved_data/files_15.000000_0.650000_1"
-
-fig = plt.figure(figsize=(6,6)) 
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='CY')
-
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,3]/3600)),linewidth=2,markersize=8,color=colors[3],linestyle='solid',label='CLY')
-
-
-
-yticks = [3,3.5,4,4.5,5]
-#plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
-plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
-plt.yticks(yticks)
-plt.xlabel('Time (Myr)')
-plt.ylabel('Time Period (hr)')
-plt.xlim([0,5])
-plt.ylim([2.9,5.5])
-plt.minorticks_on()
-plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
-plt.tick_params(labelsize=14)
-plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
-plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
-plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
-plt.legend(loc='best')
-plt.legend(fontsize=14) 
-plt.savefig('output/Omega_2.svg', dpi=300,bbox_inches="tight")
+def plot2():
+    file1="output/saved_data/files_15.000000_0.200000"
+    
+    fig = plt.figure(figsize=(6,6)) 
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='CY')
+    
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,3]/3600)),linewidth=2,marker='o',mfc='w',markersize=8,color=colors[6],linestyle='None',label='CLY')
+    
+    
+    file1="output/saved_data/files_15.000000_0.800000"
+    
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[1],linestyle='solid',label='CY')
+    
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,3]/3600)),linewidth=2,markersize=8,color=colors[4],linestyle='dotted',label='CLY')
+    
+    
+    yticks = [2.5,3,4,6,8,10,12,14]
+    #plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
+    plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
+    plt.yticks(yticks)
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('Time Period (hr)')
+    plt.xlim([0,1])
+    plt.ylim([2.3,14])
+    plt.minorticks_on()
+    plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
+    plt.tick_params(labelsize=14)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
+    plt.legend(loc='best')
+    plt.legend(fontsize=14) 
+    plt.savefig('output/Omega_1.svg', dpi=300,bbox_inches="tight")
 
 
 #%%
 
 #script for plot 3
+def plot3():
+    file1="/Users/kumargaurav/Asteroid_data/saved_data/files_15.000000_0.650000_1"
+    
+    fig = plt.figure(figsize=(6,6)) 
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='CY')
+    
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,3]/3600)),linewidth=2,markersize=8,color=colors[3],linestyle='solid',label='CLY')
+    
+    
+    
+    yticks = [3,3.5,4,4.5,5]
+    #plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
+    plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
+    plt.yticks(yticks)
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('Time Period (hr)')
+    plt.xlim([0,5])
+    plt.ylim([2.9,5.5])
+    plt.minorticks_on()
+    plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
+    plt.tick_params(labelsize=14)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
+    plt.legend(loc='best')
+    plt.legend(fontsize=14) 
+    plt.savefig('output/Omega_2.svg', dpi=300,bbox_inches="tight")
 
-file1="/Users/kumargaurav/Documents/Asteroids/output/saved_data/files_15.000000_0.650000_C"
 
-fig = plt.figure(figsize=(6,6)) 
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,1]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='Y')
+#%%
 
-omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
-plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[3],linestyle='solid',label='CY')
-
-
-
-yticks = [3,4,5,10,15,20,25]
-#plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
-plt.yticks(yticks)
-plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
-plt.gca().yaxis.set_minor_formatter(mtick.NullFormatter())
-plt.xlabel('Time (Myr)')
-plt.ylabel('Time Period (hr)')
-plt.xlim([0,5])
-plt.ylim([2.8,25.5])
-plt.minorticks_on()
-plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
-plt.tick_params(labelsize=14)
-plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
-plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
-plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
-plt.legend(loc='best')
-plt.legend(fontsize=14) 
-plt.savefig('output/Omega_3.svg', dpi=300,bbox_inches="tight")
+#script for plot 3
+def plot4():
+    file1="/Users/kumargaurav/Documents/Asteroids/output/saved_data/files_15.000000_0.650000_C"
+    
+    fig = plt.figure(figsize=(6,6)) 
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,1]/3600)),linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='Y')
+    
+    omega=np.loadtxt(file1+"/omega_T.txt",delimiter="\t")
+    plt.semilogy(omega[:,0]/1e+6,((2*math.pi/omega[:,2]/3600)),linewidth=2,markersize=8,color=colors[3],linestyle='solid',label='CY')
+    
+    
+    
+    yticks = [3,4,5,10,15,20,25]
+    #plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
+    plt.yticks(yticks)
+    plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
+    plt.gca().yaxis.set_minor_formatter(mtick.NullFormatter())
+    plt.xlabel('Time (Myr)')
+    plt.ylabel('Time Period (hr)')
+    plt.xlim([0,5])
+    plt.ylim([2.8,25.5])
+    plt.minorticks_on()
+    plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
+    plt.tick_params(labelsize=14)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
+    plt.legend(loc='best')
+    plt.legend(fontsize=14) 
+    plt.savefig('output/Omega_3.svg', dpi=300,bbox_inches="tight")

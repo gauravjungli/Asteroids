@@ -161,6 +161,7 @@ def Fit(parameters):
     Exparameter(parameters)
     np.savetxt(file,w,delimiter=",")
     print ("The best fit value of r is ", r)
+    return r
 
 
 #%%   Verified
@@ -298,7 +299,7 @@ def Initialize(parameters,target):
     file = Output_File(parameters, "output", ["output.yorp"])
     with open(file, "w") as output_file:  # Overwrites existing files
         output_file.write(
-            f"{0 :12.6e} {(2*np.pi / target.omega[2])/3600:12.8e} {target.obliq:12.8e}\n")
+            f"{0 :12.6e} {target.omega[2]:12.8e} {target.obliq:12.8e}\n")
     if target.landslide:
         res=int(parameters["Resolution"])
         base=np.zeros((res,3))
@@ -339,24 +340,30 @@ def Height(parameters,target,impactor=None):
     
     def gaussian(x, mean, std_dev):
         return np.exp(-((x - mean)**2) / (2 * std_dev**2)) / (std_dev * np.sqrt(2 * np.pi))
-    if parameters['Profile'].lower()=="gaussian":
-        
-        #for Gaussian profiles
-        mean = impactor.Phi        # Mean of the distribution in degrees
-        std_dev =   math.pi/10     # Standard deviation of the distribution in degrees
     
-        gaussian_values = gaussian(base[:,0], mean, std_dev)
-    
-        dx=(math.pi-2*offset)/res
-        area_under_curve = sum(gaussian_values*np.sin(base[:,0])*dx)
-        scaling_factor = min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*math.pi / area_under_curve
-        height = gaussian_values * scaling_factor
+
+    if impactor:
+        H=min(0.02*(impactor.dens/1260)*(impactor.d/2)**3*(impactor.vel/5000)**2/epsilon,10)
+        print(f'the destablization height is {H} and the impactor diameter is {impactor.d}' )
+        if parameters['Profile'].lower()=="gaussian":
+            
+            #for Gaussian profiles
+            mean = impactor.Phi        # Mean of the distribution in degrees
+            std_dev =   math.pi/10     # Standard deviation of the distribution in degrees
         
-    elif parameters['Profile'].lower()=="uniform":#for uniform profiles
-        height= min(max((impactor.d/target.dstarave)**3*(0.1/float(parameters["epsilon"])),1),10)*np.ones(res)
+            gaussian_values = H*gaussian(base[:,0], mean, std_dev)
+        
+            dx=(math.pi-2*offset)/res
+            area_under_curve = sum((1+Gamma*base[:,1])**2*gaussian_values*np.sin(base[:,0])*dx)
+            scaling_factor = sum((1+Gamma*base[:,1])**2*np.sin(base[:,0])*dx)*H/ area_under_curve
+            height = gaussian_values * scaling_factor
+            
+        elif parameters['Profile'].lower()=="uniform":#for uniform profiles
+            height= H*np.ones(res)
         
     else:
         #height=[ max(0.1,0.20*Gamma/epsilon*b[1]) for b in base]
+        print("No impactor found to inititate landslide. Probably its a rotational failure")
         height=np.ones(res)
     base[:,1]=base[:,1]-epsilon/Gamma*height
     base[:,2]=height[:]
@@ -458,8 +465,8 @@ def Gravity(R, Z,r,z):
     
 #%% verified
 
-def ExportOmega(myomega,parameters,target):
-    filename=f"Omega_{'C' if target.collision else ''}{'L' if target.landslide else ''}{'Y' if target.YORP else ''}.txt"
+def ExportOmega(myomega,parameters):
+    filename=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
     mydir=Output_File(parameters,"output",[filename])
     
     resultExport = ""
@@ -524,7 +531,7 @@ def Landslides(target,parameters,impacttime,myomega):
         
     
     Parameter(parameters,"output")
-    Fit(parameters)
+    fit=Fit(parameters)
     Parameter(parameters,"output")
     
     target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
@@ -534,7 +541,8 @@ def Landslides(target,parameters,impacttime,myomega):
     target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
     target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
-    Gravitycalc(parameters)
+    if abs(1-fit)>float(parameters['epsilon'])/2 or int(parameters["slides"])%5==0:
+        Gravitycalc(parameters)
     
     myomega.append([impacttime,target.omega[2]])
     print("Omega after the Landslides", target.omega[2])
@@ -608,9 +616,9 @@ def Cumdistr(parameters):
 def Istuff(target,tmaxby,cumdistr):
     prob = probi * tmaxby * (target.d/2) ** 2
 
-    numgtd = round(astnum(target.d,cumdistr)[0])#restore it to dstarave
+    numgtd = round(astnum(target.dstarave,cumdistr)[0])
     dialittle = cumdistr[-1][0]
-    dexplicit = max(1.1*dialittle, 0.025 * target.dstarave)#restore it to 0.025
+    dexplicit = max(1.1*dialittle, 0.025 * target.dstarave)
     binexplicit = astnum(dexplicit,cumdistr)[1]
     dexplicit = cumdistr[binexplicit + 1][0]
     nexplicit = round(astnum(dexplicit,cumdistr)[0])
@@ -701,7 +709,6 @@ def shape_gen(K):
         tuple: A tuple containing the generated values of coeff1 and coeff2.
     """
 
-    # Parameters (same as in Fortran code)
     K_t = 0.005
     max_g = 1.8 / 1.1
     min_g = 0.4 / 1.1
@@ -734,13 +741,14 @@ def shape_gen(K):
     else:  # K > K_t
         # 100% probability to reach 0/180 (g, coeff2)
         # 50% probability to accelerate (f, coeff1)
+
         sgn = 1.0 if np.random.rand() > 0.5 else -1.0  # Choose sign for coeff1
         coeff1 = sgn * (np.random.normal(1.0, std_f))
         coeff1 = np.clip(coeff1, min_f, max_f)
        
         coeff2 = np.random.normal(1.0, std_g)
         coeff2 = np.clip(coeff2, min_g, max_g)
-
+    print(f"The value of the coefficients are {coeff1} and {coeff2}")
     return coeff1, coeff2
 
 #%%

@@ -13,12 +13,14 @@ from PIL import Image, ImageTk  # For image loading (install Pillow if needed)
 import sys
 import os
 from datetime import datetime
-from gaurav import  Initialize_simulations
+from gaurav import  Initialize_simulations, Output_File
 import  subprocess
 import threading
 import queue
-from plots import show_shape, show_omega
-
+from plots import show_shape, show_omega, post_process, show_plots, show_3D_plots
+import matplotlib.pyplot as plt
+from tkinter import filedialog
+from matplotlib.animation import  FFMpegWriter
 
 
 def read_output(process, progress_queue):
@@ -27,39 +29,12 @@ def read_output(process, progress_queue):
         progress = float(line.strip())
         progress_queue.put(progress)
         print(f"Output from subprocess: {line}", end="")
-
-    # Check for errors and signal completion/error to the main thread
-    returncode = process.poll()  # Poll for the return code (non-blocking)
-    while returncode is None:
-        time.sleep(0.1)  # Avoid busy-waiting; adjust the sleep duration as needed
-        returncode = process.poll()
-
-
-
-def update_progressbar(progress_bars, progress_queues, threads, root):
-    for i, myqueue in enumerate(progress_queues):
-        try:
-            progress  = myqueue.get(block=False)
-            progress_bars[i]["value"] = progress  # Update progress normally
-        except:
-            pass
-
-#edule the next update after a short delay
-    if all(not t.is_alive() for t in threads) and all(bar["value"] == 100 for bar in progress_bars):
-            ttk.Label(root, text="Simulation Complete!").pack(pady=10)
-    else:      
-
-        root.after(100, update_progressbar, progress_bars, progress_queues,threads, root)
-        
-    
             
 
 def run_script_instance(output_folder,run,progress_queue):
     python_path = sys.executable
     process=subprocess.Popen([python_path, "main.py",'Output folder', output_folder, 'run', str(run)], stdout=subprocess.PIPE,
     stderr=subprocess.PIPE, text=True, bufsize=1)
-   # output_thread = threading.Thread(target=read_output, args=(process, progress_queue))
-    #output_thread.start()
     read_output(process, progress_queue)
 
 
@@ -82,7 +57,11 @@ class GUI:
         self.text_box = None
         self.widgets=None
         self.show_next_screen()
-        
+        self.anim=None
+        self.is_anim = False
+        self.is_paused = False
+        self.plot_index = -1
+        self.next_frame = False
     
     def Parameters(self):
         for name in self.screen_options:
@@ -118,16 +97,53 @@ class GUI:
         for widget in self.root.winfo_children():
             widget.destroy()
         self.widgets={}
+
+###############################################################################
+        
+    def update_progressbar(self, progress_bars, progress_queues, threads):
+        for i, myqueue in enumerate(progress_queues):
+            try:
+                progress  = myqueue.get(block=False)
+                progress_bars[i]["value"] = progress  # Update progress normally
+            except:
+                pass
+    
+    #schedule the next update after a short delay
+        if all(not t.is_alive() for t in threads) and all(bar["value"] == 100 for bar in progress_bars):
+            text_frame = ttk.Frame(self.root)  # Create a custom frame style
+            text_frame.pack(pady=(20, 10), padx=20)  # Adjust padding as needed
+            
+            # Software information
+            ttk.Label(text_frame, text=r"Simulation Complete!", font=('Helvetica', 16, "bold")).pack(pady=10)
+            ttk.Label(text_frame, text=r" Initializing post processing of the data", font=('Helvetica', 16, "bold")).pack(pady=10)
+            post_process(self.parameters)
+            ttk.Label(text_frame, text=" Post processing complete.", font=("Times", 16, "bold")).pack(pady=10)
+            ttk.Label(text_frame, text=f"Outputs are written in  {self.parameters['Output folder']} folder ", font=("Times", 16, "bold")).pack(pady=10)
+
+            self.create_buttons(self.root,next_button_text="Show time evolution", back_button_text="",packing="pack")
+            self.create_buttons(self.root,next_button_text="Start another simulation", back_button_text="Exit",packing="pack")
+
+        else:      
+            
+            self.root.after(100, self.update_progressbar, progress_bars, progress_queues,threads)  
+        
         
 ###################################################################
         
-    def next_screen(self):
+    def next_screen(self,text):
+        
         
         if 0<self.current_screen<5:
             for key, widget in self.widgets.items():
                 self.parameters[key] = widget.get()
 
         self.clear()
+        
+        if text == "Replay":
+            self.current_screen -= 1
+            
+        if text == "Start another simulation":
+            self.current_screen = 0
                     
         while True:
 
@@ -139,10 +155,15 @@ class GUI:
 
 #####################################################################
 
-    def previous_screen(self):
+    def previous_screen(self,text):
         
         self.clear()
         
+            
+        if text == "Exit":
+            self.current_screen=0
+            
+
         while True:
             self.current_screen-=1
             if  self.current_screen<1 or self.parameters[self.screen_list[self.current_screen]]=="Yes":
@@ -178,6 +199,10 @@ class GUI:
         elif self.current_screen==7:
             self.create_progressbar_screen()
 
+        elif self.current_screen==8:
+            self.create_post_processing_screen()
+            
+
         else:
             ttk.Label(self.root, text="No options selected.").pack(pady=20)
 
@@ -206,7 +231,8 @@ class GUI:
             
 ##################################################################################
     
-    def create_buttons(self,root,packing="grid",next_button_text="Next",back_button_text="Back",row=1,column=0,columnspan=1,myfont=('Helvetica', 16)):
+    def create_buttons(self,root,packing="grid",next_button_text="Next",back_button_text="Back",row=1,column=0,
+                       columnspan=1,myfont=('Helvetica', 16), *args):
         button_frame = ttk.Frame(root)
         if self.current_screen==4:
             next_button_text="Preview"
@@ -227,16 +253,117 @@ class GUI:
         # Create new styles based on the default TButton style
         style.configure('Red.TButton', background='red', foreground='white',font=myfont)  # Use foreground for text color
         style.configure('Green.TButton', background='green', foreground='white', font=myfont)
+            
         
-        back_button = ttk.Button(button_frame, text=back_button_text, command=self.previous_screen, style='Red.TButton')
-        back_button.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+        if back_button_text:
+            back_button = ttk.Button(button_frame, text=back_button_text, command= lambda: self.previous_screen(back_button_text), style='Red.TButton')
+            back_button.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
         
-        next_button = ttk.Button(button_frame, text=next_button_text, command=self.next_screen, style='Green.TButton')
-        next_button.grid(row=0, column=2, padx=10, pady=10, sticky="ew")
+        if next_button_text:
+            next_button = ttk.Button(button_frame, text=next_button_text, command=lambda: self.next_screen(next_button_text), style='Green.TButton')
+            next_button.grid(row=0, column=2, padx=10, pady=10, sticky="ew")
         
         
 #######################################################################################
         
+
+    def display_buttons(self,myfont=('Helvetica', 16)):
+        button_frame = ttk.Frame(self.root)
+        button_frame.pack(side=tk.BOTTOM)
+        
+        style = ttk.Style()
+        
+        # Create new styles based on the default TButton style
+        style.configure('Red.TButton', background='red', foreground='white',font=myfont)  # Use foreground for text color
+        style.configure('Green.TButton', background='green', foreground='white', font=myfont)
+        
+        self.play_pause_button = ttk.Button(button_frame, text="Pause", command=self.toggle_play_pause,style='Red.TButton')
+        self.play_pause_button.pack(side=tk.LEFT,padx=5)
+        
+        self.restart_button = ttk.Button(button_frame, text="Restart", command=self.restart,style='Green.TButton')
+        self.restart_button.pack(side=tk.LEFT,padx=5)
+        
+        self.previous_button = ttk.Button(button_frame, text="Previous", command=self.backward,style='Green.TButton')
+        self.previous_button.pack(side=tk.LEFT)
+        
+        self.next_button = ttk.Button(button_frame, text="Next", command=self.forward,style='Green.TButton')
+        self.next_button.pack(side=tk.LEFT)
+        
+        self.save_button = ttk.Button(button_frame, text="Save", command=self.save_animation,style='Green.TButton')
+        self.save_button.pack(side=tk.LEFT,padx=5)
+        
+        
+        self.restart_button = ttk.Button(button_frame, text="Start new simulation", command=self.next_screen,style='Green.TButton')
+        self.restart_button.pack(side=tk.LEFT,padx=5)
+        
+        self.exit_button = ttk.Button(button_frame, text="Exit", command=self.root.destroy,style='Red.TButton')
+        self.exit_button.pack(side=tk.LEFT,padx=10)
+        
+        
+        
+    def toggle_play_pause(self):
+        if self.is_paused:
+            self.is_paused = False
+            self.play_pause_button.config(text="Pause",style='Red.TButton')
+        else:
+            self.is_paused = True
+            self.play_pause_button.config(text="Play",style='Green.TButton')
+            
+        
+    def restart(self):
+        self.is_paused = False
+        self.plot_index = 0
+        self.play_pause_button.config(text="Pause",style='Red.TButton')
+
+    def forward(self):
+        
+        self.next_frame = True
+        self.plot_index += 1 
+        
+            
+    def backward(self):
+        self.next_frame = True
+        self.plot_index -= 1
+        
+    def save_animation(self):
+        self.is_paused = True
+        self.play_pause_button.config(text="Play",style='Green.TButton')
+        self.is_anim = True
+        self.progress_window = tk.Toplevel(self.root)
+        self.progress_window.title("Saving Animation")
+        
+        self.progress_label = tk.Label(self.progress_window, text="Saving animation, please wait...")
+        self.progress_label.pack(pady=10)
+        
+        self.progress = ttk.Progressbar(self.progress_window, orient='horizontal', length=200, mode='determinate')
+        self.progress.pack(pady=10)
+        self.progress_window.geometry("300x100+1000+500")
+        filename=Output_File(self.parameters,"output")
+        file_path = filedialog.asksaveasfilename(initialdir =filename,
+           defaultextension=".mp4",
+           filetypes=[("MP4 files", "*.mp4")],
+           initialfile="animation.mp4"
+       )
+        if file_path:
+            writer = FFMpegWriter(fps=20, metadata=dict(artist='Me'), bitrate=1800)
+            with writer.saving(self.fig, "animation.mp4", self.progress['maximum'] ):
+                for i in range(self.progress['maximum'] ):
+                    self.anim._draw_frame(i)
+                    writer.grab_frame()
+                    self.progress['value'] = i + 1
+                    self.progress_window.update_idletasks()
+            
+            self.progress_window.destroy()
+            print("Animation saved as animation.mp4!")
+
+
+            self.anim.event_source.stop()
+            self.anim = None
+
+            
+
+#########################################################################################
+
     def load_frame(self,frame,inputs):
         
         i=0
@@ -304,7 +431,7 @@ class GUI:
     def create_simulation_screen(self):
         ttk.Label(self.root, text="Simulation running...").pack(pady=20)
         #self.center_window(self.root)
-        self.root.after(1000, self.next_screen)  # Simulate 2 seconds of running
+        self.root.after(1000, self.next_screen,"next")  # Simulate 2 seconds of running
         
 #############################################################################################       
     
@@ -359,9 +486,16 @@ class GUI:
             thread = threading.Thread(target=run_script_instance, args=(par['Output folder'],par['run'],progress_queues[i]))
             thread.start()
             threads.append(thread)
-            
-        update_progressbar(progress_bars, progress_queues, threads, self.root)
+        
 
+        self.update_progressbar(progress_bars, progress_queues, threads)
+        
+######################################################################################################
+
+    def create_post_processing_screen(self):
+        
+        show_3D_plots(self)
+        self.display_buttons()
     
 ##############################################################################################################
 

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10) # Ensure compatibility
-project(Asteroids VERSION 1.0)              # Name your CMake project
+project(Landslides VERSION 1.0)              # Name your CMake project
 
 # Compilation Settings (Similar to Makefile variables)
 set(CMAKE_CXX_STANDARD 17)              # Set C++ standard
@@ -28,7 +28,7 @@ set(SOURCE_FILES
 set(HEADER_FILE gauravlib.h)
 
 # Executables (Targets in CMake)
-add_executable(asteroid  main.cpp ${SOURCE_FILES} ${HEADER_FILE}) # Main program
+add_executable(landslide  main.cpp ${SOURCE_FILES} ${HEADER_FILE}) # Main program
 #add_executable(test  test.cpp  ${SOURCE_FILES} ${HEADER_FILE}) # Test program
 
 

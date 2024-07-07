@@ -13,7 +13,7 @@ import math
 
 
 def YORP(target, parameters, impacttime, oldtime, myomega):
-    
+    print("Simulating YORP")
     if  not target.YORP:
         return
     # which omega to use because it is being changed by the yorp
@@ -36,12 +36,12 @@ def YORP(target, parameters, impacttime, oldtime, myomega):
             if reorient_flag:
                 print("Too slow spinning causing collisonal reorientation")
                 spin_state_new(target)
-                target.coeff_f, target.coeff_g = shape_gen(target.K)
+                target.coeff_f, target.coeff_g = shape_gen(target.K,parameters['Nature'])
 
         rk4(parameters, target)
 
         with open(file, "a") as output_file:
-            output_file.write(f"{t_yorp:12.6e} {(2*np.pi / target.omega[2])/3600:12.8e} {target.obliq:12.8e}\n")
+            output_file.write(f"{t_yorp:12.6e} { target.omega[2]:12.8e} {target.obliq:12.8e}\n")
 
         omegaLimit = (G*4/3 * math.pi*target.dens)**0.5
         
@@ -145,7 +145,12 @@ def yorp_vf(x, parameters, target):
     # Special cases: Freeze evolution of omega for extreme rotation periods
     if 2*np.pi / (x[0])/3600 > 1e3:
         vf = np.zeros(2)
-
+        
+    if parameters['Nature']=='Increasing':
+        vf[0]=abs(vf[0])
+    elif parameters['Nature']=='Decreasing':
+        vf[0]=-abs(vf[0])
+        
     return vf
 
 # %%

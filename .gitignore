@@ -4,7 +4,6 @@
 output/
 .vscode/
 Info Files/
-inputs/
 *.nb
 test.dSYM/
 data/
