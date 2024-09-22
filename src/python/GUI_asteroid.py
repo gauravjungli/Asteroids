@@ -174,7 +174,7 @@ class GUI:
     
     def show_next_screen(self):
 
-          
+        
         if self.current_screen== -1:
             self.welcome_screen.destroy()
             self.root.destroy()
@@ -233,6 +233,7 @@ class GUI:
     
     def create_buttons(self,root,packing="grid",next_button_text="Next",back_button_text="Back",row=1,column=0,
                        columnspan=1,myfont=('Helvetica', 16), *args):
+        
         button_frame = ttk.Frame(root)
         if self.current_screen==4:
             next_button_text="Preview"
@@ -268,6 +269,7 @@ class GUI:
         
 
     def display_buttons(self,myfont=('Helvetica', 16)):
+        
         button_frame = ttk.Frame(self.root)
         button_frame.pack(side=tk.BOTTOM)
         
@@ -312,7 +314,7 @@ class GUI:
         
     def restart(self):
         self.is_paused = False
-        self.plot_index = 0
+        self.plot_index = -1
         self.play_pause_button.config(text="Pause",style='Red.TButton')
 
     def forward(self):
@@ -326,6 +328,7 @@ class GUI:
         self.plot_index -= 1
         
     def save_animation(self):
+        self.plot_index = -1
         self.is_paused = True
         self.play_pause_button.config(text="Play",style='Green.TButton')
         self.is_anim = True
@@ -346,7 +349,7 @@ class GUI:
        )
         if file_path:
             writer = FFMpegWriter(fps=20, metadata=dict(artist='Me'), bitrate=1800)
-            with writer.saving(self.fig, "animation.mp4", self.progress['maximum'] ):
+            with writer.saving(self.fig, file_path, self.progress['maximum'] ):
                 for i in range(self.progress['maximum'] ):
                     self.anim._draw_frame(i)
                     writer.grab_frame()
@@ -368,6 +371,7 @@ class GUI:
         
         i=0
         for Input in inputs:
+            
             label = ttk.Label(frame, text=Input.Name)
             label.grid(row=i, column=0, sticky="w")
             
@@ -439,22 +443,24 @@ class GUI:
 
         j=0
         column=0
+        
         for name in self.screen_options:
             if self.parameters[name]=="Yes":
+
                 inputs=self.screen_options[name]
-                
                 frame = ttk.LabelFrame(self.root, text=name)
                 frame.grid(row=j, column=column, padx=10, pady=10, sticky="nsew")
                 frame.grid_columnconfigure(0, weight=1)
                 frame.grid_columnconfigure(1, weight=1)
                 j+=column
                 column= int(not bool(column))
+
                 self.load_frame(frame, inputs)
                 self.disable_all_widgets(frame) 
-                #self.widgets={}
 
-        self.create_buttons(self.root,next_button_text="Start simulation", back_button_text="Back",row=j,column=0,columnspan=2)
-        #self.center_window(self.root)
+
+        self.create_buttons(self.root,next_button_text="Start simulation", back_button_text="Back",row=j+1,column=0,columnspan=2)
+#self.center_window(self.root)
  
 ###############################################################################################        
     

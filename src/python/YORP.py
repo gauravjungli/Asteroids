@@ -48,8 +48,8 @@ def YORP(target, parameters, impacttime, oldtime, myomega):
        
         if target.omega[2] > 0.9*omegaLimit:
             print("Too fast spinning causing landslides")
+            myomega.append([t_yorp, target.omega[2]])
             # parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
-            # print(parameters["uni_h"])
             Height(parameters, target)
             Landslides(target, parameters,t_yorp,myomega)
     myomega.append([t_yorp, target.omega[2]])

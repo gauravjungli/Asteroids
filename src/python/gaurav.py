@@ -68,9 +68,9 @@ class Target:
         self.landslide = True if parameters["Landslide"].lower()=='yes' else False
         self.YORP = True if parameters["YORP"].lower()=='yes' else False
         self.collision = True if parameters["Collision"].lower()=='yes' else False
+        self.dens = float(parameters["Density"])
         if self.atype == "S-Type":
             self.mu = 0.55
-            self.dens = float(parameters["Density"])
             self.Y0, self.d0strength   =  1.44e7, 0.1
             self.nsize = 3  # strength decreases with size as 1/nsize
             self.qconst1, self.qconst2 =  1e3, 1e6
@@ -78,7 +78,6 @@ class Target:
         else:
             # otherwise - C-Type
             self.mu = 0.41
-            self.dens = float(parameters["Density"])
             self.Y0, self.d0strength   = 1e5,  0.1
             self.nsize = 3  
             self.qconst1, self.qconst2 = 2e3, 4e5 
@@ -86,14 +85,15 @@ class Target:
             
         self.M= (math.pi / 6) * self.dens * self.d**3
         self.jinertia= [2/5 * self.M * (self.d/2)**2]*3
-        self.omega=[0,0, (G * 4 / 3 * math.pi * self.dens) ** 0.5* float(parameters[ 'Angular velocity'])]
+        #self.omega=[0,0, (G * 4 / 3 * math.pi * self.dens) ** 0.5* float(parameters[ 'Angular velocity'])]
+        self.omega=[0,0,2*np.pi/(float(parameters['Rotation period'])*3600)]
         self.kvg=0.3
         self.K=float(parameters["K"])
         self.grav=G*self.M/(self.d/2)**2
         self.obliq=float(parameters["Obliquity"])
         self.dstarave=qstarf(self, math.pi / 4, velave)[2]
         # Set the seed for NumPy's random number generator
-        np.random.seed(int(time.time()))
+        np.random.seed(int(time.time()/float(parameters['run'])))
         self.coeff_f,self.coeff_g=shape_gen(self.K)
         self.sma= float(parameters['Semi major axis'])
         self.f_spline, self.g_spline = read_f_g_spline(parameters)
@@ -105,7 +105,7 @@ class Impactor:
     def __init__(self,tmaxby,low,high,cumdistr,explicit=True):
         if explicit:
             self.phi = math.acos(1 - 2 * random.random()) / 2
-            self.vel = scipy.stats.maxwell.ppf(random.random(), scale=3.232)*1000
+            self.vel = velave#scipy.stats.maxwell.ppf(random.random(), scale=3.232)*1000
             self.d=self.dia(low,high,cumdistr)
             self.theta = 2 * math.pi * random.random()
             self.Theta = 2 * math.pi * random.random()
@@ -159,7 +159,7 @@ def Fit(parameters):
     parameters["jinertia"]=float(parameters["jinertia"])/r**5
     parameters["jinertia1"]=float(parameters["jinertia1"])/r**5
     Exparameter(parameters)
-    np.savetxt(file,w,delimiter=",")
+    np.savetxt(file,w,delimiter=",") #uncomment
     print ("The best fit value of r is ", r)
     return r
 
@@ -290,8 +290,9 @@ def Initialize(parameters,target):
     parameters['time'] = 0
     parameters['omega'] = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5
     parameters['dia']=target.d
-    
-    
+    if parameters['Landslide model']!='explicit':
+        parameters['epsilon']=0
+        
     mydir=Output_File (parameters,"output")
 
     
@@ -300,15 +301,17 @@ def Initialize(parameters,target):
     with open(file, "w") as output_file:  # Overwrites existing files
         output_file.write(
             f"{0 :12.6e} {target.omega[2]:12.8e} {target.obliq:12.8e}\n")
+   
+    res=int(parameters["Resolution"])
+    base=np.zeros((res,3))
+    base[:,2]=1
+    offset=float(parameters["offset"])
+    dx=(math.pi-2*offset)/res
+    for i in range(res):
+        base[i,0] = offset + dx * (i+ 0.5)
+    np.savetxt(mydir+"/base.txt",base,delimiter=",")
+    
     if target.landslide:
-        res=int(parameters["Resolution"])
-        base=np.zeros((res,3))
-        base[:,2]=1
-        offset=float(parameters["offset"])
-        dx=(math.pi-2*offset)/res
-        for i in range(res):
-            base[i,0] = offset + dx * (i+ 0.5)
-        np.savetxt(mydir+"/base.txt",base,delimiter=",")
         Gravitycalc(parameters)
 
         executable_file=Output_File(parameters,"build",[parameters["executable"]])
@@ -337,38 +340,54 @@ def Height(parameters,target,impactor=None):
     Gamma=float(parameters["Gamma"])
     epsilon=float(parameters["epsilon"])
     base=np.loadtxt(mydir,delimiter=",",dtype=float)
-    
+    min_epsilon = float(parameters['Minimum epsilon'])
+    max_epsilon = float(parameters['Maximum epsilon'])
+    height =np.zeros(res)
     def gaussian(x, mean, std_dev):
         return np.exp(-((x - mean)**2) / (2 * std_dev**2)) / (std_dev * np.sqrt(2 * np.pi))
     
 
     if impactor:
-        H=min(0.02*(impactor.dens/1260)*(impactor.d/2)**3*(impactor.vel/5000)**2/epsilon,10)
-        print(f'the destablization height is {H} and the impactor diameter is {impactor.d}' )
-        if parameters['Profile'].lower()=="gaussian":
+        
+            
+        if parameters["Failure depth"]=='Energy dependent':
+            H=min(0.02*(impactor.dens/1260)*(impactor.d/2)**3*(impactor.vel/5000)**2*(0.5/(target.omega[2]**2/ (G * (4/3) * math.pi * target.dens))),max_epsilon)
+            if parameters['Landslide model']=='explicit':
+                epsilon=np.clip(H,min_epsilon,max_epsilon)
+            else:
+                epsilon+=H
+
+        print(f'the destablization height is {epsilon} and the impactor diameter is {impactor.d} and impactor velocity is {impactor.vel}' )
+        if parameters['Failure profile'].lower()=="gaussian":
             
             #for Gaussian profiles
             mean = impactor.Phi        # Mean of the distribution in degrees
             std_dev =   math.pi/10     # Standard deviation of the distribution in degrees
         
-            gaussian_values = H*gaussian(base[:,0], mean, std_dev)
+            gaussian_values = gaussian(base[:,0], mean, std_dev)
         
             dx=(math.pi-2*offset)/res
             area_under_curve = sum((1+Gamma*base[:,1])**2*gaussian_values*np.sin(base[:,0])*dx)
-            scaling_factor = sum((1+Gamma*base[:,1])**2*np.sin(base[:,0])*dx)*H/ area_under_curve
+            scaling_factor = sum((1+Gamma*base[:,1])**2*np.sin(base[:,0])*dx)/ area_under_curve
             height = gaussian_values * scaling_factor
             
-        elif parameters['Profile'].lower()=="uniform":#for uniform profiles
-            height= H*np.ones(res)
+        elif parameters['Failure profile'].lower()=="uniform":#for uniform profiles
+            height= np.ones(res)
         
     else:
         #height=[ max(0.1,0.20*Gamma/epsilon*b[1]) for b in base]
         print("No impactor found to inititate landslide. Probably its a rotational failure")
+        epsilon=2*min_epsilon
         height=np.ones(res)
-    base[:,1]=base[:,1]-epsilon/Gamma*height
-    base[:,2]=height[:]
-    #base=np.column_stack((base,height))
-    np.savetxt(mydir,base,delimiter=",")
+    
+    parameters['epsilon'] = epsilon
+    
+    if  parameters['Landslide model']=='explicit' or float(parameters['epsilon'])>float(parameters['Minimum epsilon']):
+
+        base[:,1]=base[:,1]-epsilon/Gamma*height
+        base[:,2]=height[:]
+        #base=np.column_stack((base,height))
+        np.savetxt(mydir,base,delimiter=",")
 
 #%%  Verified
 
@@ -386,7 +405,7 @@ def Exparameter(parameters, filetype="output"):
 def Gravitycalc(parameters):
     
     Res=int(parameters["Resolution"])
-    epsilon=float(parameters["epsilon"])
+    epsilon=0.001
     Gamma=float(parameters["Gamma"])
     density=float(parameters["Density"])
     rad=float(parameters["dia"])/2
@@ -479,7 +498,11 @@ def ExportOmega(myomega,parameters):
 
 def Landslides(target,parameters,impacttime,myomega):
     
+    if parameters["stoc_yorp"].lower()=='yes':
+        target.coeff_f, target.coeff_g = shape_gen(target.K)
     if  not target.landslide:
+        return
+    if (not parameters['Landslide model']=='explicit') and float(parameters['epsilon'])<float(parameters['Minimum epsilon']):
         return
    # target.d = target.d / (1 + float(parameters["uni_h"]) * float(parameters["epsilon"]))
     parameters["omega"] = target.omega[2] / (G * (4/3) * math.pi * target.dens)**0.5
@@ -529,8 +552,12 @@ def Landslides(target,parameters,impacttime,myomega):
         print(f"Return code: {e.returncode}")
         print(f"Error output:\n{e.stderr}")  
         
+    min_epsilon=float(parameters['Minimum epsilon'])
     
+
     Parameter(parameters,"output")
+    if not parameters['Landslide model'] == 'explicit':
+        parameters['epsilon'] = 0
     fit=Fit(parameters)
     Parameter(parameters,"output")
     
@@ -541,8 +568,9 @@ def Landslides(target,parameters,impacttime,myomega):
     target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
     target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
-    if abs(1-fit)>float(parameters['epsilon'])/2 or int(parameters["slides"])%5==0:
+    if abs(1-fit)>min_epsilon or int(parameters["slides"])%4==0 or float(parameters["omega"])>0.7:
         Gravitycalc(parameters)
+    
     
     myomega.append([impacttime,target.omega[2]])
     print("Omega after the Landslides", target.omega[2])
@@ -613,18 +641,20 @@ def Cumdistr(parameters):
 #%% verified
 
 
-def Istuff(target,tmaxby,cumdistr):
+def Istuff(parameters,target,tmaxby,cumdistr):
     prob = probi * tmaxby * (target.d/2) ** 2
-
+    explicit_cutoff = float(parameters['Explicit cutoff'])
+    implicit_cutoff = float(parameters['Implicit cutoff'])
     numgtd = round(astnum(target.dstarave,cumdistr)[0])
     dialittle = cumdistr[-1][0]
-    dexplicit = max(1.1*dialittle, 0.025 * target.dstarave)
+    dexplicit = max(1.1*dialittle, explicit_cutoff* target.dstarave)  #change it to 0.025 as done earlier
     binexplicit = astnum(dexplicit,cumdistr)[1]
     dexplicit = cumdistr[binexplicit + 1][0]
     nexplicit = round(astnum(dexplicit,cumdistr)[0])
 
     nexpimpactors = round(prob * nexplicit)
-    dimplicit =  max(0.05 * dexplicit,1.1*dialittle)
+    print(f'Number of expected impactor is {nexpimpactors}')
+    dimplicit =  max(implicit_cutoff * dexplicit,1.1*dialittle)
     binimplicit = astnum(dimplicit,cumdistr)[1]
 
     istuff=[]

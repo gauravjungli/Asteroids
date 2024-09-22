@@ -36,15 +36,16 @@ def show_shape(parameters):
         file1=parameters['Data folder']
         
         file=os.path.join(file1,f'field_{(count+1)}.csv')
+        file1=os.path.join(file1,'dia.txt')
         if os.path.exists(file):
-
+            epsilon=np.loadtxt(file1,dtype=float)[:,2]
             w=np.loadtxt(file,delimiter=",",dtype=float)
 
             ax.cla()
-            x=np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,2]+float(parameters["Gamma"])*w[:,1]))
-            y=np.cos(w[:,0])*(1+(float(parameters["epsilon"])*w[:,2]+float(parameters["Gamma"])*w[:,1]))
+            x=np.sin(w[:,0])*(1+epsilon[count]*w[:,2]+float(parameters["Gamma"])*w[:,1])
+            y=np.cos(w[:,0])*(1+(epsilon[count]*w[:,2]+float(parameters["Gamma"])*w[:,1]))
             ax.plot(x,y,'-r',linewidth=2)
-            x=-np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,2]+float(parameters["Gamma"])*w[:,1]))
+            x=-np.sin(w[:,0])*(1+(epsilon[count]*w[:,2]+float(parameters["Gamma"])*w[:,1]))
             ax.plot(x,y,'-r',linewidth=2)
             ax.set_aspect('equal')
             title=f'landslide number={count+1}'
@@ -64,9 +65,8 @@ def show_shape(parameters):
 def show_omega(parameters):
     plt.close()
     fig,ax = plt.subplots()
-    file2 = '/home/g/Asteroids/output'
     file1 = f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = os.path.join(file2,parameters['Output folder'],f'run{parameters["run"]}',file1)
+    file = Output_File(parameters,'output',[file1])
    
     if os.path.exists(file):
   
@@ -101,7 +101,6 @@ def post_process(parameters):
     T=int(parameters['Simulation period'])
     res=int(parameters['Resolution'])
     Gamma=float(parameters['Gamma'])
-    epsilon=float(parameters['epsilon'])
     x=np.zeros((length,N+1))
     
     x[:,0]=np.linspace(0, T,num=length, endpoint=True)
@@ -113,14 +112,20 @@ def post_process(parameters):
         
     myomega=[[x[i,0],np.mean(x[i,1:N+1]),np.std(x[i,1:N+1])] for i in range(length) ]
     ExportOmega(parameters=parameters,myomega=myomega)
-
-    if parameters["Collision"]=="Yes":
-        shape=np.zeros((length+1,res+1,N))
-        for i in range (0,N):
+    
+    shape=np.ones((length+1,res+1,N))*float(parameters['Diameter'])/2
+        
+    for i in range (0,N):
+        
+        file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','base.txt']) 
+        grid=np.loadtxt(file2,dtype=float,delimiter=",")
+        shape[0,1:res+1,i]=grid[:,0]
+        shape[1:length+1,0,i]=x[0:length,0]
+        
+        if parameters["Landslide"]=="Yes":
+            
             file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','data','dia.txt'])    
             dia=np.loadtxt(file2,dtype=float)
-            file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','base.txt']) 
-            grid=np.loadtxt(file2,dtype=float,delimiter=",")
             base=np.zeros((len(dia),res))
             
             for j in range(0,len(dia)):
@@ -128,28 +133,25 @@ def post_process(parameters):
                 file2 = Output_File(parameters=parameters,filetype='output',
                                     filenames=[f'run{i+1}','data',f'field_{j+1}.csv'])
                 w = np.loadtxt(file2,delimiter=",",dtype=float)
-                base[j,:] = (1+w[:,1]*Gamma+epsilon*w[:,2])*dia[j,1]/2
-            
-    
-            shape[0,1:res+1,i]=grid[:,0]
+                base[j,:] = (1+w[:,1]*Gamma+dia[j,2]*w[:,2])*dia[j,1]/2
             
             for j in range(1,length+1):
-                index=np.searchsorted(base[:,0], x[j-1,0],side='right')
+                index=np.searchsorted(dia[:,0], x[j-1,0],side='right')
                 if index==0:
                     shape[j,1:res+1,i] = float(parameters['Diameter'])/2
                 else:
                     shape[j,1:res+1,i] = base[index-1,:]   
-                shape[j,0,i]=x[j-1,0]  
+                  
             
-        mean_shape=np.mean(shape,axis=2)
-        std_shape=np.std(shape,axis=2)
-        std_shape[0,1:res+1]=mean_shape[0,1:res+1]
-        std_shape[1:length+1,0]=mean_shape[1:length+1,0]
-
-        file = Output_File(parameters=parameters,filetype='output',filenames=['mean_shape.txt']) 
-        np.savetxt(file, mean_shape, delimiter=',', fmt='%f')
-        file = Output_File(parameters=parameters,filetype='output',filenames=['std_shape.txt']) 
-        np.savetxt(file, std_shape, delimiter=',', fmt='%f')
+    mean_shape=np.mean(shape,axis=2)
+    std_shape=np.std(shape,axis=2)
+    std_shape[0,1:res+1]=mean_shape[0,1:res+1]
+    std_shape[1:length+1,0]=mean_shape[1:length+1,0]
+    
+    file = Output_File(parameters=parameters,filetype='output',filenames=['mean_shape.txt']) 
+    np.savetxt(file, mean_shape, delimiter=',', fmt='%f')
+    file = Output_File(parameters=parameters,filetype='output',filenames=['std_shape.txt']) 
+    np.savetxt(file, std_shape, delimiter=',', fmt='%f')
     
 
 
@@ -244,6 +246,7 @@ def show_3D_plots(gui):
     ax1.title.set_color('white')
     ax1.tick_params(axis='x', colors='white')
     ax1.tick_params(axis='y', colors='white')
+    ax1.yaxis.get_offset_text().set_color('white')
     colors = [(0, 0, 1), (1, 0, 0)]  # Dark blue to green to yellow
     n_bins = 100  # Number of bins in the colormap
     cmap_name = 'my_custom_cmap'
@@ -258,22 +261,24 @@ def show_3D_plots(gui):
     cbar.set_label('Radial distance', color='white')
     cbar.ax.yaxis.get_offset_text().set_color('white')
     plt.setp(cbar.ax.yaxis.get_ticklabels(), color='white')
-
+    surf = None
+    plot_step=5
     def update_plot(i):
-        nonlocal cbar
+        nonlocal cbar,surf
             
         ax2.clear()
 
-        R, Theta = np.meshgrid(w[i+1, 1:width+1], w[0, 1:width+1])
-        phi = np.linspace(0, 2 * np.pi, width)
-        Phi, R = np.meshgrid(phi, w[i+1, 1:width+1])
+        R, Theta = np.meshgrid(w[i+1, 1:width+1: plot_step], w[0, 1:width+1: plot_step])
+        phi = np.linspace(0, 2 * np.pi, int(width/ plot_step))
+        Phi, R = np.meshgrid(phi, w[i+1, 1:width+1: plot_step])
         X = R * np.sin(Theta) * np.cos(Phi)
         Y = R * np.sin(Theta) * np.sin(Phi)
         Z = R * np.cos(Theta)
         color_values=norm(R)
         facecolors = cm(color_values)
-        surf = ax2.plot_surface(X, Y, Z,edgecolor='none',linewidth=0, antialiased=False,facecolors=facecolors)
-        
+        surf = ax2.plot_surface(X, Y, Z,edgecolor='k',linewidth=0.5, antialiased=False,facecolors=facecolors)
+        #ax2.view_init(elev=0)
+        ax2.text2D(0.5, 0.2, f'Rotation period = {omega[i,1]:.2f} hrs', transform=ax2.transAxes, fontsize=12, color='white', ha='center', va='center')
         ax2.set_aspect('equal')
         fig.suptitle(f'Time = {w[i+1,0]/1e+6} Myrs',color='white')
         ax2.set_axis_off()
@@ -286,7 +291,7 @@ def show_3D_plots(gui):
         x1 =  omega[0:i+1, 0]/1e+6
         y1 =  omega[0:i+1, 1]
         ax1.plot(x1, y1, '-b', linewidth=2)
-        #ax1.set_title('Rotation period')
+
         ax1.spines['top'].set_visible(False)
         ax1.spines['right'].set_visible(False)
         ax1.spines['left'].set_color('white')
@@ -297,8 +302,21 @@ def show_3D_plots(gui):
         ax1.set_ylim([min(omega[:,1]),max(omega[:,1])])
 
         canvas.draw_idle()
-        
-        
+      
+    azim=0
+    def rotate(frames):
+        nonlocal azim
+        azim+=int(1/omega[int(frames/5)%length,1]*10)
+        azim %= 360
+        if ax2:
+            ax2.view_init(elev=0,azim=azim)
+        if frames%2==0 :
+            gui.plot_index+=1
+            gui.plot_index%=length
+            update_plot(gui.plot_index)
+            root.update_idletasks()
+        return ax2,
+    
     def animate():
         if not gui.is_paused:
             gui.plot_index+=1
@@ -315,15 +333,15 @@ def show_3D_plots(gui):
             gui.next_frame = False
         
         elif gui.is_anim:
-            gui.progress['maximum'] = length
+            gui.progress['maximum'] = length*5
             gui.is_anim = False
-            gui.anim = FuncAnimation(fig, update_plot, frames=length, interval=50)
+            gui.anim = FuncAnimation(fig, rotate, frames=length*5, interval=50,blit=False)
             
             #root.after(100,animate) 
         root.after(100,animate)    
         
     root.after(0, animate)
- 
+    #gui.anim = FuncAnimation(fig, rotate, frames=360, interval=20,blit=False)
  
 
 

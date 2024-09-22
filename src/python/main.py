@@ -47,7 +47,7 @@ if __name__=="__main__":
     tmaxby=float(parameters['Simulation period'])
 #    fig = plt.figure(figsize=(10,6))
 
-    istuff = Istuff(target,tmaxby,cumdistr)
+    istuff = Istuff(parameters,target,tmaxby,cumdistr)
     oldtime = 0
     myomega=[[0,target.omega[2]]]
     
@@ -64,8 +64,7 @@ if __name__=="__main__":
             print("Calling landslide")
             Height(parameters,target,istuff[i])
             Landslides(target,parameters,istuff[i].impacttime,myomega)
-            if parameters["stoc_yorp"].lower()=='yes':
-                target.coeff_f, target.coeff_g = shape_gen(target.K)
+
                
              
         #print(istuff[i].d)

@@ -78,7 +78,7 @@ int main()
 	file2=full_path.string();	
 	ofstream dia_file(file2,std::ofstream::app);
 
-	dia_file<< past_time <<"\t"<< dia << endl;
+	dia_file<< past_time <<"\t"<< dia << "\t" << epsilon << endl;
 
 	myfile<<"Impact number "<<slides<<endl;
 	myfile<<"Impact time "<<past_time<<endl;
