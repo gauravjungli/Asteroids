@@ -10,21 +10,20 @@ import math
 import subprocess
 from scipy.interpolate import make_interp_spline, CubicSpline
 import numpy as np
-import glob
 from circle_fit import taubinSVD
 import re
 import os
-from scipy.special import ellipk, ellipe,elliprf,elliprj
-import matplotlib.pyplot as plt
+from scipy.special import ellipk, ellipe,elliprf,elliprj, jv, jvp,lpn, hyp2f1
 import multiprocessing 
 from collisions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf
-import scipy.stats
-from scipy.integrate import simps
 import time
 import shutil
 import copy
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
+from scipy.optimize import root_scalar
+from Diffusion_spherical import frequency, find_roots, find_roots_parallel, parallel_root_computation, compute_energy
+import numba
 
 
 #%%
@@ -97,8 +96,32 @@ class Target:
         self.coeff_f,self.coeff_g=shape_gen(self.K)
         self.sma= float(parameters['Semi major axis'])
         self.f_spline, self.g_spline = read_f_g_spline(parameters)
-
+        self.k_s = 2e+3
+        self.efficiency = 1e-7
+        self.f = frequency(self)
+        self.Q = 1500
+        self.N = 50
+        self.roots = parallel_root_computation(300,50,self.d)
+        self.theta = np.linspace(np.pi/6, np.pi,self.N)
+        self.energy = compute_energy(self)
         
+    
+    
+    def Roots(self):
+        n=300
+        m=50
+        start =time.time()
+        roots = np.zeros((n+1,m))
+
+        #Find roots
+        for i in range(0,n+1):
+            
+            roots[i,:] = find_roots_parallel(i,num_roots=m)/(self.d/2)
+        end =time.time()
+        print(f"Time taken in finding roots:{end-start}")
+        return roots
+      
+    
 
 class Impactor:
     
@@ -106,7 +129,7 @@ class Impactor:
         if explicit:
             self.phi = math.acos(1 - 2 * random.random()) / 2
             self.vel = velave#scipy.stats.maxwell.ppf(random.random(), scale=3.232)*1000
-            self.d=self.dia(low,high,cumdistr)
+            self.d=2#self.dia(low,high,cumdistr)#uncomment
             self.theta = 2 * math.pi * random.random()
             self.Theta = 2 * math.pi * random.random()
             self.Phi = math.acos(1 - 2 * random.random())
@@ -124,12 +147,16 @@ class Impactor:
         self.impacttime = random.uniform(0, tmaxby)
         self.M= (math.pi / 6) * self.dens * self.d**3
         self.explicit=explicit
+        
     def dia(self,low,high,cumdistr):
         d=np.random.randint(low=low, high=high)
         return getdiaf(d,cumdistr)
 
     
 #%%
+
+
+
 
 def Fit(parameters):
     

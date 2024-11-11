@@ -15,6 +15,7 @@ from YORP import YORP
 import sys
 import os
 import subprocess
+from Diffusion_spherical import compute_height
 #%%
 
 
@@ -35,15 +36,17 @@ if __name__=="__main__":
             parameters[sys.argv[i]]=sys.argv[i+1]
             
 
-    Parameter(parameters, "output")
-    myfile=Output_File(parameters,"output",["python_log.txt"])
-    log_file=open(myfile, "w") 
-    sys.stdout = log_file
-    sys.stderr = log_file
+    Parameter(parameters, "input") #change to output
+# =============================================================================
+#     myfile=Output_File(parameters,"output",["python_log.txt"])
+#     log_file=open(myfile, "w") 
+#     sys.stdout = log_file
+#     sys.stderr = log_file
+# =============================================================================
     start_time=time.time()
     target=Target(parameters)
     cumdistr=Cumdistr(parameters)
-    Initialize(parameters,target)
+   # Initialize(parameters,target)
     tmaxby=float(parameters['Simulation period'])
 #    fig = plt.figure(figsize=(10,6))
 
@@ -52,8 +55,8 @@ if __name__=="__main__":
     myomega=[[0,target.omega[2]]]
     
     for i in range(len(istuff)):
-
-  #      Yorp(target,target1,target2,parameters,istuff[i].impacttime,oldtime,myomega)
+        
+        compute_height(target,istuff[i])
 
         YORP(target,parameters,istuff[i].impacttime,oldtime,myomega)
         
@@ -91,7 +94,6 @@ if __name__=="__main__":
         print(f"Permission denied: '{executable_file}'.")
     except Exception as e:
         print(f"Error occurred while trying to delete the file: {e}")
-
 
 
 
