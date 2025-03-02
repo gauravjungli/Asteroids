@@ -62,7 +62,13 @@ void March (vector<CV>& w, double& Ang_Shed)
 		
 		vector<CV> w_init(w);
 		if (fric_type!="constant" && fric_type!="Constant")
-			delta=std::min(Delta*t,Delta);
+		{
+			if (t<seismic_time)
+				delta= 0;
+			else
+				delta = std::min(25.0,Delta);
+			cout<<"Time "<<t<<"Friction angle"<< delta<<endl;
+		}
 		Shed(w, Ang_Shed);
 		Predictor(w,wl,wr,dt);
 		Shed(w, Ang_Shed);

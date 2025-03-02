@@ -25,6 +25,7 @@ const double past_time=stod(par["time"]);
 const double dia=stod(par["dia"]);
 const double min_h=pow(dx,4);
 const double Gamma=stod(par["Gamma"]);
+const double seismic_time =  stod(par["Seismic_shaking_time"]); 
 double delta=Delta;
 const string fric_type=par["Friction type"];
 const string Output_folder=par["Data folder"];

@@ -5,7 +5,7 @@ Created on Tue Jul 18 11:13:39 2023
 
 @author: kumargaurav
 """
-import random
+
 import math
 import subprocess
 from scipy.interpolate import make_interp_spline, CubicSpline
@@ -15,18 +15,19 @@ import re
 import os
 from scipy.special import ellipk, ellipe,elliprf,elliprj, jv, jvp,lpn, hyp2f1
 import multiprocessing 
-from collisions import velave,G,getdiaf,qstarf,probi,astnum, wobblecalcf
+from collisions import G,getdiaf,qstarf,probi,astnum, wobblecalcf
 import time
 import shutil
 import copy
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from scipy.optimize import root_scalar
-from Diffusion_spherical import frequency, find_roots, find_roots_parallel, parallel_root_computation, compute_energy
+from Diffusion_spherical import frequency, find_roots, find_roots_parallel, parallel_root_computation, compute_energy, compute_height
 import numba
 
 
 #%%
+""" The data structure is used for reading inputs from the xslx file """
 
 class InputField:
     def __init__(self, Name, Value=None, Type="str", Options=None, Help=None):
@@ -43,23 +44,39 @@ class InputField:
 
 
 #%%
+""" Represents a target object with physical properties and dynamics. It is the main data struture that holds 
+    all the information about the target asteroid. The attributes of these data structure are as follows:
+        d: Diameter
+        atype: type of the asteroid (C-type or S-type)
+        delta: Friction angle
+        landslide, YORP, collision: Flags to include these processes in the simulation
+        dens: Density 
+        M: mass of the asteoid
+        jinertia: The inertia tensor in principal coordinates
+        omega: the angular velocity of the asteroid
+        K: Thermal inertia
+        Kvg: Holsapple parameter
+        grav: Gravity field due to a sphere
+        obliq: Is the obliquity paremeter used in the YORP calculation
+        dstarave: Is the diameter for the catastrophic disruption
+        coeff_f,coeff_g: Are the coefficients used in the YORP calculation for stochasticity
+        sma: Semi major axis
+        f_spline, g_spline: Used for YORP calcution. These are the spline fits for the YORP data
+        k_s: is the diffusivity constant
+        efficiency: is the seismic efficiency
+        f: is the frequency
+        Q: is the quality factor of the seismic waves
+        N: Number of grid points at which the seismic energy is calculated
+        roots: is the root of the bessel equations 
+        theta: is the array of the latitudes at which the seismic energy is calculated
+        energy: is the array of seismic energy when the impact energy is 1 Joule.
+"""
+
 class Target:
     
-    """Represents a target object with physical properties and dynamics."""
+
 
     def __init__(self, parameters):
-        """Initializes a Target object.
-
-        Args:
-            parameters (dict): A dictionary of parameters including:
-                - dia_in: Diameter (in meters)
-                - atype: Type of target ("S-Type" or "C-Type")
-                - delta: friction angle
-                - omega_in: Angular velocity
-                - K: Thermal conductivity
-                - obliq: Obliquity
-                - sma: Semi-major axis
-        """
 
         self.d=float(parameters["Diameter"])
         self.atype=parameters["atype"]
@@ -73,14 +90,14 @@ class Target:
             self.Y0, self.d0strength   =  1.44e7, 0.1
             self.nsize = 3  # strength decreases with size as 1/nsize
             self.qconst1, self.qconst2 =  1e3, 1e6
-            self.k1, self.k2=0.06, 1
+            self.k1, self.k2 = 0.06, 1
         else:
             # otherwise - C-Type
             self.mu = 0.41
             self.Y0, self.d0strength   = 1e5,  0.1
             self.nsize = 3  
             self.qconst1, self.qconst2 = 2e3, 4e5 
-            self.k1, self.k2=0.15, 1
+            self.k1, self.k2 = 0.15, 1
             
         self.M= (math.pi / 6) * self.dens * self.d**3
         self.jinertia= [2/5 * self.M * (self.d/2)**2]*3
@@ -90,23 +107,30 @@ class Target:
         self.K=float(parameters["K"])
         self.grav=G*self.M/(self.d/2)**2
         self.obliq=float(parameters["Obliquity"])
+        velave = float(parameters["Impactor velocity"])
         self.dstarave=qstarf(self, math.pi / 4, velave)[2]
         # Set the seed for NumPy's random number generator
         np.random.seed(int(time.time()/float(parameters['run'])))
         self.coeff_f,self.coeff_g=shape_gen(self.K)
         self.sma= float(parameters['Semi major axis'])
         self.f_spline, self.g_spline = read_f_g_spline(parameters)
-        self.k_s = 2e+3
-        self.efficiency = 1e-7
-        self.f = frequency(self)
-        self.Q = 1500
+        self.wave_speed = float(parameters["P wave speed"])*(self.grav/1.6*1500/self.dens)**(1/4) 
+        self.k_s = 1/3*100*self.wave_speed
+        self.efficiency = float(parameters["Seismic efficiency"])
+        self.f = float(parameters["Frequency"])
+        self.Q = float(parameters["Q"])
         self.N = 50
         self.roots = parallel_root_computation(300,50,self.d)
-        self.theta = np.linspace(np.pi/6, np.pi,self.N)
-        self.energy = compute_energy(self)
+        self.theta = np.linspace(np.pi/10, np.pi,self.N)
+        self.energy, self.t_lan = compute_energy(self)
+        self.cohesion_cons = float(parameters["Cohesion constant"])
+        self.cohesion_linear = float(parameters["Cohesion linear"])
+        
+        self.rgrav=None 
+        self.tgrav = None
         
     
-    
+    """ Not currently in use. Using new parallel version from difusion_spherical.py"""
     def Roots(self):
         n=300
         m=50
@@ -121,32 +145,42 @@ class Target:
         print(f"Time taken in finding roots:{end-start}")
         return roots
       
-    
+""" 
+    Is the class of impactors. Its attributes are as follows:
+        explict: IS the flag to check whether an impact is big enough to cause landslides
+        impacttime: is the time of impact of each impact
+        M: is the masss of each impactor
+        dia: is the function that generates the random number which represents the number of asteroid greater
+            than a specific dia. This dia is returned by the function getdiaf
+        d: is the diameter of the impactor
+        theta, Theta, Phi: are the angles of the impact.
+ 
+"""
 
 class Impactor:
     
-    def __init__(self,tmaxby,low,high,cumdistr,explicit=True):
+    def __init__(self,tmaxby,velave,low,high,cumdistr,explicit=True):
         if explicit:
-            self.phi = math.acos(1 - 2 * random.random()) / 2
-            self.vel = velave#scipy.stats.maxwell.ppf(random.random(), scale=3.232)*1000
-            self.d=2#self.dia(low,high,cumdistr)#uncomment
-            self.theta = 2 * math.pi * random.random()
-            self.Theta = 2 * math.pi * random.random()
-            self.Phi = math.acos(1 - 2 * random.random())
+            self.phi   = math.acos(1 - 2 * np.random.random()) / 2
+            self.vel   = velave#scipy.stats.maxwell.ppf(random.random(), scale=3.232)*1000
+            self.d     = self.dia(low,high,cumdistr)   
+            self.theta = 2 * math.pi * np.random.random()
+            self.Theta = 2 * math.pi * np.random.random()
+            self.Phi   = math.acos(1 - 2 * np.random.random())
         else:
-            self.d = math.exp((math.log(low) + math.log(high)) / 2)
-            self.phi = math.pi / 4
-            self.vel = velave
+            self.d     = math.exp((math.log(low) + math.log(high)) / 2)
+            self.phi   = math.pi / 4
+            self.vel   = velave
             self.theta = math.pi
             self.Theta = 0
-            self.Phi = math.pi / 2
-        if random.randint(1, 4) == 1:
-            self.dens = 2500
+            self.Phi   = math.pi / 2
+        if np.random.randint(1, 4) == 1:
+            self.dens  = 2500
         else:
-            self.dens = 1500
-        self.impacttime = random.uniform(0, tmaxby)
-        self.M= (math.pi / 6) * self.dens * self.d**3
-        self.explicit=explicit
+            self.dens  = 1500
+        self.impacttime= np.random.uniform(0, tmaxby)
+        self.M         = (math.pi / 6) * self.dens * self.d**3
+        self.explicit  = explicit
         
     def dia(self,low,high,cumdistr):
         d=np.random.randint(low=low, high=high)
@@ -156,7 +190,9 @@ class Impactor:
 #%%
 
 
-
+"""
+    It is used for the best fit circle. Currently we are only using the average of min and max.
+"""
 
 def Fit(parameters):
     
@@ -180,18 +216,29 @@ def Fit(parameters):
      #   point.append([-x[i],y[i]])
     #xc, yc, r, sigma = taubinSVD(point)
     
-    r=1+Gamma*(min(w[:,1])+max(w[:,1]))/2
-    w[:,1]=((1+Gamma*w[:,1])-r)/(Gamma*r)
-    parameters["dia"]=float(parameters["dia"])*r
-    parameters["jinertia"]=float(parameters["jinertia"])/r**5
-    parameters["jinertia1"]=float(parameters["jinertia1"])/r**5
+    r = 1+Gamma*(min(w[:,1])+max(w[:,1]))/2
+    w[:,1] = ((1+Gamma*w[:,1])-r)/(Gamma*r)
+    if parameters['Shallowness'] == 'Variable':
+        Gamma_new = Gamma*np.average(np.abs(w[:,1]))
+        if Gamma_new>0:
+            w[:,1] = Gamma/Gamma_new*w[:,1]
+        else:
+            print("The Gamma value is zero and hence setting the basal topography to zero")
+            w[:,1] = 0
+        parameters["Gamma"] = Gamma_new
+    parameters["dia"] = float(parameters["dia"])*r
+    parameters["jinertia"] = float(parameters["jinertia"])/r**5
+    parameters["jinertia1"] = float(parameters["jinertia1"])/r**5
     Exparameter(parameters)
     np.savetxt(file,w,delimiter=",") #uncomment
     print ("The best fit value of r is ", r)
     return r
 
 
-#%%   Verified
+#%%   
+"""
+    It is the function which creates the parameters dict (which is the backbone of the data structure ).
+"""
 
 def Parameter(parameters,filetype):
 
@@ -209,12 +256,12 @@ def Parameter(parameters,filetype):
     return parameters
               
 #%% 
-
-def read_xlsx_to_input_field_dict(filename):
-    """
+"""
     Reads an XLSX file with multiple sheets and returns a dictionary
     where keys are sheet names and values are lists of InputField objects.
-    """
+"""
+
+def read_xlsx_to_input_field_dict(filename):
 
     wb = load_workbook(filename, data_only=True)
     #wb.data_only=True
@@ -245,9 +292,11 @@ def read_xlsx_to_input_field_dict(filename):
     return data_dict
 #%%   
  
+""" Writes InputField data to an XLSX workbook, each sheet named after a dictionary key, 
+    with custom column widths.
+"""
 def write_input_fields_to_xlsx(data_dict, filename):
-    """Writes InputField data to an XLSX workbook, each sheet named after a dictionary key, 
-    with custom column widths."""
+    
 
     try:
        wb = load_workbook(filename)
@@ -307,19 +356,32 @@ def write_input_fields_to_xlsx(data_dict, filename):
 
 
 #%%
+"""
+    This initializes the simulation before each landslide. Following steps are done:
+        1. Non-dimensionalizing the inertia, omega
+        2. setting the no. of landslides count to zero
+        3. Intializing the time to zero
+        4. Initializing the dia variable to the input diameter
+        5. Initializing the epsilon to zero for explicit case
+        6. Export these changes to parameters file
+        7. Write the initial data to the output.yorp file
+        8. Initialize the grid and base
+        9. Calculate the gravity
+        10.Copy the executable file to the local location
+        
+"""
 
 def Initialize(parameters,target):
     
 
     parameters['jinertia1'] = target.jinertia[0] / (target.d / 2)**5 / target.dens
-    parameters['jinertia'] = target.jinertia[2] / (target.d / 2)**5 / target.dens
-    parameters['slides'] = 0
-    parameters['time'] = 0
-    parameters['omega'] = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5
-    parameters['dia']=target.d
-    if parameters['Landslide model']!='explicit':
-        parameters['epsilon']=0
-        
+    parameters['jinertia']  = target.jinertia[2] / (target.d / 2)**5 / target.dens
+    parameters['slides']    = 0
+    parameters['time']      = 0
+    parameters['omega']     = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5
+    parameters['dia']       = target.d 
+    parameters['Gamma']     =  0
+    parameters['epsilon']   =  0   
     mydir=Output_File (parameters,"output")
 
     
@@ -339,7 +401,7 @@ def Initialize(parameters,target):
     np.savetxt(mydir+"/base.txt",base,delimiter=",")
     
     if target.landslide:
-        Gravitycalc(parameters)
+        target.rgrav,target.tgrav =  Gravitycalc(parameters) 
 
         executable_file=Output_File(parameters,"build",[parameters["executable"]])
         
@@ -354,7 +416,13 @@ def Initialize(parameters,target):
             print("An error occurred:", e)
 
     
- #%%   
+ #%%  
+"""
+    This calculates the failure height of the landslide. First check whether landslide model is included in the 
+    simulation or not. If yes then check whether it is initiated by an impact or it is a rotational failure. 
+    For impacts, update epsilon for energy dependent simulations and select a failure profile from Gaussian and
+    uniform. Update these in the base array and save it in a text file that will be later used by the C++ module.
+""" 
 
 def Height(parameters,target,impactor=None):
     
@@ -378,11 +446,10 @@ def Height(parameters,target,impactor=None):
         
             
         if parameters["Failure depth"]=='Energy dependent':
-            H=min(0.02*(impactor.dens/1260)*(impactor.d/2)**3*(impactor.vel/5000)**2*(0.5/(target.omega[2]**2/ (G * (4/3) * math.pi * target.dens))),max_epsilon)
-            if parameters['Landslide model']=='explicit':
-                epsilon=np.clip(H,min_epsilon,max_epsilon)
-            else:
-                epsilon+=H
+            H=compute_height(target=target,impactor=impactor)
+        if parameters["Shallowness"] == 'Variable':
+            epsilon=np.clip(H,min_epsilon,max_epsilon)
+
 
         print(f'the destablization height is {epsilon} and the impactor diameter is {impactor.d} and impactor velocity is {impactor.vel}' )
         if parameters['Failure profile'].lower()=="gaussian":
@@ -406,17 +473,23 @@ def Height(parameters,target,impactor=None):
         print("No impactor found to inititate landslide. Probably its a rotational failure")
         epsilon=2*min_epsilon
         height=np.ones(res)
-    
-    parameters['epsilon'] = epsilon
-    
-    if  parameters['Landslide model']=='explicit' or float(parameters['epsilon'])>float(parameters['Minimum epsilon']):
+    if parameters["Shallowness"] == 'Variable':
+        parameters['epsilon'] = epsilon
+        parameters['Gamma']  = np.abs(Gamma +epsilon)
+        print(f"The epsilon: {parameters['epsilon']} and Gamma: {parameters['Gamma']}")
 
-        base[:,1]=base[:,1]-epsilon/Gamma*height
+        base[:,1]=(base[:,1]*Gamma-epsilon*height)/np.abs(Gamma+epsilon)
         base[:,2]=height[:]
-        #base=np.column_stack((base,height))
-        np.savetxt(mydir,base,delimiter=",")
+    else:
+        base[:,1]=(base[:,1]*Gamma-epsilon*height)/np.abs(Gamma)
+        base[:,2]=height[:]*np.min(H/epsilon,max_epsilon/epsilon)
+    #base=np.column_stack((base,height))
+    np.savetxt(mydir,base,delimiter=",")
 
-#%%  Verified
+#%%  
+"""
+Writes the parameter dict to the parameters file. 
+"""
 
 def Exparameter(parameters, filetype="output"):
        
@@ -428,11 +501,14 @@ def Exparameter(parameters, filetype="output"):
         f.writelines(["-"*100])
    
 #%%
+"""
+Calculates gravity for the axisymmetric body.
+"""
 
 def Gravitycalc(parameters):
     
     Res=int(parameters["Resolution"])
-    epsilon=0.001
+    epsilon=0.001 #This is a different epsilon
     Gamma=float(parameters["Gamma"])
     density=float(parameters["Density"])
     rad=float(parameters["dia"])/2
@@ -467,8 +543,10 @@ def Gravitycalc(parameters):
     grav1=np.array([(grav[i,0],-grav[i,1]) for i in range(round(Res/2)-1,-1,-1)])
     grav=np.vstack((grav,grav1))
     
-    r_grav=-G*density*(grav[:,0]*np.sin(w[:,0])+grav[:,1]*np.cos(w[:,0]))/(4/3*np.pi*density*rad*G)
-    t_grav=-G*density*(grav[:,0]*np.cos(w[:,0])-grav[:,1]*np.sin(w[:,0]))/(4/3*np.pi*density*rad*G)
+    R_grav = -G*density*(grav[:,0]*np.sin(w[:,0])+grav[:,1]*np.cos(w[:,0]))
+    T_grav = -G*density*(grav[:,0]*np.cos(w[:,0])-grav[:,1]*np.sin(w[:,0]))
+    r_grav = R_grav/(4/3*np.pi*density*rad*G)
+    t_grav = T_grav/(4/3*np.pi*density*rad*G)
    # plt.plot(w[:,0],r_grav)
    # plt.plot(w[:,0],t_grav)
     print("gravity updated")
@@ -479,8 +557,7 @@ def Gravitycalc(parameters):
     pool.close()
     pool.join()       
     
-#%%
-
+    return R_grav, T_grav
 
 def Gravity(R, Z,r,z): 
     
@@ -509,7 +586,8 @@ def Gravity(R, Z,r,z):
         z_grav=z_grav + np.abs((z[i]-z[i-1]))*(2 * np.pi * np.sign(zeta) * eps + 2 * zeta * ((R - a)/(R + a) * pi - ks) / delta)
     return r_grav, z_grav    
     
-#%% verified
+#%% 
+""" Exports value of omega to the file. """
 
 def ExportOmega(myomega,parameters):
     filename=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
@@ -522,6 +600,20 @@ def ExportOmega(myomega,parameters):
         print("Failed in exporting the data")
 
 #%%
+"""
+This is the main function which calls the Landslide module:
+    1. Update YORP if sochastic YORP is simulated. 
+    2. Nondimensionalize all the relevant values such as omega, and inertia.
+    3. Update slide count, impact time and dump directory of the landslide module.
+    4. Export updated parameters
+    5. Check whether the executable exist, the directories exist and create relevant directories
+    6. Run the landslide executables
+    7. Import the update values in the parameters
+    8. Create the best fit circle and update the parameters dict
+    9. Update omega,diameter and inertia of the target asteroid.
+    10. Update gravity if necessary.
+    
+"""
 
 def Landslides(target,parameters,impacttime,myomega):
     
@@ -529,10 +621,11 @@ def Landslides(target,parameters,impacttime,myomega):
         target.coeff_f, target.coeff_g = shape_gen(target.K)
     if  not target.landslide:
         return
-    if (not parameters['Landslide model']=='explicit') and float(parameters['epsilon'])<float(parameters['Minimum epsilon']):
+    if float(parameters['epsilon'])<float(parameters['Minimum epsilon']):
         return
    # target.d = target.d / (1 + float(parameters["uni_h"]) * float(parameters["epsilon"]))
-    parameters["omega"] = target.omega[2] / (G * (4/3) * math.pi * target.dens)**0.5
+    parameters["omega"] = target.omega[2] /(G * (4/3) * math.pi * target.dens)**0.5
+    parameters['Seismic_shaking_time'] = target.t_lan/(target.d/2/target.grav)**0.5
     parameters["slides"] = int(parameters["slides"])+1
     parameters["dia"] = target.d
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
@@ -583,8 +676,7 @@ def Landslides(target,parameters,impacttime,myomega):
     
 
     Parameter(parameters,"output")
-    if not parameters['Landslide model'] == 'explicit':
-        parameters['epsilon'] = 0
+
     fit=Fit(parameters)
     Parameter(parameters,"output")
     
@@ -595,16 +687,17 @@ def Landslides(target,parameters,impacttime,myomega):
     target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
     target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
-    if abs(1-fit)>min_epsilon or int(parameters["slides"])%4==0 or float(parameters["omega"])>0.7:
-        Gravitycalc(parameters)
+    if abs(1-fit)>min_epsilon or int(parameters["slides"])%4==0 or float(parameters["omega"])>0.75:
+        print("Updating gravity")
+        target.rgrav, target.tgrav = Gravitycalc(parameters)
     
     
     myomega.append([impacttime,target.omega[2]])
     print("Omega after the Landslides", target.omega[2])
 
-#%% Verified
+#%% 
 
-#old version of YORP which uses orbit9, a fortran code, Please use the newer version of the YORP implemented in YORP.py
+"""old version of YORP which uses orbit9, a fortran code, Please use the newer version of the YORP implemented in YORP.py """
 
 def Yorp(target,parameters,impacttime,oldtime,myomega):
     
@@ -656,7 +749,8 @@ def Yorp(target,parameters,impacttime,oldtime,myomega):
     print("Omega after the yorp effect:", target.omega[2])
 
 
-#%% Verified
+#%% 
+""" Cumulative distribution of the astroid population."""
 
 def Cumdistr(parameters):
     
@@ -666,37 +760,73 @@ def Cumdistr(parameters):
     return cumdistr
 
 #%% verified
-
+""" This creates the collision history. Using Poisson's distribution for determining the number of impactors and deducing th
+    the collision time """
 
 def Istuff(parameters,target,tmaxby,cumdistr):
     prob = probi * tmaxby * (target.d/2) ** 2
     explicit_cutoff = float(parameters['Explicit cutoff'])
-    implicit_cutoff = float(parameters['Implicit cutoff'])
-    numgtd = round(astnum(target.dstarave,cumdistr)[0])
+    numgtd = round(astnum(explicit_cutoff*target.dstarave,cumdistr)[0])
     dialittle = cumdistr[-1][0]
-    dexplicit = max(1.1*dialittle, explicit_cutoff* target.dstarave)  #change it to 0.025 as done earlier
+    velave = float(parameters['Impactor velocity'])
+    energy_cons =  (math.pi* target.efficiency*velave**2*target.dens/12)*target.energy[-1]
+    energy_min = target.cohesion_cons**2/(2*target.wave_speed**2*target.dens*np.tan(target.delta*math.pi/180)**2)
+    dexplicit =  (energy_min/energy_cons)**(1/3)
+    dexplicit = max(1.1*dialittle, dexplicit)
     binexplicit = astnum(dexplicit,cumdistr)[1]
-    dexplicit = cumdistr[binexplicit + 1][0]
     nexplicit = round(astnum(dexplicit,cumdistr)[0])
-
-    nexpimpactors = round(prob * nexplicit)
+    
+    nexpimpactors = round(prob * (nexplicit-numgtd))
+    nexpimpactors = poisson_from_exponential(nexpimpactors)
     print(f'Number of expected impactor is {nexpimpactors}')
-    dimplicit =  max(implicit_cutoff * dexplicit,1.1*dialittle)
+    density = 1500
+    dimplicit = ((G**2*target.dens**3*target.d**5)/(9*target.efficiency*density*velave**2*target.f**2))**(1/3)*(
+                np.exp(2*math.pi*target.f*target.d**2/(target.k_s*math.pi**2*target.Q)))
     binimplicit = astnum(dimplicit,cumdistr)[1]
 
     istuff=[]
     for j in range(nexpimpactors):
-        istuff.append(Impactor(tmaxby,numgtd,nexplicit,cumdistr,True))
+        istuff.append(Impactor(tmaxby=tmaxby,velave=velave,low=numgtd,high=nexplicit,cumdistr=cumdistr,explicit=True))
 
 
     for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
-        istuff.append(Impactor(tmaxby,cumdistr[j,0],cumdistr[j+1,0],cumdistr,False))
+        istuff.append(Impactor(tmaxby=tmaxby,velave=velave,low=cumdistr[j,0],high=cumdistr[j+1,0],cumdistr=cumdistr,explicit=False))
 
     istuff.sort(key=lambda x: x.impacttime)
     return istuff
 
 
+def poisson_from_exponential(lambda_rate, max_time=1):
+    """
+    Simulate a Poisson-distributed random variable using exponential inter-arrival times.
+    
+    Parameters:
+    - lambda_rate: The rate (λ) of the Poisson process.
+    - max_time: The maximum time interval fGammaor the simulation (default is 1).
+    
+    Returns:
+    - Number of events (Poisson-distributed) in the interval [0, max_time].
+    """
+    num_events = 0
+    cumulative_time = 0
+
+    # Generate exponential random variables until the cumulative time exceeds max_time
+    while cumulative_time <= max_time:
+        # Generate the time between the next event (Exponential random variable)
+        inter_arrival_time = np.random.exponential(1 / lambda_rate)
+        
+        # Update cumulative time
+        cumulative_time += inter_arrival_time
+        
+        # If the event happens within the time interval, increase event count
+        if cumulative_time <= max_time:
+            num_events += 1
+
+    return num_events
+
+
 #%%
+""" Returns the folder location for writng and reading"""
 
 def Output_File (parameters,filetype="",filenames=[]):
     
@@ -809,8 +939,14 @@ def shape_gen(K):
     return coeff1, coeff2
 
 #%%
+"""
+This is the first function that is called. It initializes multiple simulations. It is called by GUI at the 
+beginning of the simulation. It first create a list named run. Each run corresponds to the number of simulation 
+to be run. For each run it creates a parameters list. Then it creates the output directories. It exports the 
+parameters.txt file for each run and also returns the parameters_list required for GUI.
+"""
 
-def Initialize_simulations(parameters,parameters_list):    
+def Initialize_simulations(parameters,parameters_list=[]):    
     run = list(range(1, int(parameters['Number of simulations'])+1))  # List of input values
     for i in run:
         new_parameters={}

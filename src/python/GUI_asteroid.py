@@ -51,17 +51,19 @@ class GUI:
         self.Parameters()
         self.current_screen = 0
         self.screen_list =["welcome"] + list(self.screen_options.keys())+["preview","simulation","progress"]
-        self.background_image = Image.open(os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input","back_images.png"))  # Replace with your background image path
+        self.background_image = Image.open(os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input","back_images.png"))  
         self.background_photo=None
         self.welcome_screen=None
         self.text_box = None
-        self.widgets=None
-        self.show_next_screen()
-        self.anim=None
+        self.widgets = None
+        self.anim = None
         self.is_anim = False
         self.is_paused = False
         self.plot_index = -1
         self.next_frame = False
+        #self.show_next_screen()
+        #Uncomment this line only when you are trying to generate a parameters file for the solo run
+        Initialize_simulations(parameters=self.parameters)
     
     def Parameters(self):
         for name in self.screen_options:
@@ -504,7 +506,7 @@ class GUI:
         self.display_buttons()
     
 ##############################################################################################################
-
+    """ Creates welcome screen"""
     
     def create_welcome_screen(self):
         self.welcome_screen = tk.Toplevel(self.root)

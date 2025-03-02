@@ -8,27 +8,62 @@ Created on Thu Aug 22 22:04:49 2024
 
 import numpy as np
 from scipy.special import jv, jvp,lpn, hyp2f1  # Hypergeometric function  # Bessel function of first kind and its derivative and Legendre polynomial
-from scipy.optimize import root_scalar
+from scipy.optimize import root_scalar, brentq
 from numba import jit
 import time
 import math
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-# Function to find the first n roots of the equation
+from scipy.interpolate import make_interp_spline, CubicSpline
+
+def find_threshold_time(E0, t0,theta,target):
+    """Find the time at which energy falls below 10% of its initial value."""
+
+    threshold = 0.1 * E0  # 10% of initial energy
+    
+    # Define search range
+    left, right = t0, 100*t0  # Adjust upper bound as needed
+   
+   # Perform binary search
+    while right - left > 1e-6:
+       mid = (left + right) / 2
+       if energy(t=mid,theta=theta,target=target) > threshold:
+           left = mid  # Move right if energy is still above threshold
+       else:
+           right = mid  # Move left if energy is below threshold
+   
+    return (left + right) / 2 -t0  # Return the mid-point as the estimated time
+    
 
 
-def  energy(t,n,m,theta, target,E=1.0):
-    k_d=np.pi*2*target.f/target.Q
+""" 
+The function gives the peak seismic energy due to impact at any location theta. 
+Time t corresoponds to the peak  time."""
+
+def  energy(t,theta, target,E=1.0):
+    n, m = target.roots.shape
+
+    k_d=2*np.pi*target.f/target.Q
     G = 3/2 
-    legendre = lpn(n,theta)[0]
-    for i in range(0,n):
-        for j in range(m):
-            B = (2*i+1)/(1 - i*(i+1)/(target.d/2 * target.roots[i,j])**2 )
-            G+=B*legendre[i]*np.exp(-target.roots[i,j]**2*target.k_s*t)
-            
-    G = G*E*np.exp(-k_d*t)/(2*np.pi*(target.d/2)**3)
+    legendre = lpn(n - 1, theta)[0]  # Compute all needed Legendre polynomials at once
+
+    # Vectorized computation for B
+    i_vals = np.arange(n).reshape(n, 1)  # Shape (n, 1) to match (n, m)
+    B = (2 * i_vals + 1) / (1 - i_vals * (i_vals + 1) / (target.d / 2 * target.roots) ** 2)
+    
+    # Compute exponential term only once per root
+    exp_term = np.exp(-target.roots**2 * target.k_s * t)
+
+    # Vectorized sum over i and j
+    G += np.sum(B * legendre[:, None] * exp_term)  # Using broadcasting
+
+    # Final scaling
+    G *= E * np.exp(-k_d * t) / (2 * np.pi * (target.d / 2) ** 3)
+
     return G
        
 
+"""Next three functions are used for computing the peak time. The function is broken into three subfunctions to speed up
+ the execution using Numba. """
 
 # This function will not be compiled by Numba since it uses lpn from scipy
 def compute_legendre(n, theta):
@@ -44,11 +79,10 @@ def max_time_optimized(t, theta, legendre, roots, k_d, k_s, d):
     
     for i in range(n):
         legendre_i = legendre[i]
-        two_i_plus_1 = 2 * i + 1
         for j in range(m):
             root_ij = roots[i, j]
             root_ij_squared = root_ij**2
-            B = two_i_plus_1 / (1 - i * (i + 1) / (d / 2 * root_ij)**2)
+            B = (2*i+1) / (1 - i * (i + 1) / (d / 2 * root_ij)**2)
             exp_term = np.exp(-root_ij_squared * k_s_t)
             value += B * legendre_i * exp_term * (k_d + root_ij_squared * k_s)
     
@@ -69,21 +103,22 @@ def max_time(t, theta, target):
     return max_time_optimized(t, theta, legendre, roots, k_d, k_s, d)
 
 
-#def Destabilize(parameters,target,impactor):
+
 def compute_energy(target):
-    n = target.roots.shape[0]
-    m = target.roots.shape[1]
-   #  
+    N =target.N 
     theta = np.cos(target.theta) 
-    t = np.zeros(target.N)
-    E = np.zeros(target.N)
-    for i in range(target.N):
-        lower = t[i-1] if i>0 else 1e-2
+    t = np.zeros(N)
+    E = np.zeros(N)
+    t_lan =  np.zeros(N)
+    for i in range(N):
+        lower = t[i-1] if i>0 else 1e-1
         t[i]= root_scalar(max_time,bracket=[lower,100],args=(theta[i],target),method='brentq').root
-        E[i] = energy(n=n,m=m,theta=theta[i],t=t[i], target=target)
-        print (t[i],E[i],theta[i])
-        
-    return E
+        E[i] = energy(theta=theta[i],t=t[i], target=target)
+        t_lan[i] =  find_threshold_time(E0=E[i], t0=t[i],theta=theta[i],target=target)
+        print ("Time               Energy             cos(theta)")
+        print (t[i],E[i],theta[i],t_lan[i])
+    avg_lan = np.average(t_lan)   
+    return E,avg_lan
     
 
 
@@ -91,39 +126,26 @@ def compute_height(target=None,impactor=None):
     
     
     # Define constants and variables (replace these with actual values)
-    G = 6.67430e-11    
+  
     pi = math.pi
-    R = target.d/2            
-    rho = target.dens          
-    phi = 0.6          
-    Z = 6.0            
+    R = target.d/2      
+    theta = target.theta      
+    rho = target.dens            
+    #rgrav=make_interp_spline(x, y)             
     E = 1/2*impactor.M*(impactor.vel**2)*target.efficiency*target.energy
-    alpha = 2.0      # example alpha value
-    lambda_ = 1e+9      # example lambda value
-    mu_0 = 1e+9         # example mu_0 value
-    Co = 2.0           # example Co value
+    v_p = target.wave_speed        
     
-    # Breaking down the complex terms for clarity
-    term1 = 5**(3/5) * 2**(4/5) * alpha**(1/5) * Z**(2/5) * phi**(2/5)
-    term2 = mu_0**(2/5) * (lambda_ + mu_0)**(2/5) * (13 * lambda_ + 20 * mu_0)**(2/5)
-    term3 = (alpha - 1)**(4/5) * (lambda_ + 2 * mu_0)**(3/5) * (3 * lambda_ + 4 * mu_0)**(3/5)
-    term4 = E**(3/5)
-    numerator_part1 = term1 * term2 * term3 * term4
+    peak_p = v_p*np.sqrt(2*rho*E)
+    normal_p = rho*np.abs(target.grav + target.omega[2]**2*R*np.sin(theta)**2)
+    tangential_p = rho*np.abs(target.omega[2]**2*R*np.sin(theta)*np.cos(theta))
+    height = (peak_p*np.tan(target.delta*pi/180)-target.cohesion_cons)/(np.tan(target.delta*pi/180)*normal_p
+                   -tangential_p +target.cohesion_linear)
+    avg_height = np.trapz(height*np.sin(theta),theta)/2
     
-    numerator_part2 = 39 * pi**(2/5) * (lambda_ + (20 * mu_0) / 13) * (lambda_ + 2 * mu_0) * Co * (alpha - 1)**2
-    numerator = numerator_part1 - numerator_part2
-    
-    denominator = 52 * pi**(7/5) * R * rho**2 * (lambda_ + (20 * mu_0) / 13) * (lambda_ + 2 * mu_0) * (alpha - 1)**2 * G
-    
- 
-    # Complete the expression
-    result = numerator / denominator
-    
-    result[result<0] = 0
-    result = np.trapz(result*np.sin(target.theta),target.theta)/2
-    
-    print("Result:", result)
+    return avg_height/R
 
+ 
+""" Currently not in use. Need to change implementation. May be wrong result. """
 
 def frequency(target):
 
@@ -167,6 +189,7 @@ def frequency(target):
 def bessel_eq(x, n):
     return 2 * x  * jvp(n + 0.5, x ) - jv(n + 0.5, x )
 
+""" Searching bounds for the root of Bessel's equation to be used in the root_scalar function"""
 
 def dynamic_bounds_search(n, lower, step=1.0, max_iter=100):
 
@@ -182,6 +205,8 @@ def dynamic_bounds_search(n, lower, step=1.0, max_iter=100):
     return lower, upper
 
 
+""" Serial version of finding roots. New parallel version is implemented. Not in use currently"""
+
 def find_roots(n, num_roots=5, step=1.0):
     roots = []
     lower = max(0.1, np.sqrt(n * (n + 1)))  # Start from a small value
@@ -195,6 +220,8 @@ def find_roots(n, num_roots=5, step=1.0):
         lower = upper
     return np.array(roots)
 
+
+
 def find_intervals(n, num_roots, step):
     """Find unique intervals where each root is located."""
     intervals = []
@@ -205,11 +232,13 @@ def find_intervals(n, num_roots, step):
         lower = upper  # Update lower for the next search
     return intervals
 
+
 def root_worker(n, interval):
     """Find the root in a given interval."""
     lower, upper = interval
     sol = root_scalar(bessel_eq, args=(n,), bracket=[lower, upper], method='brentq')
     return sol.root
+
 
 def find_roots_parallel(n, num_roots=5, step=1.0):
     # Step 1: Generate unique intervals for each root
@@ -229,6 +258,7 @@ def compute_roots(i, m, d):
     roots = find_roots_parallel(i, num_roots=m) / (d / 2)
     return i, roots
 
+""" Parallel version for computing roots of the Bessel equation. """
 def parallel_root_computation(n, m, d):
     roots = np.zeros((n + 1, m))  # Initialize the roots array
     start =time.time()

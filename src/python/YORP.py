@@ -11,6 +11,7 @@ from gaurav import Output_File, Height, Landslides, shape_gen
 from collisions import G, wobblecalcf
 import math
 
+"""Main YORP function that updates the spin state."""
 
 def YORP(target, parameters, impacttime, oldtime, myomega):
     print("Simulating YORP")

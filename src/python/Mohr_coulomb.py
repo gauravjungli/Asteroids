@@ -84,12 +84,13 @@ try:
 
         plt.subplot(2, 1, 2)
         plt.plot(X, (psi), label='psi(X)', color='r')
-        plt.xlabel('X')
+        plt.xlabel('X',fontsize=16)
         plt.ylabel('psi')
         plt.title('Solution for psi(X)')
         plt.grid()
         plt.legend()
-
+        plt.yticks(fontsize=14)
+        plt.xticks(fontsize=14)
         plt.tight_layout()
         plt.show()
     else:

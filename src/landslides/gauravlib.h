@@ -45,6 +45,7 @@ extern const string fric_type;
 extern const string Output_folder;
 extern const string verbose_dir;
 extern const string verbose;
+extern const double seismic_time;
 //------------------------------------------------------------------------------
 
 //Class for storing a 2D gravity field

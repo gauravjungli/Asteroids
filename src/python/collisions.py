@@ -3,11 +3,11 @@
 """
 Created on Thu Jul 13 18:14:37 2023
 
-@author: kumargaurav, ChatGpt, Holsapple
+@author: Kumar Gaurav, ChatGpt, Holsapple
 """
 
 import math
-import random
+
 from scipy.interpolate import make_interp_spline
 from scipy.constants import gravitational_constant
 import numpy as np
@@ -17,45 +17,70 @@ G=gravitational_constant
 velave=5.5e3
 probi = 2.85e-24
 
-#%%   Verified
+#%%   
+""" It gives the number of asteroid greater than a specific dia. It also returns the bin in which this specific 
+    dia belongs to. 
+    1. f: is the spine fit to the data given for the population density.  
+    2. interp: finds the number of asteroid using the spline f.
+    3. Bin: Contains the bin in which the asteroid with the given dia resides.
+    """
     
 def astnum(dia,cumdistr):
     f=make_interp_spline(np.flip(cumdistr[:,0]),np.flip(cumdistr[:,1]))
     interp=math.ceil(f(dia))
-    Bin=len(cumdistr)
     Bin = next((pos for pos, val in enumerate(cumdistr) if val[0] < dia), None)
     return [interp, Bin - 1]
 
-#%%  verified
+#%%
+""" Main function that implements spin change due to collisions also obliquity change added. 
+    zeta: Is the efficiency of the of angular momentum transfer
+    delamomentum: Is the angular momentum transffered to the body
+    delomega: Is the change in the angular velocity
+    myomega: Stores the omega values at all time instant. It is used in post processing.
+"""
 
 def Collision(target,impactor,myomega):
     
     if  not target.collision:
         return
+    print(f" obliquity before impact is {target.obliq} and angular velocity is {target.omega}")
     zeta = zetaf(impactor.phi, target.d, target.atype)
+    amomentum =  np.multiply(target.omega,target.jinertia)
     delamomentum = target.d/2 * impactor.M * impactor.vel * math.sin(impactor.phi) * zeta * np.array([-math.sin(impactor.theta)
                             * math.cos(impactor.Theta) * math.cos(impactor.Phi) - math.cos(impactor.theta) * math.sin(impactor.Theta), 
                             -math.sin(impactor.theta) * math.sin(impactor.Theta) * math.cos(impactor.Phi) + math.cos(impactor.theta) *
                             math.cos(impactor.Theta),math.sin(impactor.theta) * math.sin(impactor.Phi)])
     delomega = np.divide(delamomentum , target.jinertia)  
+    post_amomentum = np.add(amomentum,delamomentum)
+    ran_angle = 2*math.pi*np.random.rand()
+    normal = [ np.sin(target.obliq/180*np.pi)*np.cos(ran_angle),
+              np.sin(target.obliq/180*np.pi)*np.sin(ran_angle),np.cos(target.obliq/180*np.pi)]
+    target.obliq = np.arccos(np.dot(normal,post_amomentum)/np.linalg.norm(post_amomentum))*180/np.pi
 
     delomegdrain =  omegdrainf(target,impactor)
     delomega = delomega + [0,0,delomegdrain]
     target.omega = target.omega + delomega
+    print(f"New obliquity after impact is {target.obliq} and angular velocity is {target.omega}")
     myomega.append([impactor.impacttime,target.omega[2]])
     print("Omega after the collision", target.omega[2])
         
-#%%  Verified
-
+#%%
+""" 
+    Gives a diameter based on the number distribution of the asteroid. It selects first the bin in which the 
+    the random number of asteroids resides. Then it finds the diameter by linear interpolation usig the log-log
+    scale
+    pos: This is the bin in which the required diameter exists. 
+"""
 def getdiaf(num,cumdistr):
-    pos = next(i for i, val in enumerate(cumdistr[:, 1]) if val > num)
+    pos = next((i for i, val in enumerate(cumdistr[:, 1]) if val > num),None)
     low = cumdistr[pos]
     high = cumdistr[pos - 1]
     slope = math.log(high[1] / low[1]) / math.log(high[0] / low[0])
     di = high[0] * (num / high[1]) ** (1 / slope)
     return di
 
-#%% verified
+#%% 
+""" Not currently relevant. Calculates angular momentum drained to ejecta."""
 
 def omegdrainf(target,impactor):
 
@@ -71,7 +96,8 @@ def omegdrainf(target,impactor):
     drain = delomegdrain if target.d/2 > rc else 0
     return drain
 
-#%% Verified
+#%% 
+""" It calculates the values for catastrophic disruption. This uses the formula from the Holsapple paper"""
 
 def qstarf(target, phi, vel):
     slope = 3 * target.mu / (1 - 2 *target.nsize)
@@ -85,7 +111,8 @@ def qstarf(target, phi, vel):
     dstar = ((6 / math.pi) * massstar / target.dens) ** (1 / 3)
     return [qstar, massstar, dstar]
 
-#%%  verified
+#%% 
+"""For calculating wobble. It is based on just adding wobble to the existing wobble. It also exist wobble decay."""
 
 def wobblecalcf(target,impacttime,time):
     
@@ -96,8 +123,8 @@ def wobblecalcf(target,impacttime,time):
     wobble = np.arctan(math.sqrt(target.omega[0]**2 + target.omega[1]**2)/abs(target.omega[2]))
    
     if wobble < math.radians(1):
-        target.omega[0] = math.sqrt(target.omega[0]**2 + target.omega[1]**2) * math.cos(random.uniform(0, 2 * math.pi))
-        target.omega[1] = math.sqrt(target.omega[0]**2 + target.omega[1]**2) * math.sin(random.uniform(0, 2 * math.pi))
+        target.omega[0] = math.sqrt(target.omega[0]**2 + target.omega[1]**2) * math.cos(np.random.uniform(0, 2 * math.pi))
+        target.omega[1] = math.sqrt(target.omega[0]**2 + target.omega[1]**2) * math.sin(np.random.uniform(0, 2 * math.pi))
         print("No wobble")
         return
     
@@ -128,7 +155,8 @@ def wobblecalcf(target,impacttime,time):
     target.omega = [alpha1*target.omega[0],alpha1*target.omega[1],alpha2*target.omega[2]]
 
 
-#%%  Verified
+#%%  
+""" Function for calcualting zeta. It is the efficiency factor for the spinup or it can be said to be the efficiency of angular momentum transferred"""
 
 def zetaf(phi, d, name):
     

@@ -43,10 +43,10 @@ if __name__=="__main__":
 #     sys.stdout = log_file
 #     sys.stderr = log_file
 # =============================================================================
-    start_time=time.time()
-    target=Target(parameters)
-    cumdistr=Cumdistr(parameters)
-   # Initialize(parameters,target)
+    start_time = time.time()
+    target = Target(parameters)
+    cumdistr = Cumdistr(parameters)
+    Initialize(parameters,target)
     tmaxby=float(parameters['Simulation period'])
 #    fig = plt.figure(figsize=(10,6))
 
@@ -56,7 +56,7 @@ if __name__=="__main__":
     
     for i in range(len(istuff)):
         
-        compute_height(target,istuff[i])
+
 
         YORP(target,parameters,istuff[i].impacttime,oldtime,myomega)
         
