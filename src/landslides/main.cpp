@@ -3,9 +3,10 @@
 #include <chrono>
 
 std::map <std::string, string> par;
+//for the debugging mode only
+//const string par_add = (fs::current_path().parent_path()/ "input"/"parameters").string();
 const string par_add = "parameters";
 bool set_parameter=Parameters();
-
 
 const int res= (int) round(stod(par["Resolution"]));
 const double PI= M_PI;
@@ -22,7 +23,7 @@ const double epsilon= stod(par["epsilon"]);
 const double omega= stod(par["omega"]);
 const double dx= (xmax-xmin-2*offset)/res;
 const double past_time=stod(par["time"]);
-const double dia=stod(par["dia"]);
+const double dia=stod(par["current diameter"]);
 const double min_h=pow(dx,4);
 const double Gamma=stod(par["Gamma"]);
 const double seismic_time =  stod(par["Seismic_shaking_time"]); 
@@ -45,7 +46,7 @@ int main()
 	std::streambuf *coutbuf = std::cout.rdbuf(); 
     std::streambuf *cerrbuf = std::cerr.rdbuf(); 
     if (outfile.is_open()) {
-        std::cout.rdbuf(outfile.rdbuf()); // Redirect cout
+        std::cout.rdbuf(outfile.rdbuf()); // Redirect cout	
         std::cerr.rdbuf(outfile.rdbuf()); // Redirect cerr
 	}
 	vector<Grav> g(res);
@@ -79,10 +80,10 @@ int main()
 	file2=full_path.string();	
 	ofstream dia_file(file2,std::ofstream::app);
 
-	dia_file<< past_time <<"\t"<< dia << "\t" << epsilon << endl;
+	dia_file<< past_time <<"\t"<< dia << "\t" << epsilon << "\t" << Gamma << endl;
 
-	myfile<<"Impact number "<<slides<<endl;
-	myfile<<"Impact time "<<past_time<<endl;
+	myfile<<"Impact number -->  "<<slides<<endl;
+	myfile<<"Impact time -->  "<<past_time<<endl<<"Seismic shaking duraion --> "<< seismic_time<<endl;
 	myfile<<"Initial omega --> "<<omega<<endl<<" Initial Inertia --> "<<par["jinertia"]<<endl ;
 
 

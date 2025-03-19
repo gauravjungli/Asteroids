@@ -12,6 +12,7 @@ for ( int j = 2; j < res-2; j++)
 		
 		Ang_Shed=Ang_Shed-2*PI/5*(omega*(pow(1+Gamma*w[j].b+epsilon*min_h,5)-pow(1+Gamma*w[j].b,5)))*dx;
 		w[j]=CV(  min_h,0,0,w[j].b,w[j].g,w[j].x  );
+		cout<<"mass shedding is happening"<<endl;
 	} 
 
 }

@@ -23,20 +23,6 @@ from tkinter import filedialog
 from matplotlib.animation import  FFMpegWriter
 
 
-def read_output(process, progress_queue):
-    for line in iter(process.stdout.readline, ""):
-
-        progress = float(line.strip())
-        progress_queue.put(progress)
-        print(f"Output from subprocess: {line}", end="")
-            
-
-def run_script_instance(output_folder,run,progress_queue):
-    python_path = sys.executable
-    process=subprocess.Popen([python_path, "main.py",'Output folder', output_folder, 'run', str(run)], stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE, text=True, bufsize=1)
-    read_output(process, progress_queue)
-
 
 class GUI:
     def __init__(self, screen_options):
@@ -61,9 +47,10 @@ class GUI:
         self.is_paused = False
         self.plot_index = -1
         self.next_frame = False
-        #self.show_next_screen()
+        self.show_next_screen()
+        self.processes = {}  # Store subprocesses for termination
         #Uncomment this line only when you are trying to generate a parameters file for the solo run
-        Initialize_simulations(parameters=self.parameters)
+        #Initialize_simulations(parameters=self.parameters)
     
     def Parameters(self):
         for name in self.screen_options:
@@ -100,6 +87,25 @@ class GUI:
             widget.destroy()
         self.widgets={}
 
+################################################################################
+
+    def read_output(self,process, progress_queue):
+        
+        for line in iter(process.stdout.readline, ""):
+    
+            progress = float(line.strip())
+            progress_queue.put(progress)
+            print(f"Output from subprocess: {line}", end="")
+                
+    
+    def run_script_instance(self,index,output_folder,run,progress_queue):
+        python_path = sys.executable
+        process=subprocess.Popen([python_path, "main.py",'Output folder', output_folder, 'run', str(run)], stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, text=True, bufsize=1)
+        self.processes[index]=process
+        self.read_output(process, progress_queue)
+
+
 ###############################################################################
         
     def update_progressbar(self, progress_bars, progress_queues, threads):
@@ -109,9 +115,14 @@ class GUI:
                 progress_bars[i]["value"] = progress  # Update progress normally
             except:
                 pass
-    
+
+                
     #schedule the next update after a short delay
-        if all(not t.is_alive() for t in threads) and all(bar["value"] == 100 for bar in progress_bars):
+        if all(not t.is_alive() for t in threads) or all(bar["value"] == 100 for bar in progress_bars):
+            if  all(not t.is_alive() for t in threads):
+                print("All threads ended")
+            if all(bar["value"] == 100 for bar in progress_bars):
+                print("All values in progress bar reached 100")
             text_frame = ttk.Frame(self.root)  # Create a custom frame style
             text_frame.pack(pady=(20, 10), padx=20)  # Adjust padding as needed
             
@@ -211,6 +222,7 @@ class GUI:
 ################################################################################
     
     def center_window(self,root):
+        
         screen_width = root.winfo_screenwidth()
         screen_height = root.winfo_screenheight()
         width=root.winfo_reqwidth()
@@ -473,7 +485,6 @@ class GUI:
         parameters_list=[]
         Initialize_simulations(parameters=self.parameters,parameters_list=parameters_list)
         
-        
         threads = []
         progress_bars = []
         progress_queues = [queue.Queue() for _ in parameters_list]
@@ -486,17 +497,40 @@ class GUI:
             label.pack(side="left",padx=10)
             progress_bar =  ttk.Progressbar(frame, orient="horizontal", length=300, mode="determinate")
             progress_bar.pack(side="left",padx=5,pady=10)
+            # Individual abort button
+            abort_button = ttk.Button(frame, text="Abort", command=lambda i=i: self.abort_process(i))
+            abort_button.pack(side="right", padx=5)
             show_plot_button = ttk.Button(frame, text="Show shape", command=lambda par=par: show_shape(par))
             show_plot_button.pack(side="right", padx=5) 
             show_plot_button = ttk.Button(frame, text="Show spin", command=lambda par=par: show_omega(par))
             show_plot_button.pack(side="right", padx=5) 
+            
             progress_bars.append(progress_bar)
-            thread = threading.Thread(target=run_script_instance, args=(par['Output folder'],par['run'],progress_queues[i]))
+            # Create an abort flag for the process
+
+            thread = threading.Thread(target=self.run_script_instance, args=(i,par['Output folder'],par['run'],progress_queues[i]))
             thread.start()
             threads.append(thread)
         
-
+        # Global abort button
+        abort_all_button = ttk.Button(self.root, text="Abort Simulation", command=self.abort_all_processes)
+        abort_all_button.pack(pady=10)
         self.update_progressbar(progress_bars, progress_queues, threads)
+        
+    def abort_process(self, index):
+        """Abort a specific process"""
+  
+        if  self.processes[index].poll() is None:
+            self.processes[index].terminate()
+            print(f"Process {index + 1} terminated.")
+
+    def abort_all_processes(self):
+        """Abort all processes"""
+
+        for i in self.processes:
+            if self.processes[i].poll() is None:
+                self.processes[i].terminate()
+                print(f"Process {i + 1} terminated.")
         
 ######################################################################################################
 
@@ -509,6 +543,7 @@ class GUI:
     """ Creates welcome screen"""
     
     def create_welcome_screen(self):
+        
         self.welcome_screen = tk.Toplevel(self.root)
         self.welcome_screen.protocol("WM_DELETE_WINDOW", self._quit)
         self.welcome_screen.title("Welcome")

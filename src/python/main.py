@@ -36,12 +36,12 @@ if __name__=="__main__":
             parameters[sys.argv[i]]=sys.argv[i+1]
             
 
-    Parameter(parameters, "input") #change to output
+    Parameter(parameters, "output") 
 # =============================================================================
-#     myfile=Output_File(parameters,"output",["python_log.txt"])
-#     log_file=open(myfile, "w") 
-#     sys.stdout = log_file
-#     sys.stderr = log_file
+    myfile=Output_File(parameters,"output",["python_log.txt"])
+    log_file=open(myfile, "w") 
+    sys.stdout = log_file
+    sys.stderr = log_file
 # =============================================================================
     start_time = time.time()
     target = Target(parameters)
@@ -72,7 +72,10 @@ if __name__=="__main__":
              
         #print(istuff[i].d)
         oldtime = istuff[i].impacttime
-        print(round(oldtime/tmaxby*100),file=sys.__stdout__,flush=True)
+        #sys.__stdout__ always points to the original standard output stream. 99 is set to max because 
+        #near completion time it will be very close to 100 that will stop the simulation
+        
+        print(min(99,round(oldtime/tmaxby*100)),file=sys.__stdout__,flush=True)
         sys.stdout.flush() 
         ExportOmega(myomega,parameters) 
         #plt.clf()
@@ -82,7 +85,7 @@ if __name__=="__main__":
     print("All collisions simulated. Final YORP simulations")
     YORP(target,parameters,tmaxby,oldtime,myomega)
     ExportOmega(myomega,parameters)    
-    print(100,file=sys.__stdout__,flush=True)
+    
     executable_file=Output_File(parameters,"output",[parameters["executable"]])
     
     try:
@@ -96,7 +99,7 @@ if __name__=="__main__":
         print(f"Error occurred while trying to delete the file: {e}")
 
 
-
+    print(100,file=sys.__stdout__,flush=True)
     end_time=time.time()
     elapsed_time=end_time-start_time
     

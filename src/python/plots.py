@@ -39,13 +39,14 @@ def show_shape(parameters):
         file1=os.path.join(file1,'dia.txt')
         if os.path.exists(file):
             epsilon=np.loadtxt(file1,dtype=float)[:,2]
+            Gamma=np.loadtxt(file1,dtype=float)[:,3]
             w=np.loadtxt(file,delimiter=",",dtype=float)
 
             ax.cla()
-            x=np.sin(w[:,0])*(1+epsilon[count]*w[:,2]+float(parameters["Gamma"])*w[:,1])
-            y=np.cos(w[:,0])*(1+(epsilon[count]*w[:,2]+float(parameters["Gamma"])*w[:,1]))
+            x=np.sin(w[:,0])*(1+epsilon[count]*w[:,2]+Gamma[count]*w[:,1])
+            y=np.cos(w[:,0])*(1+(epsilon[count]*w[:,2]+Gamma[count]*w[:,1]))
             ax.plot(x,y,'-r',linewidth=2)
-            x=-np.sin(w[:,0])*(1+(epsilon[count]*w[:,2]+float(parameters["Gamma"])*w[:,1]))
+            x=-np.sin(w[:,0])*(1+(epsilon[count]*w[:,2]+Gamma[count]*w[:,1]))
             ax.plot(x,y,'-r',linewidth=2)
             ax.set_aspect('equal')
             title=f'landslide number={count+1}'
@@ -100,14 +101,18 @@ def post_process(parameters):
     N=int(parameters['Number of simulations'])
     T=int(parameters['Simulation period'])
     res=int(parameters['Resolution'])
-    Gamma=float(parameters['Gamma'])
+ 
     x=np.zeros((length,N+1))
     
     x[:,0]=np.linspace(0, T,num=length, endpoint=True)
     
     for i in range (1,N+1):
         file = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i}',file1])     
-        w=np.loadtxt(file,dtype=float)
+        try:
+            w=np.loadtxt(file,dtype=float)
+        except FileNotFoundError:
+            print(f"File {file} does not exist. Post processing can't be done")
+            return
         x[:,i] = 2*np.pi/np.interp(x[:,0], w[:,0], w[:,1])/3600   
         
     myomega=[[x[i,0],np.mean(x[i,1:N+1]),np.std(x[i,1:N+1])] for i in range(length) ]
@@ -118,22 +123,37 @@ def post_process(parameters):
     for i in range (0,N):
         
         file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','base.txt']) 
-        grid=np.loadtxt(file2,dtype=float,delimiter=",")
+        try:
+            grid=np.loadtxt(file2,dtype=float,delimiter=",")
+        except FileNotFoundError:
+            print(f"File {file2} does not exist. Post processing can't be done")
+            return
+        
         shape[0,1:res+1,i]=grid[:,0]
         shape[1:length+1,0,i]=x[0:length,0]
         
         if parameters["Landslide"]=="Yes":
             
-            file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','data','dia.txt'])    
-            dia=np.loadtxt(file2,dtype=float)
+            file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','data','dia.txt'])
+            try:
+                dia=np.loadtxt(file2,dtype=float)
+            except FileNotFoundError:
+                print(f"File {file2} does not exist. Post processing can't be done")
+                return
+            
             base=np.zeros((len(dia),res))
             
             for j in range(0,len(dia)):
                 
                 file2 = Output_File(parameters=parameters,filetype='output',
                                     filenames=[f'run{i+1}','data',f'field_{j+1}.csv'])
-                w = np.loadtxt(file2,delimiter=",",dtype=float)
-                base[j,:] = (1+w[:,1]*Gamma+dia[j,2]*w[:,2])*dia[j,1]/2
+                try:
+                    w = np.loadtxt(file2,delimiter=",",dtype=float)
+                except FileNotFoundError:
+                    print(f"File {file2} does not exist. Post processing can't be done")
+                    return
+                
+                base[j,:] = (1+w[:,1]*dia[j,3]+dia[j,2]*w[:,2])*dia[j,1]/2
             
             for j in range(1,length+1):
                 index=np.searchsorted(dia[:,0], x[j-1,0],side='right')
@@ -153,7 +173,7 @@ def post_process(parameters):
     file = Output_File(parameters=parameters,filetype='output',filenames=['std_shape.txt']) 
     np.savetxt(file, std_shape, delimiter=',', fmt='%f')
     
-
+""" For old style 2D plots"""
 
 def show_plots(parameters, root):
     file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.txt']) 

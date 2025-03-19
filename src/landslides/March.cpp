@@ -13,7 +13,7 @@ void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
 		FS hr= Hx(wr[j],wl[j+1]);
 		
 		FS source=Source( wtemp[j], wr[j-1], wl[j], wr[j], wl[j+1]);
-		w[j].Modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt
+		w[j].Modify(wtemp[j].p - ((hr.p - hl.p) / dx - source.p) * dt 
 		, wtemp[j].q - ((hr.q - hl.q) / dx - source.q) * dt
     	, wtemp[j].r - ((hr.r-hl.r) / dx - source.r) * dt);	
 	}
@@ -39,7 +39,7 @@ void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_ini
 
 void March (vector<CV>& w, double& Ang_Shed)
 {	
-	double dt = dx / 4;
+	double dt = dx / 8;
 	static int timesteps=0;
 	double sum1=0,sum=0;
 	vector<CV> wl(w),wr(w);
@@ -48,7 +48,7 @@ void March (vector<CV>& w, double& Ang_Shed)
 	if(!filesystem::exists(file1))
 		filesystem::create_directory(file1);
 	static double t=0;
-	int check_t=1; 
+	double check_t=1; 
 	while(t<finalt)
 	{
 		if(timesteps%dump==0 && (verbose=="Yes"|| verbose=="yes" ))
@@ -67,29 +67,29 @@ void March (vector<CV>& w, double& Ang_Shed)
 				delta= 0;
 			else
 				delta = std::min(25.0,Delta);
-			cout<<"Time "<<t<<"Friction angle"<< delta<<endl;
 		}
+		
 		Shed(w, Ang_Shed);
-		Predictor(w,wl,wr,dt);
+		Predictor(w,wl,wr,dt);	
 		Shed(w, Ang_Shed);
-		Corrector(w, wl, wr, w_init, dt);
+		Corrector(w, wl, wr, w_init, dt); 
 		
 		Time_step(wl,wr,dt,t,timesteps);
 
 		sum=0;
 		for (int i=2;i<res-2;i++)
 			sum+=PI/2*(w[i].v*(pow(1+Gamma*w[i].b+epsilon*w[i].h,4)-pow(1+Gamma*w[i].b,4)))*dx;
-		if (t>check_t)
+	/*	if (t>check_t)
 		{	
 			if (abs(sum)<epsilon*epsilon )
 			{	
 				break;
 			}
 			sum1=sum;
-			check_t++;
+			check_t+=0.1;
 		}
 		//std::cout<<std::setprecision(18)<<t<<"  "<<sum<<"  "<<delta<<endl;
-
+	*/
 	}
 	fs::path base_path = verbose_dir;
 	fs::path file_name= string("log.txt");

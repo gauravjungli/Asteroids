@@ -39,8 +39,8 @@ FS Flux( CV w )
 {
 	FS f;
 	 f.p = w.u*w.h*w.lambda*sin(w.x);
-	 f.q = (w.u*w.u+epsilon*w.psi*w.h/2)*pow(w.lambda,2)*w.h*sin(w.x); 
-	 f.r = (w.u*(w.v))*w.h*pow(w.lambda,2)*sin(w.x)*sin(w.x);
+	 f.q =  (w.u*w.u+epsilon*w.psi*w.h/2)*pow(w.lambda,2)*w.h*sin(w.x); 
+	 f.r =  (w.u*(w.v))*w.h*pow(w.lambda,2)*sin(w.x)*sin(w.x);
 	//	f.p=-w.q*(2*w.b*epsilon*sin(w.x)+epsilon*w.p-sin(w.x))/sin(w.x);
 	//	f.q=-(4*w.b*epsilon*sin(w.x)*w.q*w.q+2*epsilon*w.p*w.q*w.q-2*sin(w.x)*w.q*w.q-epsilon*pow(w.p,3)*w.psi)/(2*sin(w.x)*w.p);
 	//	f.r=-w.q*w.r*(2*w.b*epsilon*sin(w.x)+epsilon*w.p-sin(w.x))/(sin(w.x)*w.p);
@@ -59,12 +59,12 @@ FS Source( CV w, CV w1, CV w2, CV w3, CV w4)
 
 	double grad_b= Gamma*((w3.b-w1.b)/dx)*((w1.h+w2.h+w3.h+w4.h)/4)*((w1.psi+w2.psi+w3.psi+w4.psi)/4)*(sin(w3.x)+sin(w1.x))/2*((pow((w1.lambda+w2.lambda)/2,3)+pow((w3.lambda+w4.lambda)/2,3))/2);
 
-	double pressure=(((pow((w1.v+w2.v)/2,2)+pow((w3.v+w4.v)/2,2))/2)*((pow((w1.lambda+w2.lambda)/2,2)+pow((w3.lambda+w4.lambda)/2,2))/2)
+	double pressure=(((pow((w1.v+w2.v)/2,2)+pow((w3.v+w4.v)/2,2))/2+epsilon*w.psi*w.h/2)*((pow((w1.lambda+w2.lambda)/2,2)+pow((w3.lambda+w4.lambda)/2,2))/2)
 					*((w1.h+w2.h+w3.h+w4.h)/4))*(sin(w3.x)-sin(w1.x))/dx;
 
-	source.q = pressure+(bf.q-fr.q)*w.h*sin(w.x)-grad_b;
+	source.q = pressure+(bf.q-fr.q)*w.h*sin(w.x)-grad_b; 
 
-	source.r=bf.r-fr.r;
+	source.r=bf.r-fr.r; 
 
 	return source;
 }

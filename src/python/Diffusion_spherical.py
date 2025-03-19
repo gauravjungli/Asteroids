@@ -112,7 +112,8 @@ def compute_energy(target):
     t_lan =  np.zeros(N)
     for i in range(N):
         lower = t[i-1] if i>0 else 1e-1
-        t[i]= root_scalar(max_time,bracket=[lower,100],args=(theta[i],target),method='brentq').root
+        upper =  2*t[i-1] if i>0 else 10
+        t[i]= root_scalar(max_time,bracket=[lower,upper],args=(theta[i],target),method='brentq').root
         E[i] = energy(theta=theta[i],t=t[i], target=target)
         t_lan[i] =  find_threshold_time(E0=E[i], t0=t[i],theta=theta[i],target=target)
         print ("Time               Energy             cos(theta)")

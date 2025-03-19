@@ -20,9 +20,7 @@ if __name__ == "__main__":
     data_dict=read_xlsx_to_input_field_dict(inputfile)
     gui=GUI(data_dict)
     gui.root.mainloop()
-    start_time=time.time()
-     
-    end_time=time.time()
-    elapsed_time=end_time-start_time
+    print("End of GUI")
+    
 
     

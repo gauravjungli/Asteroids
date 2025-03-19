@@ -11,13 +11,15 @@ import os
 import re
 from gaurav import Parameter
 import seaborn as sns
+from scipy.ndimage import gaussian_filter1d
 
 #from mpl_toolkits.mplot3d import Axes3D
 
 def show_shape(parameters):
     plt.close()
     fig,ax = plt.subplots()
-    
+    epsilon = float(parameters["epsilon"])
+    Gamma = float(parameters["Gamma"])
     for count in range(0,100):
         
         file1=parameters['Data folder']
@@ -29,10 +31,10 @@ def show_shape(parameters):
            # if count!=slides-1 and count!=0:
             #    continue
             #plt.clf()
-            x=np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
-            y=np.cos(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+            x=np.sin(w[:,0])*(1+epsilon*w[:,2]+Gamma*w[:,1])
+            y=np.cos(w[:,0])*(1+epsilon*w[:,2]+Gamma*w[:,1])
             ax.plot(x,y,'-r',linewidth=4)
-            x=-np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+            x=-np.sin(w[:,0])*(1+epsilon*w[:,2]+Gamma*w[:,1])
             ax.plot(x,y,'-r',linewidth=2)
             ax.set_aspect('equal')
             title=f'landslide number={count+1}'
@@ -93,7 +95,7 @@ def backup():
     dx=(math.pi-2*offset)/res
     #omega=0.65
     #delta=30
-    file1="/home/g/Asteroids/output/files_"+str(format(delta,".6f"))+"_"+str(format(omega,".6f"))
+
 #file1="output/omega_15_0.65_0.002"
 # omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
 #%%
@@ -108,12 +110,12 @@ def show_plot(parameters):
        # if count!=slides-1 and count!=0:
         #    continue
         #plt.clf()
-        x=np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
-        y=np.cos(w[:,0])*(1+(float(parameters["epsilon"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+        x=np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,2]+float(parameters["Gamma"])*w[:,1]))
+        y=np.cos(w[:,0])*(1+(float(parameters["epsilon"])*w[:,2]+float(parameters["Gamma"])*w[:,1]))
         plt.clf()
         plt.axis('equal')
         plt.plot(x,y,'-r',linewidth=4)
-        x=-np.sin(w[:,0])*(1+(float(parameters["Gamma"])*w[:,1]+float(parameters["Gamma"])*w[:,2]))
+        x=-np.sin(w[:,0])*(1+(float(parameters["Gamma"])*w[:,1]+float(parameters["Gamma"])*w[:,1]))
         plt.plot(x,y,'-r',linewidth=4)
         plt.title("lanslide number="+str(count+1))
         plt.pause(0.5)
@@ -121,37 +123,69 @@ def show_plot(parameters):
     
 #plt.close()
  #%%   
-fig = plt.figure(figsize=(6,6))  
-dirFiles = os.listdir(file1+"/data") #list of directory files
-dirFiles.sort(key=lambda f: int(re.sub('\D', '', f)))
-os.chdir(file1+"/data")
-ang_mom=[]
-lin_mom=[]
-count=0
-for file in dirFiles:
+def show_individual_run(parameters):
+    # Function to extract the numerical value from a name (e.g., "dir_10" -> 10)
+    def extract_number(text):
+        match = re.search(r'\d+', text)  # Find first occurrence of a number
+        return int(match.group()) if match else float('inf')  # Default to large number if no match
 
+    main_dir=parameters['Data folder']
+    file1=os.path.join(main_dir,'dia.txt')
+
+    epsilon=np.loadtxt(file1,dtype=float)[:,2]
+    Gamma = np.loadtxt(file1,dtype=float)[:,3]
+ 
+    dx=(math.pi-2*float(parameters["offset"]))/float(parameters["Resolution"])
+    fig = plt.figure(figsize=(6,6))  
+    subdirs = sorted([d for d in os.listdir(main_dir) if os.path.isdir(os.path.join(main_dir, d))], key=extract_number)
+    count=0
     
-    w=np.loadtxt(file,delimiter=",",dtype=float)
-  #  print(file)
-    
-    plt.clf()
-    x=(w[:,0])
-    y=(w[:,1]+Gamma/epsilon*w[:,2])
-    # y=(w[:,3])
-    ang_mom.append([count,sum(w[:,4])*dx])
-    lin_mom.append([count,sum(w[:,3])*dx])
-    count +=1
-    if count%1!=0:
-          continue
-    plt.plot(x,y)
-    plt.title("Time="+str(count))
-    plt.pause(0.1)  
-    # print(sum(w[:,1]))  
-# ang_mom=np.array(ang_mom)
-# plt.plot(ang_mom[:,0],ang_mom[:,1])
-# lin_mom=np.array(lin_mom)
-# plt.plot(lin_mom[:,0],lin_mom[:,1])
-os.chdir("..")
+    for subdir in subdirs:
+        
+        subdir_path = os.path.join(main_dir, subdir)
+        
+        # Get and sort files by number within the subdirectory
+        dirFiles = sorted( [f for f in os.listdir(subdir_path) if f.lower() != "log.txt"], key=extract_number)
+   
+        os.chdir(subdir_path)
+        ang_mom=[]
+        lin_mom=[]
+        
+        if count <0:
+            count +=1
+            continue
+        for file in dirFiles:
+            
+
+            w=np.loadtxt(file,delimiter=",",dtype=float)
+          #  print(file)
+            w_filtered = gaussian_filter1d(w[:,2], sigma=20)
+            plt.clf()
+            x=(w[:,0])
+            y=(w[:,3])#+Gamma[count]/epsilon[count]*w[:,1])
+            # y=(w[:,3])
+            ang_mom.append([count,sum(w[:,4])*dx])
+            lin_mom.append([count,sum(w[:,3])*dx])
+            
+            #plt.plot(x,w_filtered)
+            plt.plot(x,y)
+            #plt.plot(x, w_filtered)
+            plt.title("Time="+str(count))
+            plt.pause(0.1) 
+           # if count > -1:
+            #    break
+            #plt.ylim(0.975,1.025)
+            
+        count +=1
+        print(count, subdir)
+        if count>4:
+            return
+        # print(sum(w[:,1]))  
+    # ang_mom=np.array(ang_mom)
+    # plt.plot(ang_mom[:,0],ang_mom[:,1])
+    # lin_mom=np.array(lin_mom)
+    # plt.plot(lin_mom[:,0],lin_mom[:,1])
+    os.chdir("../..")
 #%%
 fig = plt.figure(figsize=(14,6)) 
 x=w[:,0]

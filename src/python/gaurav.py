@@ -24,6 +24,7 @@ from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 from scipy.optimize import root_scalar
 from Diffusion_spherical import frequency, find_roots, find_roots_parallel, parallel_root_computation, compute_energy, compute_height
 import numba
+from scipy.ndimage import gaussian_filter1d
 
 
 #%%
@@ -101,7 +102,7 @@ class Target:
             
         self.M= (math.pi / 6) * self.dens * self.d**3
         self.jinertia= [2/5 * self.M * (self.d/2)**2]*3
-        #self.omega=[0,0, (G * 4 / 3 * math.pi * self.dens) ** 0.5* float(parameters[ 'Angular velocity'])]
+        
         self.omega=[0,0,2*np.pi/(float(parameters['Rotation period'])*3600)]
         self.kvg=0.3
         self.K=float(parameters["K"])
@@ -215,7 +216,7 @@ def Fit(parameters):
      #   point.append([x[i],y[i]])
      #   point.append([-x[i],y[i]])
     #xc, yc, r, sigma = taubinSVD(point)
-    
+    w[:,1] = gaussian_filter1d(w[:,1], sigma=20)
     r = 1+Gamma*(min(w[:,1])+max(w[:,1]))/2
     w[:,1] = ((1+Gamma*w[:,1])-r)/(Gamma*r)
     if parameters['Shallowness'] == 'Variable':
@@ -226,11 +227,11 @@ def Fit(parameters):
             print("The Gamma value is zero and hence setting the basal topography to zero")
             w[:,1] = 0
         parameters["Gamma"] = Gamma_new
-    parameters["dia"] = float(parameters["dia"])*r
+    parameters["current diameter"] = float(parameters["current diameter"])*r
     parameters["jinertia"] = float(parameters["jinertia"])/r**5
     parameters["jinertia1"] = float(parameters["jinertia1"])/r**5
     Exparameter(parameters)
-    np.savetxt(file,w,delimiter=",") #uncomment
+    np.savetxt(file,w,delimiter=",") 
     print ("The best fit value of r is ", r)
     return r
 
@@ -379,7 +380,7 @@ def Initialize(parameters,target):
     parameters['slides']    = 0
     parameters['time']      = 0
     parameters['omega']     = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5
-    parameters['dia']       = target.d 
+    parameters['current diameter']       = target.d 
     parameters['Gamma']     =  0
     parameters['epsilon']   =  0   
     mydir=Output_File (parameters,"output")
@@ -469,7 +470,7 @@ def Height(parameters,target,impactor=None):
             height= np.ones(res)
         
     else:
-        #height=[ max(0.1,0.20*Gamma/epsilon*b[1]) for b in base]
+       
         print("No impactor found to inititate landslide. Probably its a rotational failure")
         epsilon=2*min_epsilon
         height=np.ones(res)
@@ -507,11 +508,12 @@ Calculates gravity for the axisymmetric body.
 
 def Gravitycalc(parameters):
     
+    start =time.time()
     Res=int(parameters["Resolution"])
     epsilon=0.001 #This is a different epsilon
     Gamma=float(parameters["Gamma"])
     density=float(parameters["Density"])
-    rad=float(parameters["dia"])/2
+    rad=float(parameters["current diameter"])/2
     
     file=Output_File(parameters,"output",["base.txt"])
 
@@ -556,7 +558,8 @@ def Gravitycalc(parameters):
     
     pool.close()
     pool.join()       
-    
+    end =time.time()
+    print(f"Time taken in calculating gravity:{end-start}")
     return R_grav, T_grav
 
 def Gravity(R, Z,r,z): 
@@ -623,11 +626,11 @@ def Landslides(target,parameters,impacttime,myomega):
         return
     if float(parameters['epsilon'])<float(parameters['Minimum epsilon']):
         return
-   # target.d = target.d / (1 + float(parameters["uni_h"]) * float(parameters["epsilon"]))
+
     parameters["omega"] = target.omega[2] /(G * (4/3) * math.pi * target.dens)**0.5
     parameters['Seismic_shaking_time'] = target.t_lan/(target.d/2/target.grav)**0.5
     parameters["slides"] = int(parameters["slides"])+1
-    parameters["dia"] = target.d
+    parameters["current diameter"] = target.d
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
     parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
     parameters["time"]=impacttime
@@ -681,13 +684,13 @@ def Landslides(target,parameters,impacttime,myomega):
     Parameter(parameters,"output")
     
     target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
-    target.d = float( parameters["dia"])
+    target.d = float( parameters["current diameter"])
     
     r = target.d / 2
     target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
     target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
-    if abs(1-fit)>min_epsilon or int(parameters["slides"])%4==0 or float(parameters["omega"])>0.75:
+    if int(parameters["slides"])%10==0 or float(parameters["omega"])>0.85:
         print("Updating gravity")
         target.rgrav, target.tgrav = Gravitycalc(parameters)
     
@@ -793,6 +796,7 @@ def Istuff(parameters,target,tmaxby,cumdistr):
         istuff.append(Impactor(tmaxby=tmaxby,velave=velave,low=cumdistr[j,0],high=cumdistr[j+1,0],cumdistr=cumdistr,explicit=False))
 
     istuff.sort(key=lambda x: x.impacttime)
+    print(f"The minimum diameter for creating landslides is {dexplicit}")
     return istuff
 
 
@@ -830,7 +834,7 @@ def poisson_from_exponential(lambda_rate, max_time=1):
 
 def Output_File (parameters,filetype="",filenames=[]):
     
-    dir = os.path.dirname(os.path.dirname(os.getcwd()))
+    directory = os.path.dirname(os.path.dirname(os.getcwd()))
     filenames1=copy.deepcopy(filenames)
     if filetype=="output":
         output_folder=parameters['Output folder']
@@ -838,7 +842,7 @@ def Output_File (parameters,filetype="",filenames=[]):
             filenames1.insert(0,"run"+str(parameters["run"]))
         filenames1.insert(0,output_folder)
         
-    return os.path.join(dir,filetype,*filenames1)
+    return os.path.join(directory,filetype,*filenames1)
 #%%
 
 def read_f_g_spline(parameters):

@@ -90,9 +90,9 @@ void Base ( vector<double>& b,vector<double>& h,vector<double>& x)
         getline(iss, word2, ','); 
         getline(iss, word3, ',');        
 
-        x[i]=stod(word1);
-        b[i]=stod(word2);
-        h[i]=stod(word3);
+        x[i] = stod(word1);
+        b[i] = stod(word2); 
+        h[i] = 1;//stod(word3); //change
         i++;
     }
     myfile.close();

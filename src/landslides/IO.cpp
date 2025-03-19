@@ -144,7 +144,7 @@ void Read_grav( vector<Grav>& g, const string& file)
         // Check if the row is complete
         if (row.size() == 2) 
         {
-            g[i].X1=row[0];
+            g[i].X1=row[0]; //change
             g[i].X2=row[1];
             g[i].X3=0;
             row.clear();
