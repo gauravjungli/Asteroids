@@ -4,10 +4,12 @@
 output/
 .vscode/
 Info Files/
-inputs/
 *.nb
 test.dSYM/
 data/
 images/
 __pycache__/
 .empty/
+build/
+untitled*.py
+input/roots.csv

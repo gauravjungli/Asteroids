@@ -1,0 +1,35 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "Landslides_1D",
+            "hidden": false,
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_LANDSLIDES_1D": "ON",
+                "BUILD_LANDSLIDES_2D": "OFF"
+            }
+        },
+        {
+            "name": "Landslides_2D_release",
+            "hidden": false,
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_LANDSLIDES_1D": "OFF",
+                "BUILD_LANDSLIDES_2D": "ON"
+            }
+        },
+        {
+            "name": "Landslides_2D_debug",
+            "hidden": false,
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_LANDSLIDES_1D": "OFF",
+                "BUILD_LANDSLIDES_2D": "ON"
+            }
+        }
+    ]
+}
