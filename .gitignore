@@ -13,3 +13,4 @@ __pycache__/
 build/
 untitled*.py
 input/roots.csv
+.spyproject/
