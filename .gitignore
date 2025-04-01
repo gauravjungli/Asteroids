@@ -11,3 +11,5 @@ images/
 __pycache__/
 .empty/
 build/
+untitled*.py
+input/roots.csv
