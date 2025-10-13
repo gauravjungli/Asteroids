@@ -7,7 +7,7 @@ Created on Thu Aug 22 22:04:49 2024
 """
 
 import numpy as np
-from scipy.special import jv, jvp,lpn, hyp2f1  # Hypergeometric function  # Bessel function of first kind and its derivative and Legendre polynomial
+from scipy.special import jv, jvp,legendre_p_all, hyp2f1  # Hypergeometric function  # Bessel function of first kind and its derivative and Legendre polynomial
 from scipy.optimize import root_scalar, brentq
 from numba import jit
 import time
@@ -15,25 +15,26 @@ import math
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 from scipy.interpolate import make_interp_spline, CubicSpline
 
-def find_threshold_time(E0, t0,theta,target):
+def find_threshold_time(E0,t0,theta,target):
     """Find the time at which energy falls below 10% of its initial value."""
-
-    threshold = 0.1 * E0  # 10% of initial energy
+    #change currently it is approximated for a spherical body
+    Gamma = 1
+    f = 1
+    threshold = target.dens*(Gamma*(target.grav-(target.omega[2]*np.sin(theta))**2*target.d/2)/2/np.pi/f)**2/2
     
     # Define search range
-    left, right = t0, 100*t0  # Adjust upper bound as needed
+    left, right = t0, 10000*t0  # Adjust upper bound as needed
    
    # Perform binary search
-    while right - left > 1e-6:
+    while right - left > 1e-1:
        mid = (left + right) / 2
-       if energy(t=mid,theta=theta,target=target) > threshold:
+       if E0*energy(t=mid,theta=np.cos(theta),target=target) > threshold:
            left = mid  # Move right if energy is still above threshold
        else:
            right = mid  # Move left if energy is below threshold
    
     return (left + right) / 2 -t0  # Return the mid-point as the estimated time
     
-
 
 """ 
 The function gives the peak seismic energy due to impact at any location theta. 
@@ -44,7 +45,7 @@ def  energy(t,theta, target,E=1.0):
 
     k_d=2*np.pi*target.f/target.Q
     G = 3/2 
-    legendre = lpn(n - 1, theta)[0]  # Compute all needed Legendre polynomials at once
+    legendre = legendre_p_all(n - 1, theta)[0]  # Compute all needed Legendre polynomials at once
 
     # Vectorized computation for B
     i_vals = np.arange(n).reshape(n, 1)  # Shape (n, 1) to match (n, m)
@@ -67,7 +68,7 @@ def  energy(t,theta, target,E=1.0):
 
 # This function will not be compiled by Numba since it uses lpn from scipy
 def compute_legendre(n, theta):
-    return lpn(n, theta)[0]
+    return legendre_p_all(n, theta)[0]
 
 # JIT-compiled function for performance
 @jit(nopython = True)
@@ -112,37 +113,66 @@ def compute_energy(target):
     t_lan =  np.zeros(N)
     for i in range(N):
         lower = t[i-1] if i>0 else 1e-1
-        upper =  (i+1)*4
+        upper =  (i+1)*4*(target.d/500)
         t[i]= root_scalar(max_time,bracket=[lower,upper],args=(theta[i],target),method='brentq').root
         E[i] = energy(theta=theta[i],t=t[i], target=target)
-        t_lan[i] =  find_threshold_time(E0=E[i], t0=t[i],theta=theta[i],target=target)
-        print ("Time               Energy             cos(theta)")
-        print (t[i],E[i],theta[i],t_lan[i])
+       # print ("Time               Energy             cos(theta)")
+       # print (t[i],E[i],theta[i],t_lan[i])
     avg_lan = np.average(t_lan)   
-    return E,avg_lan
+    return E,t
     
 
+def compute_time(target,impactor):
+    N =target.N 
+    theta = target.theta
+    t = target.t_max
+    t_lan =  np.zeros(N)
+    E = 1/2*impactor.M*(impactor.vel**2)*target.efficiency
+    for i in range(N):
+        t_lan[i] =  find_threshold_time( E0=E, t0=t[i],theta=theta[i],target=target)
 
-def compute_height(target=None,impactor=None,grid=None):
+    avg_lan = np.average(t_lan)  
+    print (f"Seismic shaking time is {avg_lan}")
+    return avg_lan
+
+
+def compute_height(parameters,target=None,impactor=None,grid=None,dimension='1D'):
     
     
     # Define constants and variables (replace these with actual values)
-  
+    
     pi = math.pi
     R = target.d/2      
     theta = target.theta      
-    rho = target.dens            
+    rho = target.dens   
+    Nx = int(parameters['X Resolution']) 
+    Ny = int(parameters['Y Resolution']) 
     #rgrav=make_interp_spline(x, y)             
     E = 1/2*impactor.M*(impactor.vel**2)*target.efficiency*target.energy
-    v_p = target.wave_speed        
+    v_p = target.wave_speed   
     
+    if  dimension != '1D':
+        nx, ny = int(parameters['X Resolution']), int(parameters['Y Resolution'])
+
+        offset =float(parameters["offset"])
+        dx=(np.pi-2*offset)/(nx)
+        dy=(2*np.pi)/(ny)
+        grid2 = np.linspace(offset+dx/2, np.pi-offset-dx/2, nx)
+    else:
+        grid2=grid
+        
+    r_grav = make_interp_spline(grid2[2:-2], target.rgrav[2:-2])
+    t_grav = make_interp_spline(grid2[2:-2], target.tgrav[2:-2]) 
+    rgrav = r_grav(theta)
+    tgrav = t_grav(theta)
     peak_p = v_p*np.sqrt(2*rho*E)
-    normal_p = rho*np.abs(target.grav + target.omega[2]**2*R*np.sin(theta)**2)
-    tangential_p = rho*np.abs(target.omega[2]**2*R*np.sin(theta)*np.cos(theta))
+    
+    normal_p = rho*np.abs(rgrav + target.omega[2]**2*R*np.sin(theta)**2)
+    tangential_p = rho*np.abs(tgrav+target.omega[2]**2*R*np.sin(theta)*np.cos(theta))
     height = (peak_p*np.tan(target.delta*pi/180)-target.cohesion_cons)/(np.tan(target.delta*pi/180)*normal_p
                    -tangential_p +target.cohesion_linear)
     
-    if grid is not None:
+    if dimension != '1D':
         
         theta_new, phi_new = transform_spherical_coords(grid[:,0], grid[:,1], impactor.Theta, impactor.Phi)
         h_interp=make_interp_spline(theta,height)
@@ -150,7 +180,7 @@ def compute_height(target=None,impactor=None,grid=None):
         return height_new*(1-grid[:,3])/R  #Contains the flag to check whether the grid lies inside the crater
     else:
       
-        avg_height = np.trapz(height*np.sin(theta),theta)/2
+        avg_height = np.trapezoid(height*np.sin(theta),theta)/2
         H = avg_height/(R)
         
         return H

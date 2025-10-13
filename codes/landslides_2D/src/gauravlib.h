@@ -76,9 +76,9 @@ class AMB{
 class CV
 {
     public:
-        double w, p, q, r,h,u,v,b,x,y,psi,lambda;
+        double w, p, q, r,h,u,v,b,x,y,psi,lambda,mass_shed;
         Grav g;
-        CV(double h, double u, double v, double b, Grav g, double x,double y );
+        CV(double h, double u, double v, double b, Grav g, double x, double y, bool mass_shed );
         void Modify(double p, double q, double r);
      
 };

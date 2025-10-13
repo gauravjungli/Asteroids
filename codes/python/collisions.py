@@ -10,9 +10,11 @@ import math
 
 from scipy.interpolate import make_interp_spline
 from scipy.constants import gravitational_constant
+from IO import Output_File
+import random
 G=gravitational_constant
-velave=5.5e3
 probi = 2.85e-24
+
 import numpy as np
 
 #%%
@@ -30,18 +32,18 @@ import numpy as np
 
 class Impactor:
     
-    def __init__(self,tmaxby,velave,low,high,cumdistr,explicit=True):
+    def __init__(self,tmaxby,low,high,cumdistr,file,explicit=True):
         if explicit:
             self.phi   = math.acos(1 - 2 * np.random.random()) / 2
-            self.vel   = velave#scipy.stats.maxwell.ppf(random.random(), scale=3.232)*1000
-            self.d     = self.dia(low,high,cumdistr)   
+            self.vel   = self.velocity(file) 
+            self.d     = self.dia(low,high,cumdistr)  
             self.theta = 2 * math.pi * np.random.random()
             self.Phi = 2 * math.pi * np.random.random()
-            self.Theta   = np.clip(math.acos(1 - 2 * np.random.random()),np.pi/6,5*np.pi/6)
+            self.Theta = np.clip(math.acos(1 - 2 * np.random.random()),np.pi/6,5*np.pi/6)
         else:
             self.d     = math.exp((math.log(low) + math.log(high)) / 2)
             self.phi   = math.pi / 4
-            self.vel   = velave
+            self.vel   = self.velocity(file) 
             self.theta = math.pi
             self.Phi = 0
             self.Theta   = math.pi / 2
@@ -56,6 +58,29 @@ class Impactor:
     def dia(self,low,high,cumdistr):
         d=np.random.randint(low=low, high=high)
         return getdiaf(d,cumdistr)
+    
+    def velocity(self,file):
+        ranges = []
+        probabilities = []
+        
+        with open(file, 'r') as file:
+            for line in file:
+                parts = line.strip().split()
+                if len(parts) == 3:
+                    lower, upper, prob = map(float, parts)
+                    ranges.append((lower, upper))
+                    probabilities.append(prob)
+
+# Step 2: Choose a range based on the distribution
+        selected_range = random.choices(ranges, weights=probabilities, k=1)[0]
+
+# Step 3: Sample a value uniformly from the selected range
+        sample = random.uniform(selected_range[0], selected_range[1])
+        
+        return sample*1e+3
+
+
+
 
 
 #%%   
@@ -146,7 +171,7 @@ def qstarf(target, phi, vel):
     qstarg = target.qconst2 * (target.d/2 / 5e5) ** (3 * target.mu)
     qstar = ((qstars  + qstarg ) * 
              (math.cos(phi) / math.cos(math.radians(45))) ** (-3 * target.mu) * 
-             (vel / velave) ** (2 - 3 * target.mu))
+             (vel / 5.5e+3) ** (2 - 3 * target.mu))
     
     massstar = 2 * qstar * target.M / vel ** 2
     dstar = ((6 / math.pi) * massstar / target.dens) ** (1 / 3)
@@ -227,34 +252,74 @@ def zetaf(phi, d, name):
     the collision time """
 
 def Istuff(parameters,target,tmaxby,cumdistr):
+    """
+    Creates a list of impactors. 
+    probi: is the intrinsic collisional probability
+    tmaxby: the simulation time period
+    explicit_cutoff: is the maximum limit on diameter that we considers for impact
+    numgtd: The number of impactors greater than the explicit limit
+    dialittle: Minimum size of impactors that we can consider
+    velave: is the average velocity of the impactor
+    energy_min: The mininum energy of the impactor that can cause global failure
+    dexplicit: the minimum diameter for causing global landslide
+    
+    ----------
+
+    Returns
+    -------
+    istuff : TYPE
+        DESCRIPTION.
+
+    """
     prob = probi * tmaxby * (target.d/2) ** 2
     explicit_cutoff = float(parameters['Explicit cutoff'])
     numgtd = round(astnum(explicit_cutoff*target.dstarave,cumdistr)[0])
     dialittle = cumdistr[-1][0]
     velave = float(parameters['Impactor velocity'])
+    
+    #Find minimum energy for the global failure
     energy_cons =  (math.pi* target.efficiency*velave**2*target.dens/12)*target.energy[-1]
     energy_min = target.cohesion_cons**2/(2*target.wave_speed**2*target.dens*np.tan(target.delta*math.pi/180)**2)
+    
+    #Find minimum explicit diameter
     dexplicit =  (energy_min/energy_cons)**(1/3)
+    #Check whether the dexplicit lies inside the permissible range
     dexplicit = max(1.1*dialittle, dexplicit)
+    
+    #Find the bin in which the dexplicit lies
     binexplicit = astnum(dexplicit,cumdistr)[1]
+    #Find number of impactors
     nexplicit = round(astnum(dexplicit,cumdistr)[0])
     
+    #FInd expected number of impactors
     nexpimpactors = round(prob * (nexplicit-numgtd))
+    #Number of impactors using Poisson's distribution
     nexpimpactors = poisson_from_exponential(nexpimpactors)
     print(f'Number of expected impactor is {nexpimpactors}')
     density = 1500
+    
+    #Not in use currently
     dimplicit = ((G**2*target.dens**3*target.d**5)/(9*target.efficiency*density*velave**2*target.f**2))**(1/3)*(
                 np.exp(2*math.pi*target.f*target.d**2/(target.k_s*math.pi**2*target.Q)))
     binimplicit = astnum(dimplicit,cumdistr)[1]
+    
+    #File containing velocity distribution
+    vel_dist = parameters['Velocity file']
+    file =Output_File(parameters,'input',[vel_dist])
 
+    #Create collisional history for the explicit impactors
     istuff=[]
+    #  Added only to simulate manual collisional history
+    #nexpimpactors = 20
     for j in range(nexpimpactors):
-        istuff.append(Impactor(tmaxby=tmaxby,velave=velave,low=numgtd,high=nexplicit,cumdistr=cumdistr,explicit=True))
+        istuff.append(Impactor(tmaxby=tmaxby, low=numgtd, high=nexplicit, cumdistr=cumdistr,file=file, explicit=True))
 
-
-    for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
-        istuff.append(Impactor(tmaxby=tmaxby,velave=velave,low=cumdistr[j,0],high=cumdistr[j+1,0],cumdistr=cumdistr,explicit=False))
-
+    #Create collisional history for the implicit impactors
+    #implicit impactors are not required and are hence removed from further simulations
+   # for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
+   #     istuff.append(Impactor(tmaxby=tmaxby, low=cumdistr[j,0], high=cumdistr[j+1,0], cumdistr=cumdistr,file=file, explicit=False))
+    
+    #Sort with the impact time
     istuff.sort(key=lambda x: x.impacttime)
     print(f"The minimum diameter for creating landslides is {dexplicit}")
     return istuff
@@ -273,7 +338,9 @@ def poisson_from_exponential(lambda_rate, max_time=1):
     """
     num_events = 0
     cumulative_time = 0
-
+    if (lambda_rate == 0):
+        print("No expected impact")
+        return 0
     # Generate exponential random variables until the cumulative time exceeds max_time
     while cumulative_time <= max_time:
         # Generate the time between the next event (Exponential random variable)

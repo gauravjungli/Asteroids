@@ -10,14 +10,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)     # Enforce the standard
 set(SOURCE_FILES 
      
      src/Omega.cpp
-     src/bc.cpp
+     src/BC.cpp
      src/Characteristics.cpp
-     src/Sphere.cpp
+     src/axisymmetric.cpp
     src/gravity.cpp
      src/IC.cpp
     src/IO.cpp
     src/March.cpp
-     src/pressure_shed.cpp
     src/solver.cpp
      src/topography.cpp
    src/TVD.cpp 

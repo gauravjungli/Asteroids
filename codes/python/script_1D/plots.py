@@ -5,7 +5,9 @@ Created on Mon Jun 17 12:24:53 2024
 
 @author: g
 """
-
+"""
+This script is used to show results while running simulations.
+"""
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -14,7 +16,7 @@ from matplotlib.figure import Figure
 from pathlib import Path
 import glob
 import os
-
+import pdb
 from IO import Output_File, ExportOmega
 import seaborn as sns
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -26,38 +28,32 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.cm import ScalarMappable
 from scipy.ndimage import gaussian_filter1d
-
+from Fit import Fit
 
 def show_shape(parameters):
+    #pdb.set_trace()
     plt.close()
     fig,ax = plt.subplots()
     file1=parameters['Data folder']
     file2=os.path.join(file1,'dia.txt')
     epsilon=np.loadtxt(file2,dtype=float)[:,2]
-    Gamma=np.loadtxt(file2,dtype=float)[:,3]
-    for count in range(999,1000):#change
+
+    for count in range(1000):
         
         
         file=os.path.join(file1,f'field_{(count+1)}.csv')
-        print(file)
+        
         if os.path.exists(file):
            
             w=np.loadtxt(file,delimiter=",",dtype=float)
 
             ax.cla()#change
-            x=w[:,0]#np.sin(w[:,0])*(1+epsilon[count]*w[:,2]+Gamma[count]*w[:,1])
-            y=w[:,2]#+epsilon[count]/Gamma[count]*w[:,2]#np.cos(w[:,0])*(1+(epsilon[count]*w[:,2]+Gamma[count]*w[:,1]))
-            w_new = gaussian_filter1d(w[:,2], sigma=20)#+epsilon[count]/Gamma[count]*w[:,2], sigma=20)
-            
+            x = np.sin(w[:,0])*w[:,1]
+            y = np.cos(w[:,0])*w[:,1]
             ax.plot(x,y,'-r',linewidth=2)
-            ax.plot(x,w_new,'--b',linewidth=1)
-            vol =  np.trapz(np.sin(x)*np.power((1+Gamma[count]*y),3),x)
-            
-            vol_new =  np.trapz(np.sin(w[:,0])*np.power((1+Gamma[count]*w_new),3),x)
-            print(vol/vol_new)
-            # x=-np.sin(w[:,0])*(1+(epsilon[count]*w[:,2]+Gamma[count]*w[:,1]))
-            # ax.plot(x,y,'-r',linewidth=2)
-            # ax.set_aspect('equal')
+            x =-np.sin(w[:,0])*w[:,1]
+            ax.plot(x,y,'-r',linewidth=2)
+            ax.set_aspect('equal')
             title=f'landslide number={count+1}'
             ax.set_title(title)
             fig.canvas.draw()
@@ -65,7 +61,7 @@ def show_shape(parameters):
             plt.show(block=False)
             #fig.canvas.draw_idle()
             plt.pause(0.1)
-            plt.savefig()
+         #   plt.savefig()
 
         else:
             break
@@ -109,7 +105,7 @@ def post_process(parameters):
         file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
     
     N=int(parameters['Number of simulations'])
-    T=int(parameters['Simulation period'])
+    T=float(parameters['Simulation period'])*1e+6
     res=int(parameters['Resolution'])
  
     x=np.zeros((length,N+1))
@@ -132,9 +128,9 @@ def post_process(parameters):
         
     for i in range (0,N):
         
-        file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','base.txt']) 
+        file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','base.txt']) #change
         try:
-            grid=np.loadtxt(file2,dtype=float,delimiter=",")
+            grid = np.loadtxt(file2,dtype=float,delimiter=",")
         except FileNotFoundError:
             print(f"File {file2} does not exist. Post processing can't be done")
             return
@@ -146,14 +142,17 @@ def post_process(parameters):
             
             file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','data','dia.txt'])
             try:
-                dia=np.loadtxt(file2,dtype=float)
+                slides=np.loadtxt(file2,dtype=float,ndmin = 2)
+                epsilon = slides[:,2]
+                Gamma = slides[:,3]
+                dia =  slides[:,1]
             except FileNotFoundError:
                 print(f"File {file2} does not exist. Post processing can't be done")
                 return
             
-            base=np.zeros((len(dia),res))
+            base=np.zeros((len(slides),res))
             
-            for j in range(0,len(dia)):
+            for j in range(0,len(slides)):
                 
                 file2 = Output_File(parameters=parameters,filetype='output',
                                     filenames=[f'run{i+1}','data',f'field_{j+1}.csv'])
@@ -163,24 +162,27 @@ def post_process(parameters):
                     print(f"File {file2} does not exist. Post processing can't be done")
                     return
                 
-                base[j,:] = (1+w[:,1]*dia[j,3]+dia[j,2]*w[:,2])*dia[j,1]/2
+                #base[j,:] = np.sqrt((1+Gamma[j]*w[:,1]+epsilon[j]*w[:,2])**2+(epsilon[j]*Gamma[j]*w[:,2]*w[:,3])**2)*dia[j]/2
+                base[j,:] = (w[:,1]+epsilon[j]*w[:,2])*dia[j]/2
+
+        
             
             for j in range(1,length+1):
-                index=np.searchsorted(dia[:,0], x[j-1,0],side='right')
+                index=np.searchsorted(slides[:,0], x[j-1,0],side='right')
                 if index==0:
                     shape[j,1:res+1,i] = float(parameters['Diameter'])/2
                 else:
                     shape[j,1:res+1,i] = base[index-1,:]   
                   
     # First row of mean shape contains theta and first column contains time      
-    mean_shape=np.sqrt(np.mean(np.power(shape,3),axis=2))
+    mean_shape=np.power(np.mean(np.power(shape,3),axis=2),1/3)
     std_shape=np.std(shape,axis=2)
     std_shape[0,1:res+1]=mean_shape[0,1:res+1]
     std_shape[1:length+1,0]=mean_shape[1:length+1,0]
     
-    file = Output_File(parameters=parameters,filetype='output',filenames=['mean_shape.txt']) 
+    file = Output_File(parameters=parameters,filetype='output',filenames=['mean_shape.csv']) 
     np.savetxt(file, mean_shape, delimiter=',', fmt='%f')
-    file = Output_File(parameters=parameters,filetype='output',filenames=['std_shape.txt']) 
+    file = Output_File(parameters=parameters,filetype='output',filenames=['std_shape.csv']) 
     np.savetxt(file, std_shape, delimiter=',', fmt='%f')
     
 """ For old style 2D plots"""
@@ -251,7 +253,7 @@ def show_3D_plots(gui):
     
     parameters = gui.parameters
     root = gui.root
-    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.txt']) 
+    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
     w = np.loadtxt(file, dtype=float, delimiter=",")
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
     file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 

@@ -22,40 +22,38 @@ else
 
 void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr)
 {   
-    for(int i=2; i<res-1;i++)
+    for(int i=2; i<res-2;i++)
     {	
-		Reconstruct(wl[i],w[i-1],w[i],w[i+1],-1);            
-        
-
-        Reconstruct(wr[i-1],w[i-2],w[i-1],w[i],1);
+		Reconstruct(wl[i],wr[i],w[i-1],w[i],w[i+1]);            
 		
-		wl[i].b=wr[i-1].b=(wl[i].b+wr[i-1].b)/2;
+		//Balancing(w[i],wl[i],wr[i]);
 
-	//	Balancing(w,wl,wr,i);
-	
-
-		wl[i]=CV(  wl[i].h,wl[i].u,wl[i].v,wl[i].b,wl[i].g,wl[i].x);
+		wl[i]=CV( wl[i].h, wl[i].u, wl[i].u, wl[i].v, wl[i].b, wl[i].db,wl[i].ddb, wl[i].g, wl[i].x );
 	//	wl[i].Modify(wl[i].p,wl[i].q,wl[i].r);  
 
-		wr[i-1]=CV(  wr[i-1].h,wr[i-1].u,wr[i-1].v,wr[i-1].b,wr[i-1].g,wr[i-1].x);
+		wr[i]=CV( wr[i].h, wr[i].u, wl[i].u, wr[i].v, wr[i].b, wr[i].db, wr[i].ddb, wr[i].g, wr[i].x );
 	//	wr[i].Modify(wr[i].p,wr[i].q,wr[i].r);	
 	//if (w[i-1].w<wr[i-1].b || w[i-1].w<wl[i-1].b)
 	//		std::cout<<"Partially filled cells "<< i-1<<  endl;
 
 	 }
+	 BC(wl,wr);
+	 BC(wr,wl);
 }
 
- void Reconstruct(CV& w, CV w1, CV w2, CV w3, int sign )
+ void Reconstruct(CV& wl, CV& wr, CV w1, CV w2, CV w3 )
   {
-	w.h=w2.h+sign*dx*Derivative(w1.h,w2.h,w3.h)/2;
-	w.w=w2.w+sign*dx*Derivative(w1.w,w2.w,w3.w)/2;
-	w.b=w2.b+sign*dx*Derivative(w1.b,w2.b,w3.b)/2;
-	w.u=w2.u+sign*dx*Derivative(w1.u,w2.u,w3.u)/2;
-	w.v=w2.v+sign*dx*Derivative(w1.v,w2.v,w3.v)/2;
-	w.x=w2.x+sign*dx/2.0;//can add theta here
-	w.g.X1=w2.g.X1+sign*dx*Derivative(w1.g.X1,w2.g.X1,w3.g.X1)/2;
-	w.g.X2=w2.g.X2+sign*dx*Derivative(w1.g.X2,w2.g.X2,w3.g.X2)/2;
-	w.g.X3=w2.g.X3+sign*dx*Derivative(w1.g.X3,w2.g.X3,w3.g.X3)/2;
+	
+	wl.h=w2.h - dx*Derivative(w1.h,w2.h,w3.h)/2;
+	wl.u=w2.u - dx*Derivative(w1.u,w2.u,w3.u)/2;
+	wl.v=w2.v - dx*Derivative(w1.v,w2.v,w3.v)/2;
+	wl.u_c=w2.u_c - dx*Derivative(w1.u_c,w2.u_c,w3.u_c)/2;
+
+
+	wr.h=w2.h + dx*Derivative(w1.h,w2.h,w3.h)/2;
+	wr.u=w2.u + dx*Derivative(w1.u,w2.u,w3.u)/2;
+	wr.v=w2.v + dx*Derivative(w1.v,w2.v,w3.v)/2;
+	wl.u_c=w2.u_c + dx*Derivative(w1.u_c,w2.u_c,w3.u_c)/2;
 
   }
 
@@ -69,23 +67,23 @@ void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr)
 
   }*/
 
-  void Balancing (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, int i)
+  void Balancing (CV& w, CV& wl, CV& wr)
   {	
 		
 			
-		if (wr[i-1].w<wr[i-1].b)
-		{
-			wr[i-1].w=wr[i-1].b;
-			wl[i-1].w=2*w[i-1].w-wr[i-1].b;
+		if (wr.w<wr.b)
+		{	cout <<"Dry region appeared" << endl;
+			wr.w=wr.b;
+			wl.w=2*w.w-wr.b;
 		}
-		if (wl[i].w<wl[i].b)
-		{
-			wr[i].w=2*w[i].w-wl[i].b;
-			wl[i].w=wl[i].b;
+		if (wl.w<wl.b)
+		{	cout <<"Dry region appeared" << endl;
+			wr.w=2*w.w-wl.b;
+			wl.w=wl.b;
 		}
 
-		wl[i].h=wl[i].w-wl[i].b;
-		wr[i-1].h=wr[i-1].w-wr[i-1].b; 
+		wl.h= wl.w - wl.b;
+		wr.h= wr.w - wr.b; 
 	
   }
 

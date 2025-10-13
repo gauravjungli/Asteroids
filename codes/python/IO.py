@@ -137,6 +137,10 @@ def read_xlsx_to_input_field_dict(filename):
 def Parameter(parameters,filetype):
 
     inputfile = Output_File(parameters, filetype ,["parameters"])
+    #print("Reading parameter from the following input file:", inputfile )
+    if not os.path.exists(inputfile):
+        print("Parameter file does not exist")
+        return
     with open(inputfile, "r") as file:
         for line in file:
             line = line.strip()
@@ -160,7 +164,7 @@ def Exparameter(parameters, filetype="output"):
     with open(mydir,"w") as f:
         for key in parameters.keys():
             f.writelines(["-"*100,"\n"])
-            f.writelines(f'{key.ljust(40)}\t{parameters[key]}\n') 
+            f.writelines(f'{key.ljust(50)}\t{parameters[key]}\n') 
         f.writelines(["-"*100])
 
 #%%
@@ -200,3 +204,60 @@ def ExportOmega(myomega,parameters):
         resultExport = file.write("\n".join(["\t".join(map(str, omega)) for omega in myomega]))
     if resultExport == -1:
         print("Failed in exporting the data")
+
+
+def load_asteroid_data(filename):
+    """
+    Loads the reference radius, latitude, longitude, and deviation grids
+    from a NumPy (.npz) file.
+
+    Args:
+        filename (str): The path to the file to load (e.g., 'asteroid_data.npz').
+
+    Returns:
+        tuple: (reference_radius, lats_rad, lons_rad, deviations) if successful,
+               otherwise (None, None, None, None).
+    """
+    if not os.path.exists(filename):
+        print(f"Error: File not found at '{filename}'")
+        return None, None, None, None
+
+    try:
+        data = np.load(filename)
+        # Extract data using the keys we saved them with
+        # Use .item() to extract the scalar value from the 0-D radius array
+        radius = data['radius'].item()
+        lats = data['lats_rad']
+        lons = data['lons_rad']
+        devs = data['deviations']
+
+        print(f"Successfully loaded asteroid data from: {filename}")
+        print(f"  Reference Radius: {radius}")
+        print(f"  Latitude grid shape: {lats.shape}")
+        print(f"  Longitude grid shape: {lons.shape}")
+        print(f"  Deviations grid shape: {devs.shape}")
+
+        # Basic validation
+        if not (lats.shape == lons.shape == devs.shape):
+             print("Warning: Loaded array shapes do not match!")
+             # Decide how to handle: return None or return data anyway? Returning data for now.
+
+        return radius, lats, lons, devs
+
+    except KeyError as e:
+         print(f"Error loading data from {filename}: Missing expected key '{e}'. Was the file saved correctly?")
+         return None, None, None, None
+    except Exception as e:
+        print(f"Error loading asteroid data from {filename}: {e}")
+        return None, None, None, None
+  
+#%%   
+  
+
+ 
+def extract_number(text):
+     #match = re.search(r'\d+', text)  # Find first occurrence of a number
+     #return int(match.group()) if match else float('inf')  # Default to large number if no match
+     numbers = [int(num) for num in re.findall(r'\d+', text)]
+
+     return numbers  # Sorting will compare these tuples

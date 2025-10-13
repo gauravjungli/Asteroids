@@ -46,7 +46,7 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<double> & y, vector<
 	    for (int j = 0; j < cols; j++)
         {
             int i1 = index(i,j);
-            CV temp(h[i1],u[i1],v[i1],b[i1],g[i1],x[i1],y[i1]);
+            CV temp(h[i1],u[i1],v[i1],b[i1],g[i1],x[i1],y[i1],false);
             w.push_back(temp);
         } 
     }

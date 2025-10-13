@@ -27,7 +27,6 @@ extern const double offset;
 extern const double xmax;
 extern const double xmin;
 extern const double weight;
-
 extern const double finalt;
 extern const double Delta;
 extern const double theta;
@@ -38,7 +37,7 @@ extern const double dx;
 extern const double past_time;
 extern const double dia;
 extern const double min_h;
-extern const double Gamma;
+extern const double min_u;
 extern double delta;
 extern const string par_add;
 extern const string fric_type;
@@ -46,6 +45,8 @@ extern const string Output_folder;
 extern const string verbose_dir;
 extern const string verbose;
 extern const double seismic_time;
+extern double mass_shed;
+extern double k_d;
 //------------------------------------------------------------------------------
 
 //Class for storing a 2D gravity field
@@ -55,7 +56,8 @@ class Grav{
         double X1, X2, X3;
         Grav(): X1(-1), X2(0), X3(0)
         {}
-        
+        Grav operator+ (Grav w);
+        Grav operator/ (double w);
 };
 
 class AMB{
@@ -74,12 +76,19 @@ class AMB{
 class CV
 {
     public:
-        double w, p, q, r,h,u,v,b,x,psi,lambda;
+        double w, p, q, r,h,u,u_c,v,V,b,db,ddb,x,psi,metric,theta,phi_norm,phi_tan,phi,J;
         Grav g;
-        CV(double h, double u, double v, double b, Grav g, double x );
+        CV(double h, double u,double u_c, double v, double b, double db, double ddb, Grav g, double x);
+      //  CV(const CV& temp);
+      //  CV& operator=(const CV& temp);
         void Modify(double p, double q, double r);
      
 };
+
+ template <typename T>
+int sign(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 class FS
 {
@@ -99,17 +108,17 @@ class FS
 /////   I/O
 
 //To write files 
-void Write(const vector<CV> & w, string file  );
-void Write (const vector<double>& x, const vector<CV>& w, string file);
+void Write_data(const vector<CV> & w, string file  );
+void Write_base ( const vector<CV>& w, string file);
 void Write( const double om, string file );
 void Write( const double om, const double t, string file );
-void Write ( std::map <std::string, string> par);
+void Write_par ( std::map <std::string, string> par);
 
 //To read files
 void Read ( vector<double>&, string file );
 bool Parameters();
 void Read_grav( vector<Grav>& g, const string& file);
-
+void Read_data ( vector<double>& x,vector<double>& b,vector<double>& db,vector<double>& ddb,vector<double>& h,string file);
 //To catch errors
 void Error(string , string );
 
@@ -120,7 +129,7 @@ std::string to_string(double value, int precision);
 //----------------------------------------------------------------------------------------
 ///// bc.cpp
 //Boundary conditions
-void BC(vector<CV>& w );
+void BC(vector<CV>& w1 ,vector<CV>& w2);
 
 //---------------------------------------------------------------------------------
 
@@ -141,10 +150,9 @@ FS Minmod(FS w, FS v);
 //////////  IC.cpp
 
 //To initialize the simulation
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g);
+void Initial_Condition (vector<CV> & w, vector<CV> & wl, vector<CV> & wr,vector<Grav>& g);
 void Grid(vector<double> & x);
-//To incorporate topography 
-void Base ( vector<double>& b,vector<double>& h,vector<double>& x);
+
 //-------------------------------------------------------------------------
 
 ////////////// solver.cpp
@@ -165,9 +173,21 @@ FS Flux( CV w );
 FS Source( CV w, CV w1, CV w2, CV w3, CV w4);
 FS Eigen(CV w );
 
-FS Friction (CV w, FS bf);
+FS Friction (CV w);
 
 FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4);
+
+
+double Ang_mom_reg (CV w);
+
+double Jinertia1_reg (CV w);
+
+double Jinertia1_ast (CV w);
+
+double Jinertia2_reg (CV w);
+
+double Jinertia2_ast (CV w);
+
 //---------------------------------------------------------------------------------
 
 ///////// characteristics.cpp
@@ -177,14 +197,14 @@ FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4);
 double Ax(CV wl, CV wr, string s);
 //values at edges
 void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
-void Reconstruct(CV& wl, CV w1, CV w2, CV w3, int sign );
-void Balancing (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, int i);
+void Reconstruct(CV& wl, CV& wr, CV w1, CV w2, CV w3 );
+void Balancing (CV& w, CV& wl, CV& wr);
 //--------------------------------------------------------------------------------------------------------
 
 /////// march.cpp
 
 //To be used in the time marching
-void March (vector<CV>& w, double& Ang_Shed);
+void March (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double& Ang_Shed);
 void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt);
 void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double dt);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
@@ -195,6 +215,7 @@ void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
 ///////// Omega.cpp
 //To update omega
 double Inertia(vector<CV>& w, int no);
+double Reg_Inertia(vector<CV>& w);
 //--------------------------------------------------------------------------------------------------------------
 
 ///////// pressure_shed.cpp
@@ -202,6 +223,8 @@ double Inertia(vector<CV>& w, int no);
 //mass shedding and pressure
 void Shed(vector<CV>& w, double& Ang_Shed);
 double Psi(CV w);
+double Psi_basal(CV w);
+double J_Psi(CV w);
 
 
 ////////

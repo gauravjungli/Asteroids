@@ -54,12 +54,12 @@ void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr,  vector<CV>& wb, vector
 	//	Balancing(w,wl,wr,i);
 	
 
-			wl[i0]=CV(  wl[i0].h,wl[i0].u,wl[i0].v,wl[i0].b,wl[i0].g,wl[i0].x,wl[i0].y);
-			wb[j0]=CV(  wb[j0].h,wb[j0].u,wb[j0].v,wb[j0].b,wb[j0].g,wb[j0].x,wb[j0].y);
+			wl[i0]=CV(  wl[i0].h,wl[i0].u,wl[i0].v,wl[i0].b,wl[i0].g,wl[i0].x,wl[i0].y,false);
+			wb[j0]=CV(  wb[j0].h,wb[j0].u,wb[j0].v,wb[j0].b,wb[j0].g,wb[j0].x,wb[j0].y,false);
 	//	wl[i0].Modify(wl[i0].p,wl[i0].q,wl[i0].r);  
 
-			wr[i_1]=CV(  wr[i_1].h,wr[i_1].u,wr[i_1].v,wr[i_1].b,wr[i_1].g,wr[i_1].x,wr[i_1].y);
-			wt[j_1]=CV(  wt[j_1].h,wt[j_1].u,wt[j_1].v,wt[j_1].b,wt[j_1].g,wt[j_1].x,wt[j_1].y);
+			wr[i_1]=CV(  wr[i_1].h,wr[i_1].u,wr[i_1].v,wr[i_1].b,wr[i_1].g,wr[i_1].x,wr[i_1].y,false);
+			wt[j_1]=CV(  wt[j_1].h,wt[j_1].u,wt[j_1].v,wt[j_1].b,wt[j_1].g,wt[j_1].x,wt[j_1].y,false);
 	//	wr[i0].Modify(wr[i0].p,wr[i0].q,wr[i0].r);	
 	//if (w[i_1].w<wr[i_1].b || w[i_1].w<wl[i_1].b)
 	//		std::cout<<"Partially filled cells "<< i_1<<  endl;

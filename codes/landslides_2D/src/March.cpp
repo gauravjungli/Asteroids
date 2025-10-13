@@ -90,7 +90,7 @@ void March (vector<CV>& w, double& Ang_Shed)
 		if (fric_type!="constant" && fric_type!="Constant")
 		{
 			if (t<seismic_time)
-				delta= 0;
+				delta= 0.0; 
 			else
 				delta = std::min(25.0,Delta);
 		}
@@ -102,7 +102,7 @@ void March (vector<CV>& w, double& Ang_Shed)
 		
 		Time_step(wl,wr,wb,wt,dt,t,timesteps);
 
-
+		maximum=0;
 		for (int i=0;i<rows*cols;i++)
 			maximum =max({maximum,w[i].u*w[i].h,w[i].v*w[i].h});
 		if (t>check_t)

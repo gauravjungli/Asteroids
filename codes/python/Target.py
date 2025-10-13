@@ -15,43 +15,38 @@ from Diffusion_spherical import find_roots_parallel, parallel_root_computation, 
 
 
 
-
-
-
-
-
 #%%
-""" Represents a target object with physical properties and dynamics. It is the main data struture that holds 
-    all the information about the target asteroid. The attributes of these data structure are as follows:
-        d: Diameter
-        atype: type of the asteroid (C-type or S-type)
-        delta: Friction angle
-        landslide, YORP, collision: Flags to include these processes in the simulation
-        dens: Density 
-        M: mass of the asteoid
-        jinertia: The inertia tensor in principal coordinates
-        omega: the angular velocity of the asteroid
-        K: Thermal inertia
-        Kvg: Holsapple parameter
-        grav: Gravity field due to a sphere
-        obliq: Is the obliquity paremeter used in the YORP calculation
-        dstarave: Is the diameter for the catastrophic disruption
-        coeff_f,coeff_g: Are the coefficients used in the YORP calculation for stochasticity
-        sma: Semi major axis
-        f_spline, g_spline: Used for YORP calcution. These are the spline fits for the YORP data
-        k_s: is the diffusivity constant
-        efficiency: is the seismic efficiency
-        f: is the frequency
-        Q: is the quality factor of the seismic waves
-        N: Number of grid points at which the seismic energy is calculated
-        roots: is the root of the bessel equations 
-        theta: is the array of the latitudes at which the seismic energy is calculated
-        energy: is the array of seismic energy when the impact energy is 1 Joule.
-"""
+
 
 class Target:
     
-
+    """ Represents a target object with physical properties and dynamics. It is the main data struture that holds 
+        all the information about the target asteroid. The attributes of these data structure are as follows:
+            d: Diameter
+            atype: type of the asteroid (C-type or S-type)
+            delta: Friction angle
+            landslide, YORP, collision: Flags to include these processes in the simulation
+            dens: Density 
+            M: mass of the asteoid
+            jinertia: The inertia tensor in principal coordinates
+            omega: the angular velocity of the asteroid
+            K: Thermal inertia
+            Kvg: Holsapple parameter
+            grav: Gravity field due to a sphere
+            obliq: Is the obliquity paremeter used in the YORP calculation
+            dstarave: Is the diameter for the catastrophic disruption
+            coeff_f,coeff_g: Are the coefficients used in the YORP calculation for stochasticity
+            sma: Semi major axis
+            f_spline, g_spline: Used for YORP calcution. These are the spline fits for the YORP data
+            k_s: is the diffusivity constant
+            efficiency: is the seismic efficiency
+            f: is the frequency
+            Q: is the quality factor of the seismic waves
+            N: Number of grid points at which the seismic energy is calculated
+            roots: is the root of the bessel equations 
+            theta: is the array of the latitudes at which the seismic energy is calculated
+            energy: is the array of seismic energy when the impact energy is 1 Joule.
+    """
 
     def __init__(self, parameters):
 
@@ -88,7 +83,7 @@ class Target:
         self.dstarave=qstarf(self, math.pi / 4, velave)[2]
         # Set the seed for NumPy's random number generator
         np.random.seed(int(time.time()/float(parameters['run'])))
-        self.coeff_f,self.coeff_g=shape_gen(self.K)
+        self.coeff_f,self.coeff_g = (1,1) #shape_gen(self.K) #change
         self.sma= float(parameters['Semi major axis'])
         self.f_spline, self.g_spline = read_f_g_spline(parameters)
         self.wave_speed = float(parameters["P wave speed"])*(self.grav/1.6*1500/self.dens)**(1/4) 
@@ -96,15 +91,17 @@ class Target:
         self.efficiency = float(parameters["Seismic efficiency"])
         self.f = float(parameters["Frequency"])
         self.Q = float(parameters["Q"])
+        self.k_d = np.pi*self.f/self.Q*np.sqrt(3/4/np.pi/G/self.dens)
         self.N = 50
         self.roots = parallel_root_computation(300,50,self.d)
         self.theta = np.linspace(np.pi/20, np.pi,self.N)
-        self.energy, self.t_lan = compute_energy(self)
+        self.energy, self.t_max = compute_energy(self)
         self.cohesion_cons = float(parameters["Cohesion constant"])
         self.cohesion_linear = float(parameters["Cohesion linear"])
         self.omegaLimit = (G*4/3 * math.pi*self.dens)**0.5
         self.rgrav=None 
         self.tgrav = None
+        self.t_lan =None
         
     
     """ Not currently in use. Using new parallel version from difusion_spherical.py"""

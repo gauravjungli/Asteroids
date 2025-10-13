@@ -50,7 +50,7 @@ def YORP(target, parameters, impacttime, oldtime, myomega):
         
         
        
-        if target.omega[2] > 0.9*target.omegaLimit:
+        if target.omega[2] > 0.95*target.omegaLimit:
             print("Too fast spinning causing landslides")
             myomega.append([t_yorp, target.omega[2]])
             # parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
@@ -132,7 +132,7 @@ def yorp_vf(x, parameters, target):
     # Normalize gamma to [0, pi]
     x[1] = x[1] + 180 if x[1] < 0 else x[1]-180 if x[1] > 180 else x[1]
 
-    # Compute f and g (using the comp_f_g function, which needs to be implemented separately)
+    # Compute f and g 
     f = target.f_spline(x[1])
     g = target.g_spline(x[1])
 

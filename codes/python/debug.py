@@ -4,8 +4,13 @@
 Created on Sat Jul  6 01:33:23 2024
 
 @author: g
+
+This is made for debugging the codes. These are for the 1D cases only.
+debug_main: This is used  to create and save files required for debugging the  main.py codes
+debug_plot: This us used for creating the parameter files required for making plots from already available simulations
+debug_cpp: For debugging the cpp files. It initializes the simulation as well as saves all the files like gravity and basal topography.
+debug_post_process: For doing post processing to save the mean and std shapes
 """
-from plots import post_process, show_omega
 from IO import Exparameter, Output_File, read_xlsx_to_input_field_dict, Parameter
 from Initialize import Initialize_simulations, Initialize
 import sys
@@ -14,8 +19,10 @@ import os
 import math
 import numpy as np
 from landslides import Height
-from Crater import Crater
-#from main import main
+from script_2D.Crater import Crater
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+import pdb
+
 def Parameters(data_dict,parameters):
     for name in data_dict:
         parameters[name]="Yes"
@@ -40,27 +47,69 @@ class Impactor:
         self.M         = (math.pi / 6) * self.dens * self.d**3
         self.explicit  = explicit
         
+        
+# To debug the main script        
+def debug_main():   
+    parameters={"run":0}
+    inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
+    data_dict=read_xlsx_to_input_field_dict(inputfile)
+    Parameters(data_dict,parameters)
+    Initialize_simulations(parameters)
+    return parameters
+
+#call this command from the console
+#  %debugfile /home/g/Asteroids/codes/python/main.py --wdir --args "'Output folder' 'Debug' 'run' '1'"
+
+#for plotting the data
+def debug_plot():
+    parameters ={}
+    parameters['run'] = 1
+    parameters['Output folder'] = 'Debug'
+    Parameter(parameters,'output')
+    return parameters
     
-parameters={"run":0}
-inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
-data_dict=read_xlsx_to_input_field_dict(inputfile)
-Parameters(data_dict,parameters)
-Initialize_simulations(parameters)
+# for doing post processing to save the mean and std shapes
+def debug_post_process(parameters):   
+    parameters["run"] = 0
+    inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
+    data_dict=read_xlsx_to_input_field_dict(inputfile)
+    Parameters(data_dict,parameters)
+   
+    
+#impactor =Impactor()
+#for debugging cpp codes
+def debug_cpp():
+    
+    pdb.set_trace()
+    parameters={"run":0}
+    inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
+    data_dict=read_xlsx_to_input_field_dict(inputfile)
+    Parameters(data_dict,parameters)
+    
 
+    parameters['Rotation period'] = 10
+    parameters['dump'] = 50
+    parameters['Friction angle'] = 45
+   # parameters['Output folder'] = f'Spherical_{parameters["Rotation period"]}_{parameters["Friction angle"]}'
+    Initialize_simulations(parameters)
+    
+    parameters['run'] = 1
+    Parameter(parameters,"output")
+    target = Target(parameters)
+    Initialize(parameters, target)
+    
+    parameters['slides'] = 1
+    parameters['Seismic_shaking_time'] = 0.0
+    parameters['Landslide simulation period'] = 5
+    parameters['omega']=0.0
+    
+    parameters['verbose_dir']=Output_File(parameters,"output",['data',f"landslides_{parameters['slides']}"])
+    
 
-
-
-# parameters['run'] = 1
-# impactor =Impactor()
-# Parameter(parameters,'output')
-# target = Target(parameters)
-# Initialize(parameters, target)
-# if bool(parameters['verbose']):
-#     parameters['slides'] = 1
-#     parameters['Seismic_shaking_time'] = 5
-#     parameters['verbose_dir']=Output_File(parameters,"output",['data',f"landslides_{parameters['slides']}"])
-# Exparameter(parameters)  
-# os.mkdir(parameters['verbose_dir'])
+    Exparameter(parameters)  
+    os.mkdir(parameters['verbose_dir'])
+    return parameters
+    
 # data = Crater(parameters, target,impactor)
 # mydir=Output_File (parameters,"output",["base.txt"])
 # base=np.loadtxt(mydir,delimiter=",",dtype=float)
@@ -68,7 +117,8 @@ Initialize_simulations(parameters)
 # np.savetxt(mydir,base,delimiter=",")
 # sys.argv = ['main.py', 'Output folder', 'dunes' , 'run','1']
 
-#call this command from the console
-#  %debugfile /home/g/Asteroids/codes/python/main.py --wdir --args "'Output folder' 'debug' 'run' '1'"
 
 
+if __name__ == "__main__":
+    parameters = {}
+#    parameters = debug_cpp()

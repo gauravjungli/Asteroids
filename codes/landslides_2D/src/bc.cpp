@@ -16,13 +16,13 @@
 		int i_3 = index(rows-3,j);
 		int i_4 = index(rows-4,j);
 
-		w[i0] = CV(w[i3].h,-w[i3].u,w[i3].v,w[i3].b,w[i3].g,w[i0].x, w[i0].y);
+		w[i0] = CV(w[i3].h,-w[i3].u,w[i3].v,w[i3].b,w[i3].g,w[i0].x, w[i0].y,false);
 
-		w[i1] = CV(w[i2].h,-w[i2].u,w[i2].v,w[i2].b,w[i2].g,w[i1].x, w[i1].y);
+		w[i1] = CV(w[i2].h,-w[i2].u,w[i2].v,w[i2].b,w[i2].g,w[i1].x, w[i1].y,false);
 
-		w[i_2] = CV(w[i_3].h,-w[i_3].u,w[i_3].v,w[i_3].b,w[i_3].g,w[i_2].x, w[i_2].y);
+		w[i_2] = CV(w[i_3].h,-w[i_3].u,w[i_3].v,w[i_3].b,w[i_3].g,w[i_2].x, w[i_2].y,false);
 
-		w[i_1] = CV(w[i_4].h,-w[i_4].u,w[i_4].v,w[i_4].b,w[i_4].g,w[i_1].x, w[i_1].y);
+		w[i_1] = CV(w[i_4].h,-w[i_4].u,w[i_4].v,w[i_4].b,w[i_4].g,w[i_1].x, w[i_1].y,false);
 	}
 }
 

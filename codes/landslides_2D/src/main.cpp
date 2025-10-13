@@ -17,25 +17,27 @@ const double xmax =   PI;
 const double xmin =   0;
 const double ymin =   0;
 const double ymax =   2*PI;
-const double weight = stod(par["weight"]); 
+const double weight = stod(par["Correction weight"]); 
 const double finalt = stod(par["Landslide simulation period"]);
 const double Delta = stod(par["Friction angle"]); 
-const double theta = stod(par["theta"]); 
+const double theta = stod(par["Minmod Limiter"]); 
 const double slides = stod(par["slides"]);
 const double epsilon = stod(par["epsilon"]); 
 const double omega = stod(par["omega"]);
 const double dx = (xmax-xmin-2*offset)/rows; 
 const double dy = (ymax-ymin)/cols; 
 const double past_time = stod(par["time"]);
-const double dia = stod(par["current diameter"]);
+const double dia = stod(par["Current diameter"]);
 const double min_h = pow(dx,4);
-const double Gamma = stod(par["Gamma"]);
+const double Gamma = stod(par["epsilon"]);
 const double seismic_time =  stod(par["Seismic_shaking_time"]); 
 double delta = Delta;
 const string fric_type = par["Friction type"];
 const string Output_folder = par["Data folder"];
 const string verbose_dir = par["verbose_dir"];
 const string verbose = par["verbose"];
+
+
 
 int main()
 {
@@ -44,13 +46,13 @@ int main()
 	auto start = sc.now();
 	double Ang_Shed=0;
 	std::string file=Output_folder;
-	
+
 	std::ofstream outfile("c++_output.txt",std::ofstream::app);  // Create or open output file
 
-	 std::streambuf *coutbuf = std::cout.rdbuf(); //change
+	 std::streambuf *coutbuf = std::cout.rdbuf(); 
      std::streambuf *cerrbuf = std::cerr.rdbuf(); 
      if (outfile.is_open()) {
-         std::cout.rdbuf(outfile.rdbuf()); // Redirect cout	
+         std::cout.rdbuf(outfile.rdbuf()); // Redirect cout	\\change
          std::cerr.rdbuf(outfile.rdbuf()); // Redirect cerr
 	 }
 	vector<Grav> g(rows*cols);
@@ -62,12 +64,6 @@ int main()
 	//Grid(x);
 	vector<CV> w;
 
-	//uncomment only for the solo run
-
-	//if(filesystem::exists(file))
-	//	deleteDirectoryContents(file);
-	//filesystem::create_directory(file); 
-	
 
 	
 
@@ -103,8 +99,8 @@ int main()
 	par["omega"]=to_string((Ang_Mom-Ang_Shed)/stod(par["jinertia"]),15);
 
 	Write(w,file1);
-	Write(x,y,w,base_path.parent_path());//change
-	Write (par);
+	Write(x,y,w,base_path.parent_path());
+	//Write (par);//change
 
 	myfile<<"Initial Angular Momentum --> "<<Ang_Mom<<endl<<" Total Angular Momentum Shed --> "<<Ang_Shed<<endl ;
 	myfile<<"Final omega --> "<<par["omega"]<<endl<<" Final Inertia--> "<<par["jinertia"]<<endl ;
@@ -115,7 +111,7 @@ int main()
 	myfile<<"----------------------------------------------------------------------------"<<endl;
 	myfile<<"----------------------------------------------------------------------------"<<endl;
 	myfile.close();
-	 std::cout.rdbuf(coutbuf); //change
+	 std::cout.rdbuf(coutbuf); 
      std::cerr.rdbuf(cerrbuf);
 	outfile.close();
 	dia_file.close();

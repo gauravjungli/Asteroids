@@ -1,13 +1,13 @@
 #include "gauravlib.h"
 
-CV::CV(double h, double u, double v, double b, Grav g, double x )
+CV::CV(double h, double u, double v, double b, double db, double ddb, Grav g, double x )
 {	
 	if (h<=min_h) 
 	{  if (h<0) std::cout<<"Much smaller values encountered "<<h<<"  "<<x<< endl;
 	h=min_h;
-	u=0; v=0;
+	u=min_u; v=min_u;
 	}
-    this->h=h;this->u=u;this->v=v;this->b=b;
+    this->h=h; this->u=u; this->v=v; this->b=b; this->db=db; this->ddb=ddb;
 	lambda= (1+Gamma*b);
 	this->g=g;this->x=x;this->psi=Psi(*this); this->w=h+Gamma/epsilon*b;
     this->p=h*sin(x)*pow(lambda,2); 
@@ -18,17 +18,37 @@ CV::CV(double h, double u, double v, double b, Grav g, double x )
 
 void CV::Modify(double p, double q, double r)
 {	h=p/sin(x)/pow(lambda,2);
+	if (h>100) std::cout<<"Much bigger values encountered in Modify "<<h<<"  "<<x<<"   "<<p<<"    "<<q<<"    "<<r<<"   "<< endl;
 	if (h<min_h)
-	{  if (h<0) std::cout<<"Much smaller values encountered in Modify "<<h<<"  "<<x<< endl;
-	h=min_h;
+	{  if (h<0) std::cout<<"Much smaller values encountered in Modify "<<h<<"  "<<x<<"   "<<p<<"    "<<q<<"    "<<r<<"   "<< endl;
+	h = min_h; u = min_u; v = min_u;
 	p=h*sin(x)*pow(lambda,2);
-	q=0;
-	r=0;
+	q=h*u*pow(lambda,3)*sin(x);
+	r=h*v*sin(x)*sin(x)*pow(lambda,3);
 	}
-	this->p=p; this->q=q; this->r=r; w=epsilon/Gamma*h+b;
-	u=q/(lambda*p);
+	this->p=p; this->q=q; this->r=r; w=h+Gamma/epsilon*b;
 	
-	v=r/(p*lambda*sin(x));
+	double u_temp=q/(lambda*p);
+
+	//if (u_temp*u < 0) 
+	//{
+	//	u= u_temp/abs(u_temp) * min_u;
+	//	this->q=h*u*pow(lambda,3);
+	//}
+	//else
+		u = u_temp;
+	
+	 double v_temp =r/(p*lambda*sin(x));
+	 
+	// if (v_temp*v < 0) 
+	// {
+	//	 v = v_temp/abs(v_temp) * min_u;
+	//	 this->r=h*v*sin(x)*sin(x)*pow(lambda,3); 
+	// }
+
+ 	//else
+		 v = v_temp;
+
 
 	psi=Psi(*this);
 }
@@ -124,4 +144,42 @@ FS Eigen(CV w)
 		e.r = (base-root);
 
 		return e;
+}
+
+double Psi(CV w)
+{
+return	-(omega*omega*w.lambda*sin(w.x)*sin(w.x)+2*omega*w.v*sin(w.x)+w.g.X1+(w.u*w.u+w.v*w.v)/w.lambda);
+}
+
+double Jinertia1 (CV w)
+{
+	return 2*PI/5*pow(1+Gamma*w.b+epsilon*w.h,5)*pow(sin(w.x),3);
+}
+
+double Jinertia2 (CV w)
+{
+	return 2*PI/5*pow(1+Gamma*w.b+epsilon*w.h,5)*(2-pow(sin(w.x),2))*sin(w.x);
+}
+
+double Ang_mom_shed (CV w)
+{
+	return PI/2*(w.v*(pow(1+Gamma*w.b+epsilon*w.h,4)-pow(1+Gamma*w.b,4)))*pow(sin(w.x),2);
+
+}
+
+double Jinertia1_reg (CV w)
+{
+	return 2*PI/5*pow(1+Gamma*w.b+epsilon*w.h,5)*pow(sin(w.x),3)-Jinertia1_ast (w);
+}
+double Jinertia1_ast (CV w)
+{
+	return 2*PI/5*pow(1+Gamma*w.b,5)*pow(sin(w.x),3);
+}
+double Jinertia2_reg (CV w)
+{
+	return 2*PI/5*pow(1+Gamma*w.b+epsilon*w.h,5)*(2-pow(sin(w.x),2))*sin(w.x) - Jinertia2_ast (w);
+}
+double Jinertia2_ast (CV w)
+{
+	return 2*PI/5*pow(1+Gamma*w.b,5)*(2-pow(sin(w.x),2))*sin(w.x);
 }

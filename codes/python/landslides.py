@@ -8,83 +8,41 @@ Created on Tue Jul 18 11:13:39 2023
 
 import math
 import subprocess
-
+from circle_fit import taubinSVD
 import numpy as np
 import os
-import multiprocessing 
 from collisions import G
 import time
-from Diffusion_spherical import  compute_height
+from Diffusion_spherical import  compute_height,compute_time
 from IO import Parameter, Exparameter, Output_File
-from scipy.ndimage import gaussian_filter1d
+from scipy.optimize import least_squares
 from gravity import Gravitycalc
-from Crater import Crater
-
-    
-#%%
-
-
-"""
-    It is used for the best fit circle. Currently we are only using the average of min and max.
-"""
-
-def Fit(parameters):
-    
-    
-    Gamma=float(parameters["Gamma"])
-    file=Output_File(parameters,"output",["base.txt"])
-    try:
-        w=np.loadtxt(file,dtype=float,delimiter=",")
-    except:
-        print("cannot import shape")
-        return
-    
-    # w_new = gaussian_filter1d(w[:,1], sigma=20)
-
-    # vol =  np.trapz(np.sin(w[:,0])*np.power((1+Gamma*w[:,1]),3),w[:,0])
-    
-    # vol_new =  np.trapz(np.sin(w[:,0])*np.power((1+Gamma*w_new),3),w[:,0])
-    
-    # w[:,1] = (vol/vol_new)**(1/3)*w_new
-        
-    r = 1+Gamma*(min(w[:,1])+max(w[:,1]))/2
-    w[:,1] = ((1+Gamma*w[:,1])-r)/(Gamma*r)
-    if parameters['Shallowness'] == 'Variable':
-        Gamma_new = Gamma*np.average(np.abs(w[:,1]))
-        if Gamma_new>0:
-            w[:,1] = Gamma/Gamma_new*w[:,1]
-        else:
-            print("The Gamma value is zero and hence setting the basal topography to zero")
-            w[:,1] = 0
-        parameters["Gamma"] = Gamma_new
-    parameters["current diameter"] = float(parameters["current diameter"])*r
-    parameters["jinertia"] = float(parameters["jinertia"])/r**5
-    parameters["jinertia1"] = float(parameters["jinertia1"])/r**5
-    Exparameter(parameters)
-    np.savetxt(file,w,delimiter=",") 
-    print ("The best fit value of r is ", r)
-  
-
-
+from script_2D.Crater import Crater
+import pdb
+from scipy.interpolate import UnivariateSpline, CubicSpline  , interp1d  
+from Fit import Fit 
 
   
  #%%  
-"""
-    This calculates the failure height of the landslide. First check whether landslide model is included in the 
-    simulation or not. If yes then check whether it is initiated by an impact or it is a rotational failure. 
-    For impacts, update epsilon for energy dependent simulations and select a failure profile from Gaussian and
-    uniform. Update these in the base array and save it in a text file that will be later used by the C++ module.
-""" 
+
 
 def Height(parameters,target,impactor=None):
+    
+    """
+        This calculates the failure height of the landslide. First check whether landslide model is included in the 
+        simulation or not. If yes then check whether it is initiated by an impact or it is a rotational failure. 
+        For impacts, update epsilon for energy dependent simulations and select a failure profile from Gaussian and
+        uniform. Update these in the base array and save it in a text file that will be later used by the C++ module.
+    """ 
     
     if  not target.landslide:
         return
     
     mydir=Output_File (parameters,"output",["base.txt"])
-    Gamma=float(parameters["Gamma"])
+
     epsilon=float(parameters["epsilon"])
     base=np.loadtxt(mydir,delimiter=",",dtype=float)
+    
     min_epsilon = float(parameters['Minimum epsilon'])
     max_epsilon = float(parameters['Maximum epsilon'])
     
@@ -95,8 +53,10 @@ def Height(parameters,target,impactor=None):
         height =np.ones(res)
         
         if impactor:
-            
-            H = compute_height(target=target,impactor=impactor)
+            #compute landslide duration
+            target.t_lan = compute_time(target,impactor)
+            H = compute_height(parameters,target=target,impactor=impactor,grid = base[:,0],dimension='1D') 
+            print("The average failure height is ", H )
             epsilon = np.clip(H,min_epsilon,max_epsilon)
             
             print(f'the destablization height is {epsilon} and the impactor diameter is {impactor.d}\
@@ -106,20 +66,24 @@ def Height(parameters,target,impactor=None):
        
             print("No impactor found to inititate landslide. Probably its a rotational failure")
             epsilon=10*min_epsilon
-            
-        base[:,1]=(base[:,1]*Gamma-epsilon*height)/np.abs(Gamma)
+            target.t_lan = np.sqrt(target.d/2/target.grav)
+        
+        parameters['epsilon'] = epsilon
+        base[:,2] = -height[:]
+        base = Fit(parameters,base_old=base)
+        
         base[:,2]=height[:]        
     
     else:
         base = Crater(parameters,target,impactor) #Fourth column contains the flag to check whether the point lies inside the crater
-#change
-        H=compute_height(target=target,impactor=impactor,grid=base)
+        #pdb.set_trace()
+        H=compute_height(parameters,target=target,impactor=impactor,grid=base,dimension='2D')
         epsilon = (np.min(H) + np.max(H))/2
         epsilon = np.clip(epsilon,min_epsilon,max_epsilon)
-        base[:,2] = (base[:,2]*Gamma-H[:])/np.abs(Gamma)
         base[:,3] = H[:]/epsilon  
-    parameters['epsilon'] = epsilon   
-    print(f"The epsilon: {parameters['epsilon']} and Gamma: {parameters['Gamma']}")
+        base[:,2] = (base[:,2]-base[:,3])
+        parameters['epsilon'] = epsilon   
+    print(f"The epsilon: {parameters['epsilon']}")
 
     
 
@@ -155,10 +119,11 @@ def Landslides(target,parameters,impacttime,myomega):
     parameters["omega"] = target.omega[2] /(G * (4/3) * math.pi * target.dens)**0.5
     parameters['Seismic_shaking_time'] = target.t_lan/(target.d/2/target.grav)**0.5
     parameters["slides"] = int(parameters["slides"])+1
-    parameters["current diameter"] = target.d
+    parameters["Current diameter"] = target.d
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
     parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
     parameters["time"]=impacttime
+    parameters["k_d"] = target.k_d
     
     if bool(parameters['verbose']):
         parameters['verbose_dir']=Output_File(parameters,"output",['data',f"landslides_{parameters['slides']}"])
@@ -210,13 +175,13 @@ def Landslides(target,parameters,impacttime,myomega):
         Parameter(parameters,"output")
     
         target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
-        target.d = float( parameters["current diameter"])
+        target.d = float( parameters["Current diameter"])
     
         r = target.d / 2
         target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
         target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
-        if int(parameters["slides"])%10==0 or float(parameters["omega"])>0.9:
+        if int(parameters["slides"])%2==0 or float(parameters["omega"])>0.95:#change
             print("Updating gravity")
             target.rgrav, target.tgrav = Gravitycalc(parameters)
     

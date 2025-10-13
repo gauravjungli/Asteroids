@@ -10,46 +10,58 @@ void Grid(vector<double> & x)
 }
 
 
-void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g)
+void Initial_Condition (vector<CV> & w, vector<CV> & wl, vector<CV> & wr,vector<Grav>& g)
 {   
-    vector<double>  b(res,0);
-    vector <double> h(res,1), u(res,0),v(res,0);
-    
-//Uncomment this one only if you want special initial conditions
+    vector<double>  b(res,1),x(res,0),db(res,0),ddb(res,0);
+    vector <double> h(res,1), u(res,min_u),v(res,min_u);
 
-    Base(b,h,x);
+    Read_data(x,b,db,ddb,h,"base.txt");
 
-    // for (int j=0;j<res;j++)
-    // {
-    //     double max_h=1;
-    //     if (b[j]<-max_h)
-    //     {
-    //         h[j]=min_h;
-    //         b[j]=b[j]+epsilon/Gamma*uni_h;
-    //     }
-
-    //     if (b[j]>max_h)
-    //     { 
-    //         h[j]=h[j]+Gamma/epsilon*(b[j]-max_h);
-    //         b[j]=max_h;
-    //     }
-        
-    // } 
     
     if (w.empty())
     {
 	    for (int j = 0; j < res; j++)
-        {
-            CV temp(h[j],u[j],v[j],b[j],g[j],x[j]);
+        {   
+            double dbase = 0;
+            double ddbase = 0;
+            double base =1;
+            CV temp(h[j],u[j],u[j],v[j],base,dbase ,ddbase, g[j],x[j]);
+
+            if (j>0 and j<res-1)
+            {
+             dbase = db[j];
+             ddbase = ddb[j];
+             base = b[j];
+             temp = CV(h[j],u[j],u[j],v[j],base,dbase,ddbase,g[j],x[j]);
+            }
+            
             w.push_back(temp);
-        } 
+
+               if (j>0)
+            {
+            base = (b[j-1]+b[j])/2;
+            dbase = (db[j-1]+db[j])/2;
+            ddbase = (ddb[j-1]+ddb[j])/2;          
+            temp = CV(h[j],u[j],u[j],v[j],base,dbase,ddbase,(g[j-1]+g[j])/2,(x[j-1]+x[j])/2);
+            }
+
+            wl.push_back(temp);
+
+
+             if ( j<res-1)
+            {
+            base = (b[j+1]+b[j])/2;
+            dbase = (db[j+1]+db[j])/2;
+            ddbase = (ddb[j+1]+ddb[j])/2;
+            temp = CV(h[j],u[j],u[j],v[j],base, dbase, ddbase, (g[j+1]+g[j])/2,(x[j+1]+x[j])/2);
+            }  
+            
+            wr.push_back(temp); 
+        }  
     }
     else
     {
-        for (int j = 1; j < res-1; j++)
-       { 
-            w[j]=CV(h[j],u[j],v[j],b[j],g[j],x[j]);
-       }
+       cout<<"There already appears to be elements in the w vector"<<endl;
     } 
 	    
 }
@@ -71,30 +83,3 @@ void Uniform_IC (vector<CV> & w, vector<double> & x, vector<Grav>& g)
         
 } */
 
-void Base ( vector<double>& b,vector<double>& h,vector<double>& x)
-{
-    fs::path base_path = Output_folder;
-
-	fs::path file_name= "base.txt";
-	fs::path full_path = base_path.parent_path()/ file_name;
-	string file1=	full_path.string();
-    ifstream myfile(file1);
-
-    std::string line;
-    int i=0;
-    while(getline(myfile,line))
-    {
-        istringstream iss(line);
-        string word1,word2,word3;
-        getline(iss, word1, ',');
-        getline(iss, word2, ','); 
-        getline(iss, word3, ',');        
-
-        x[i] = stod(word1);
-        b[i] = stod(word2); 
-        h[i] = stod(word3); 
-        i++;
-    }
-    myfile.close();
-
-}

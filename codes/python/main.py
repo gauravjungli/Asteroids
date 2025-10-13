@@ -3,8 +3,18 @@
 """
 Created on Thu Jul 13 18:36:25 2023
 
-@author: kumargaurav, chatgpt and Holsapple
+@author: kumargaurav and chatgpt 
+This is the main script which starts one simulation for each collision history. It needs some arguments: Output folder and run.
+The log of this script is saved in python_log.txt and it gives output in form of % run to the progressbar. It creates an object target
+and the collisional history which is then stored in the istuff object of the impactor class. It then calls the YORP, collisions
+and landslide modules to simulate history and stores the value of omega in a file. 
 """
+import sys
+import os
+
+sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'script_1D')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__),'script_2D')))
 
 from collisions import   Collision, Istuff
 from landslides import Landslides, Height
@@ -14,17 +24,13 @@ from Initialize import Initialize
 import multiprocessing 
 import time
 from YORP import YORP, shape_gen
-import sys
-import os
-
-#%%
-
 
 
 #%%
 
 
 
+#%%
 
 if __name__=="__main__":
     
@@ -35,12 +41,13 @@ if __name__=="__main__":
             continue
         else:
             parameters[sys.argv[i]]=sys.argv[i+1]
-    
+
     Parameter(parameters, "output") 
+
 # =============================================================================
     myfile=Output_File(parameters,"output",["python_log.txt"])
     log_file=open(myfile, "w") 
-    sys.stdout = log_file
+    sys.stdout = log_file 
     sys.stderr = log_file
 # =============================================================================
     start_time = time.time()
@@ -54,21 +61,20 @@ if __name__=="__main__":
     oldtime = 0
     myomega=[[0,target.omega[2]]]
     
+    print("Starting real simulation")
+    sys.stdout.flush() 
     for i in range(len(istuff)):
-        
-
 
         YORP(target,parameters,istuff[i].impacttime,oldtime,myomega)
         
         
         Collision(target,istuff[i],myomega)
         
-        
         if istuff[i].explicit:
             print("Calling landslide")
             Height(parameters,target,istuff[i])
             Landslides(target,parameters,istuff[i].impacttime,myomega)
-            if parameters["stoc_yorp"].lower()=='yes':
+            if parameters["stoc_yorp"].lower()=='yes' and int(parameters["slides"])%10==0:
                 target.coeff_f, target.coeff_g = shape_gen(target.K)
 
                

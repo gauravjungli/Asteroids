@@ -60,7 +60,7 @@ class GUI:
             for Input in inputs:
                 self.parameters[Input.Name]=Input.Value
         now=datetime.now()
-        self.parameters['Output folder']= now.strftime("%Y-%m-%d_%H:%M")
+        self.parameters['Output folder']= 'Debug'#now.strftime("%Y-%m-%d_%H:%M")#change
     
     def _quit(self):
         self.root.quit()
@@ -101,9 +101,22 @@ class GUI:
     
     def run_script_instance(self,index,output_folder,run,progress_queue):
         python_path = sys.executable
-        process=subprocess.Popen([python_path, "main.py",'Output folder', output_folder, 'run', str(run)], stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE, text=True, bufsize=1)
-        self.processes[index]=process
+
+        process = subprocess.Popen( [python_path, "main.py", 'Output folder', output_folder, 'run', str(run)], stdout=subprocess.PIPE,
+        stderr  = subprocess.PIPE, text=True, bufsize=1 )
+        
+        #For debugging the code
+        # Wait for the process to complete and get output/error
+        # The timeout is optional but good practice
+        #stdout_data, stderr_data = process.communicate(timeout=15)
+        #return_code = process.returncode
+
+        #print(f"Parent: Child STDOUT:\n{stdout_data}")
+        #if stderr_data: # Only print if there's something in stderr
+          #  print(f"Parent: Child STDERR:\n{stderr_data}")
+        #print(f"Parent: Child Return Code: {return_code}")
+        
+        self.processes[index] = process
         self.read_output(process, progress_queue)
 
 
@@ -208,7 +221,8 @@ class GUI:
         elif self.current_screen==5:
             #uncomment only when you want to do post process of already simulated data
             #post_process(self.parameters)
-            #self.create_post_processing_screen() #uncomment only for special purposes
+            #self.create_post_processing_screen()
+            
             self.create_preview_screen() 
         
         elif self.current_screen==6:
@@ -484,10 +498,48 @@ class GUI:
 #self.center_window(self.root)
  
 ###############################################################################################        
-    
+
+            
     def create_progressbar_screen(self):
 
-        #self.center_window(self.root)
+        # --- Parent Frame for Everything ---
+        main_frame = ttk.Frame(self.root)
+        main_frame.pack(fill=tk.BOTH, expand=1)
+        
+        # --- NEW: A frame to hold the canvas and the VERTICAL scrollbar together ---
+        top_container = ttk.Frame(main_frame)
+        # This container will expand to fill the space *above* the horizontal scrollbar
+        top_container.pack(fill=tk.BOTH, expand=1)
+        
+        # --- The Horizontal scrollbar goes at the very bottom of the main_frame ---
+        x_scrollbar = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL)
+        x_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        # --- The Canvas and Vertical scrollbar go INSIDE the top_container ---
+        my_canvas = tk.Canvas(top_container, xscrollcommand=x_scrollbar.set)
+        my_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=1)
+        
+        y_scrollbar = ttk.Scrollbar(top_container, orient=tk.VERTICAL, command=my_canvas.yview)
+        y_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # --- Final Configuration ---
+        my_canvas.configure(yscrollcommand=y_scrollbar.set)
+        x_scrollbar.config(command=my_canvas.xview) # Configure x-scrollbar command here
+        
+        # Bind and add the inner frame
+        my_canvas.bind('<Configure>', lambda e: my_canvas.configure(scrollregion = my_canvas.bbox("all")))
+        scrollable_frame = ttk.Frame(my_canvas)
+        my_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        
+        def _on_arrow_keys(event):
+            # For Linux arrow key scrolling
+            if event.keysym == 'Up':
+                my_canvas.yview_scroll(-1, "units")
+            elif event.keysym == 'Down':
+                my_canvas.yview_scroll(1, "units")
+        
+        my_canvas.bind_all("<Button-4>", lambda e: _on_arrow_keys(e) or my_canvas.yview_scroll(-1, "units")) # Linux
+        my_canvas.bind_all("<Button-5>", lambda e: _on_arrow_keys(e) or my_canvas.yview_scroll(1, "units")) # Linux
         
         parameters_list=[]
         Initialize_simulations(parameters=self.parameters,parameters_list=parameters_list)
@@ -496,7 +548,7 @@ class GUI:
         progress_bars = []
         progress_queues = [queue.Queue() for _ in parameters_list]
         for i, par in enumerate(parameters_list):
-            frame = ttk.Frame(self.root)
+            frame = ttk.Frame(scrollable_frame)
             frame.pack(fill="x")  # Expand horizontally
             style = ttk.Style()
             style.configure("Bold.TLabel", font=("Helvetica", 12, "bold")) 
@@ -543,8 +595,9 @@ class GUI:
 
     def create_post_processing_screen(self):
         
+        self.display_buttons() 
         show_3D_plots(self)
-        self.display_buttons()
+        
     
 ##############################################################################################################
     """ Creates welcome screen"""
@@ -599,7 +652,7 @@ class GUI:
         creators = [
             ("Gaurav", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "gaurav.jpeg")),
             ("Deepayan", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Deepayan.jpeg")),
-           ("Gauri", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Gauri.jpg")),
+          # ("Gauri", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Gauri.jpg")),
         ]
         
         max_width = 100

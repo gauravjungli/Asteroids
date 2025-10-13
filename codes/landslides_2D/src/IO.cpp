@@ -105,7 +105,21 @@ void deleteDirectoryContents(const std::string& dir_path)
 
 bool Parameters()
 {
-	ifstream myfile(par_add);
+	ifstream myfile;
+    fs::path filePath1 = fs::path(par_add) ;
+   // fs::path filePath2 = fs::path("/home/g/Asteroids/output/Bennu/run1/parameters");
+    if (fs::exists(filePath1)) {
+         myfile.open(filePath1);
+        std::cout << "File found in first directory.\n";
+    }
+   //  else if (fs::exists(filePath2)) {
+   //     myfile.open(filePath2);
+   //     std::cout << "File found in second directory.\n";
+  //  } 
+    else {
+        std::cout << "File not found in either directory.\n";
+        return 1;  // Exit if the file doesn't exist in either directory
+    }
 	if (!myfile) Error("Can't open file", "parameters");
 	string line;
 	while (getline(myfile, line))  
@@ -152,11 +166,11 @@ void Read_grav( vector<Grav>& g, const string& file)
         row.push_back(num);
 
         // Check if the row is complete
-        if (row.size() == 3) 
+        if (row.size() == 2) 
         {
-            g[i].X1=row[0]; 
-            g[i].X2=row[1];
-            g[i].X3=row[2];
+            g[i].X1=-1;//row[0]; change
+            g[i].X2=0;//row[1];
+            g[i].X3=0;// row[2];
             row.clear();
             i++;
         }

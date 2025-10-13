@@ -11,7 +11,7 @@ from IO import Output_File
 import matplotlib.pyplot as plt
 # Import color normalization tools
 import matplotlib.colors as mcolors
-#from Initialize import grid
+from Initialize import grid
 # Optional: for 3D plotting if you want to visualize
 # from mpl_toolkits.mplot3d import Axes3D # Already implicitly imported by projection='3d'
 
@@ -147,35 +147,20 @@ def crater_radius_to_angle(crater_radius, sphere_radius):
     return float(crater_radius) / float(sphere_radius)
 
 
-def grid(parameters):#change it is temporary here
-    
-    if parameters['Dimension'] == '2D':
-        
-        nx, ny = int(parameters['X Resolution']), int(parameters['Y Resolution'])
-
-    # Define the grid ranges
-        offset =float(parameters["offset"])
-        dx=(np.pi-2*offset)/(nx)
-        dy=(2*np.pi)/(ny)
-        x_values = np.linspace(offset+dx/2, np.pi-offset-dx/2, nx)
-        y_values = np.linspace(0+dy/2, 2 * np.pi-dy/2, ny)
-        
-        return x_values, y_values
-
 def Crater(parameters,target,impactor):
     
     # 1. Define the Spherical Grid
     initial_sphere_radius = target.d/2 # Let's say this is in 'units'
     
-    mydir=Output_File (parameters,"output",["base.txt"])
-    Gamma=float(parameters["Gamma"])
+    mydir=Output_File (parameters,"output",["base.txt"]) #change
+
     epsilon=float(parameters["epsilon"])
     
     base=np.loadtxt(mydir,delimiter=",",dtype=float)
     n_theta = int(parameters['X Resolution'])
     n_phi = int(parameters['Y Resolution'])
     
-    theta, phi = grid(parameters)
+    theta, phi, _ = grid(parameters, target)
     phi_grid, theta_grid = np.meshgrid(phi, theta)
     
     
@@ -195,7 +180,7 @@ def Crater(parameters,target,impactor):
     # This order corresponds to iterating through theta (rows) then phi (columns)
     # when the input data was created/flattened.
     rho_grid_initial = rho_values_flat.reshape((n_theta, n_phi))
-    rho_grid_initial = initial_sphere_radius*(1+Gamma*rho_grid_initial)
+    rho_grid_initial = initial_sphere_radius*(1+epsilon*rho_grid_initial)
     print(f"Reshaped initial rho_grid shape: {rho_grid_initial.shape}")
     
 
@@ -226,11 +211,11 @@ def Crater(parameters,target,impactor):
     # Ensure the flattening order is consistent (default 'C' or row-major)
     theta_flat = theta_grid.ravel()
     phi_flat = phi_grid.ravel()
-    rho_mod_flat = (rho_grid_mod.ravel()/initial_sphere_radius -1 )/Gamma
+    rho_mod_flat = (rho_grid_mod.ravel()/initial_sphere_radius -1 )/epsilon
     mask_flat_int = mask.ravel().astype(int)
     # 2. Stack them as columns [theta, phi, rho_modified]
     # This creates an array of shape (n_theta * n_phi, 3)
-    output_spherical_data = np.column_stack((theta_flat, phi_flat, rho_mod_flat,mask_flat_int))
+    output_spherical_data = np.column_stack((theta_flat, phi_flat, rho_mod_flat, mask_flat_int))
 
     print(f"Output data shape: {output_spherical_data.shape}")
 

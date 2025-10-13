@@ -12,56 +12,112 @@ import matplotlib.gridspec as gridspec
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.cm import ScalarMappable
-from pathlib import Path
-import glob
 import os
-import re
-from IO import Parameter
 import seaborn as sns
-from scipy.ndimage import gaussian_filter1d
-from IO import Output_File
-
+from IO import Output_File, extract_number
+import pdb
+from matplotlib.ticker import ScalarFormatter
+from Fit import Fit
 #from mpl_toolkits.mplot3d import Axes3D
 
-def show_shape(parameters):
-    plt.close()
+"""
+Main post processing script.
+"""
+def create_fill(ax,x,y,x1,y1):
+    
+    
+    ax.fill_betweenx(y,x,0,color='lightcoral')
+    ax.fill_betweenx(y1,x1,0,color='lightblue')
+    x=-x
+    x1=-x1
+    ax.fill_betweenx(y,x,0,color='lightcoral')
+    ax.fill_betweenx(y1,x1,0,color='lightblue')
+    
+    arrow_x_location = 0      # The x-coordinate where the arrow will be
+    arrow_y_start = -1.90      # The y-coordinate where the arrow starts
+    arrow_length = 3.55     # The length of the arrow
+
+# 3. Draw the vertical arrow using ax.arrow()
+    ax.arrow(
+        arrow_x_location,      # x-start
+        arrow_y_start,         # y-start
+        0,                     # dx (change in x) -> 0 for vertical
+        arrow_length,          # dy (change in y) -> length of the arrow
+        head_width=0.05,        # width of the arrowhead
+        head_length=0.05,       # length of the arrowhead
+        fc='black',              # face color (fill) of the arrow
+        ec='black',              # edge color of the arrow
+        linewidth=1,           # width of the arrow line
+        zorder=10              # zorder > 0 to ensure it's on top of other elements
+        )
+
+
+
+def show_shape (parameters):
+    #plt.close()
+    #pdb.set_trace()
     fig,ax = plt.subplots()
-    epsilon = float(parameters["epsilon"])
-    Gamma = float(parameters["Gamma"])
-    for count in range(0,100):
-        
-        file1=parameters['Data folder']
-        
-        file=os.path.join(file1,f'field_{(count+1)}.csv')
-        if os.path.exists(file):
-            
-            w=np.loadtxt(file,delimiter=",",dtype=float)
-           # if count!=slides-1 and count!=0:
-            #    continue
-            #plt.clf()
-            x=np.sin(w[:,0])*(1+epsilon*w[:,2]+Gamma*w[:,1])
-            y=np.cos(w[:,0])*(1+epsilon*w[:,2]+Gamma*w[:,1])
-            ax.plot(x,y,'-r',linewidth=4)
-            x=-np.sin(w[:,0])*(1+epsilon*w[:,2]+Gamma*w[:,1])
-            ax.plot(x,y,'-r',linewidth=2)
-            ax.set_aspect('equal')
-            title=f'landslide number={count+1}'
-            ax.set_title(title)
-            fig.canvas.draw()
-            fig.canvas.flush_events()
-            plt.show(block=False)
-            fig.canvas.draw_idle()
-            plt.pause(0.1)
-            #plt.savefig(file1+"/img_"+str(count+1)+".svg",dpi=300,bbox_inches="tight")
-        else:
-            break
-    #plt.pause(10)
-    #plt.close(fig)
+    file1 = parameters['Data folder']
+    Res = int(parameters['Resolution'])
+    file2 = os.path.join(file1,'dia.txt')
+    epsilon = np.loadtxt(file2,dtype=float,ndmin=2)[:,2]
+    dia = np.loadtxt(file2,dtype=float,ndmin=2)[:,1]
     
 
+    for count in range(1,1000):        
+        #pdb.set_trace()
+        file = os.path.join(file1,f'field_{(count)}.csv')
+        print(file)
+        if os.path.exists(file):
+           
+            w = np.loadtxt(file,delimiter=",",dtype='float')
+            ax.cla()
+            theta = w[2:Res-2,0]
+            base = w[2:Res-2,1]
+            height = epsilon[count-1]*w[2:Res-2,2]
+            dbase = w[2:Res-2,3]
+        
+            metric = base**2 + dbase**2
+             
+            rad = np.sqrt((2*base**2*np.sqrt(metric)*height + metric*(height**2 + base**2  ))/metric)
+            print("maximum radial distance is ", max(rad) )
+            z = np.cos(theta)*base + 1/np.sqrt(metric)*(height*dbase*np.sin(theta)+np.cos(theta)*base*height)
+            theta_new = np.arccos(z/rad)
+            
+            x = dia[count-1]*rad*np.sin(theta_new)/2
+            y = dia[count-1]*rad*np.cos(theta_new)/2
+           # x1 = dia[count-1]*base*np.sin(theta)/2
+           # y1 = dia[count-1]*base*np.cos(theta)/2
+            ax.plot(x,y,color='black')
+            ax.plot(-x,y,color='black')
+
+            #create_fill(ax,x,y,x1,y1)
+            # Set x and y limits
+            ax.set_xlim(-300, 300)
+            ax.set_ylim(-300, 300)
+            ax.set_aspect('equal')
+            title=f'landslide number={count}'
+            #ax.set_title(title)
+            #fig.canvas.draw()
+            fig.canvas.flush_events()
+            plt.show(block=False)
+            #fig.canvas.draw_idle()
+            plt.pause(0.1)
+            plt.savefig(file1+f"/img/img_{count}.svg", dpi=100)
+
+
+        else:
+            break
+
+#%%    
+
+
+
 def show_omega(parameters):
+    #pdb.set_trace()
     plt.close()
-    fig,ax = plt.subplots()
+    plt.rcParams.update({'font.size' : 14})
+    fig,ax1 = plt.subplots()
     file2='/home/g/Asteroids/output'
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
     file=os.path.join(file2,parameters['Output folder'],f'run{parameters["run"]}',file1)
@@ -70,78 +126,45 @@ def show_omega(parameters):
         w=np.loadtxt(file,dtype=float)
         x=w[:,0]
         y=2*np.pi/w[:,1]/3600
-        ax.plot(x,y,'-r',linewidth=2)
-        title="Evolution of time period"
-        ax.set_ylabel("Time period (hrs)")
-        ax.set_xlabel("Simulation time")
-        ax.set_title(title)
+        ax1.plot(x/1000,y,'-r',linewidth=2)
+        #title="Evolution of time period"
+        ax1.set_xlim(0,200)
+        ax1.set_ylabel("Time period (hr)")
+        ax1.set_xlabel(" Time (ky)")
+        
+        secax = ax1.secondary_yaxis('right', functions=(lambda y: 2*np.pi/(y*3600), lambda y: 2*np.pi/(y*3600)))
+        secax.set_ylabel(r"$\omega$ (1/s)" )
+        secax.tick_params(axis='y')
+        plt.grid(True)
+        #ax.set_title(title)
         fig.canvas.draw()
         fig.canvas.flush_events()
         plt.show(block=False)
         fig.canvas.draw_idle()
+        plt.tight_layout()
+        # Apply scientific notation formatting
+        formatter = ScalarFormatter(useMathText=True)
+        formatter.set_scientific(True)
+        formatter.set_powerlimits((-2, 2))
+        secax.yaxis.set_major_formatter(formatter)
         
-    plt.pause(0.1)
+        plt.pause(0.1)
     #plt.close(fig)
      
      
 
 
 
-def backup():
-    plt.rcParams.update({'font.size' : 14})
-    colors=sns.color_palette("rocket",7)
-    
-    parameters={}
-    Parameter(parameters)
-    omega=float(parameters["omega_in"])
-    delta=float(parameters["Friction angle"])
-    slides=int(parameters["slides"])
-    epsilon=float(parameters["epsilon"])
-    Gamma=float(parameters["Gamma"])
-    res=int(parameters["res"])
-    offset=float(parameters["offset"])
-    dx=(math.pi-2*offset)/res
-    #omega=0.65
-    #delta=30
-
-#file1="output/omega_15_0.65_0.002"
-# omega=np.loadtxt(file1+"/omega.txt",delimiter=" ")
-#%%
-def show_plot(parameters):
-    fig = plt.figure(figsize=(6,6))
-    
-    for count in range(0,int(parameters["slides"])):
-        file1=parameters['Data folder']
-        file=glob.glob(file1+"/field_"+str(count+1)+".csv",recursive=True)
-        w=np.loadtxt(file[0],delimiter=",",dtype=float)
-        print(file)
-       # if count!=slides-1 and count!=0:
-        #    continue
-
-        x=w[:,0]#np.sin(w[:,0])*(1+(float(parameters["epsilon"])*w[:,2]+float(parameters["Gamma"])*w[:,1]))
-        y=w[:,2]#np.cos(w[:,0])*(1+(float(parameters["epsilon"])*w[:,2]+float(parameters["Gamma"])*w[:,1]))
-        plt.clf()
-        #plt.axis('equal')
-        plt.plot(x,y,'-r',linewidth=1)
-       # x=-np.sin(w[:,0])*(1+(float(parameters["Gamma"])*w[:,1]+float(parameters["Gamma"])*w[:,1]))
-       # plt.plot(x,y,'-r',linewidth=4)
-        plt.title("lanslide number="+str(count+1))
-        plt.pause(0.5)
-        #plt.savefig(file1+"/img_"+str(count+1)+".svg",dpi=300,bbox_inches="tight")
-    
-#plt.close()
  #%%   
 def show_individual_run(parameters):
     # Function to extract the numerical value from a name (e.g., "dir_10" -> 10)
-    def extract_number(text):
-        match = re.search(r'\d+', text)  # Find first occurrence of a number
-        return int(match.group()) if match else float('inf')  # Default to large number if no match
-
+    #pdb.set_trace()
     main_dir=parameters['Data folder']
     file1=os.path.join(main_dir,'dia.txt')
-
-    epsilon=np.loadtxt(file1,dtype=float)[:,2]
-    Gamma = np.loadtxt(file1,dtype=float)[:,3]
+    res = int(parameters['Resolution'])
+    dia = np.loadtxt(file1,dtype=float,ndmin=2)[:,1]
+    epsilon = np.loadtxt(file1,dtype=float,ndmin=2)[:,2]
+    Gamma = np.loadtxt(file1,dtype=float,ndmin=2)[:,3]
  
     dx=(math.pi-2*float(parameters["offset"]))/float(parameters["Resolution"])
     fig = plt.figure(figsize=(6,6))  
@@ -154,59 +177,120 @@ def show_individual_run(parameters):
         
         # Get and sort files by number within the subdirectory
         dirFiles = sorted( [f for f in os.listdir(subdir_path) if f.lower() != "log.txt"], key=extract_number)
-   
+        print(subdir)
         os.chdir(subdir_path)
         ang_mom=[]
         lin_mom=[]
         
-        if count <0:
-            count +=1
+        if count<0 or count>12:
+            count+=1
             continue
+        
         for file in dirFiles:
             
 
             w=np.loadtxt(file,delimiter=",",dtype=float)
-          #  print(file)
-            w_filtered = gaussian_filter1d(w[:,2], sigma=20)
+    
+            theta  = w[:,0]
+            base   = w[:,1]
+            height = w[:,2]
+            dbase  = w[:,3]
+            ddbase = w[:,4]
+            u = w[:,5]
+            v = w[:,6]
+            metric = np.sqrt(base**2 + dbase**2)
+            sum1 = 0
+            for j in range(2,res-2):
+                sum1+= metric[j]*base[j]*height[j]*np.sin(theta[j])*(theta[3]-theta[2])
+
+            print(height[2])
+
             plt.clf()
-            x=(w[:,0])
-            y=(w[:,3])#+Gamma[count]/epsilon[count]*w[:,1])
-            # y=(w[:,3])
-            ang_mom.append([count,sum(w[:,4])*dx])
-            lin_mom.append([count,sum(w[:,3])*dx])
-            
-            #plt.plot(x,w_filtered)
-            plt.plot(x,y)
+
+            plt.plot(theta[2:res-2],height[2:res-2])
+           # plt.plot(theta[2:res-2],w[2:res-2,7])
+ 
+           # plt.plot(x[2:res-2],z1[2:res-2])
             #plt.plot(x, w_filtered)
             plt.title("Time="+str(count))
             plt.pause(0.1) 
-           # if count > -1:
-            #    break
+
             #plt.ylim(0.975,1.025)
-            
+           # if count>-1:
+           #     break
         count +=1
+       # if count>10:
+        #    return
         print(count, subdir)
-        if count>4:
-            return
+        
         # print(sum(w[:,1]))  
     # ang_mom=np.array(ang_mom)
     # plt.plot(ang_mom[:,0],ang_mom[:,1])
     # lin_mom=np.array(lin_mom)
     # plt.plot(lin_mom[:,0],lin_mom[:,1])
-    os.chdir("../..")
-#%%
-def plot_grav():
-    fig = plt.figure(figsize=(14,6)) 
-    x=w[:,0]
-    grav=np.loadtxt(file1+"/grav.txt",delimiter=" ")
-    #plt.clf()
-    plt.plot(x,grav[:,1],linewidth=2,markersize=8)
+    os.chdir("/home/g/Asteroids/codes/python")
     
+#%%
+
+def show_fit(parameters):
+   # pdb.set_trace()
+   # plt.close()
+
+
+    fig,ax = plt.subplots()
+    file1=parameters['Data folder']
+    file2=os.path.join(file1,'dia.txt')
+    epsilon=np.loadtxt(file2,dtype=float,ndmin=2)[:,2]
+    
+    for count in range(1000):
+        
+        
+        file=os.path.join(file1,f'field_{(count+1)}.csv')
+        print(file)
+        if os.path.exists(file):
+           
+            w=np.loadtxt(file,delimiter=",",dtype=float)
+
+            ax.cla()#change
+            x = np.sin(w[:,0])*w[:,1]
+            y = np.cos(w[:,0])*w[:,1]
+            x =-np.sin(w[:,0])*w[:,1]
+            w_new =  Fit(parameters,epsilon[count],w) 
+            continue
+            ax.plot(x,y,'-r',linewidth=2)
+            ax.set_aspect('equal')
+            title=f'landslide number={count+1}'
+            ax.set_title(title)
+            fig.canvas.draw()
+            #fig.canvas.flush_events()
+            plt.show(block=False)
+            #fig.canvas.draw_idle()
+            plt.pause(0.1)
+         #   plt.savefig()
+
+        else:
+            break
+    #plt.pause(10)
+    #plt.close(fig)
+
+#%%
+def plot_grav(parameters):
+   # pdb.set_trace()
+    Res = int(parameters['Resolution'])
+    fig = plt.figure(figsize=(14,6))
+    file =Output_File(parameters,filetype='output',filenames=['base.txt'])
+    w=np.loadtxt(file,delimiter=",",dtype=float)
+    file1 =Output_File(parameters,filetype='output',filenames=['grav.txt'])
+    x=w[:,0]
+    grav=np.loadtxt(file1,delimiter=" ")
+    #plt.clf()
+    plt.plot(x[2:Res-2],grav[2:Res-2,0],linewidth=2,markersize=8)
+    plt.plot(x[2:Res-2],grav[2:Res-2,1],linewidth=2,markersize=8)
     plt.grid()
     plt.xlabel(r'$\theta$')
     plt.ylabel('Non-dimensionalized Normal Gravity')
     plt.xlim([0,3.14])
-    plt.ylim([-0.25,0.25])
+    #plt.ylim([-0.25,0.25])
     plt.minorticks_on()
     plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
     plt.tick_params(labelsize=14)
@@ -214,71 +298,51 @@ def plot_grav():
     plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
     plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
     
-    plt.savefig('output/grav_20_static.svg', dpi=300,bbox_inches="tight")
+    #plt.savefig('output/grav_20_static.svg', dpi=300,bbox_inches="tight")
 
 
-#%%
-#fig = plt.figure(figsize=(14,6)) 
-# omega=np.loadtxt(file1+"/omega_L.txt",delimiter="\t")
-
-
-# #plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
-# plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,markersize=8,color=colors[2],linestyle='dotted',label='L')
-
-# plt.xlabel('Time (Myr)')
-# plt.ylabel('Time Period (hr)')
-# plt.xlim([0,1])
-# plt.ylim([2.5,4.5])
-# plt.minorticks_on()
-# plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
-# plt.tick_params(labelsize=14)
-# plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
-# plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
-# plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
-# plt.legend(loc='best')
-# plt.legend(fontsize=14) 
-# plt.savefig('output/Omega.svg', dpi=300,bbox_inches="tight")
 
 #%%
 #script for plot 1
 def omega_comparison_plot():
     plt.rcParams.update({'font.size' : 14})
     colors=sns.color_palette("rocket",7)
-    file1="/home/g/Asteroids/output/omega"
+    file1="/home/g/Asteroids/output/PRSA/omega"
     fig = plt.figure(figsize=(6,6)) 
     
     
-    omega=np.loadtxt(file1+"/Omega_L.txt",delimiter="\t")
-    plt.semilogy(omega[0:-1:3,0]/1e+6,omega[0:-1:3,1],linewidth=2,marker='o',mfc='w',markersize=8,color=colors[2],linestyle='None',label='L')
+    #omega=np.loadtxt(file1+"/Omega_L.txt",delimiter="\t")
+    #plt.semilogy(omega[0:-1:3,0]/1e+6,omega[0:-1:3,1],linewidth=2,marker='o',mfc='w',markersize=8,color=colors[2],linestyle='None',label='L')
     
     
     omega=np.loadtxt(file1+"/Omega_CY.txt",delimiter="\t")
-    plt.semilogy(omega[0:-1:3,0]/1e+6,omega[0:-1:3,1],linewidth=2,marker='s',mfc='w',markersize=8,color=colors[0],linestyle='None',label='CY')
+    plt.semilogy(omega[0:-1:3,0]/1e+6,omega[0:-1:3,1],linewidth=2,marker='o',mfc='w',markersize=8,color=colors[0],linestyle='None',label='CY')
     
     omega=np.loadtxt(file1+"/Omega_CL.txt",delimiter="\t")
-    plt.semilogy(omega[1:-1:3,0]/1e+6,omega[1:-1:3,1],linewidth=2,marker='^',mfc='w',markersize=8,color=colors[4],linestyle='None',label='CL')
+    #plt.semilogy(omega[1:-1:3,0]/1e+6,omega[1:-1:3,1],linewidth=2,marker='^',mfc='w',markersize=8,color=colors[4],linestyle='None',label='CL')
+    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[1],linestyle='solid',label='CL')
     
     omega=np.loadtxt(file1+"/Omega_C.txt",delimiter="\t")
-    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[0],linestyle='dashdot',label='C')
+    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[2],linestyle='dashdot',label='C')
     
     
-    omega=np.loadtxt(file1+"/Omega_LY.txt",delimiter="\t")
-    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[5],linestyle='solid',label='LY')
+    #omega=np.loadtxt(file1+"/Omega_LY.txt",delimiter="\t")
+    #plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[5],linestyle='solid',label='LY')
     
     omega=np.loadtxt(file1+"/Omega_CLY.txt",delimiter="\t")
-    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[1],linestyle='dotted',label='CLY')
+    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[3],linestyle='dotted',label='CLY')
     
     omega=np.loadtxt(file1+"/Omega_Y.txt",delimiter="\t")
-    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[6],linestyle='dashed',label='Y')
+    plt.semilogy(omega[:,0]/1e+6,omega[:,1],linewidth=2,markersize=8,color=colors[4],linestyle='dashed',label='Y')
     
-    yticks = np.arange(2.5,6.5,0.5)
+    yticks = np.arange(3.0,5,0.25)
     #plt.plot(omega[:,0]/1e+6,(2*math.pi/omega[:,3]/3600),linewidth=2,marker='^',mfc='w',markersize=8,color=colors[0],linestyle='solid',label='L')
     plt.gca().yaxis.set_major_formatter(mtick.ScalarFormatter())
     plt.yticks(yticks)
     plt.xlabel('Time (Myr)')
     plt.ylabel('Time Period (hr)')
-    plt.xlim([0,0.5])
-    plt.ylim([3.0,6.0])
+    plt.xlim([0,0.25])
+    plt.ylim([3.0,4.5])
     plt.minorticks_on()
     plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
     plt.tick_params(labelsize=14)
@@ -386,7 +450,7 @@ def save_3D_omega(parameters):
     
 def save_3D_shapes(parameters):
     
-    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.txt']) 
+    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
     w = np.loadtxt(file, dtype=float, delimiter=",")
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
     file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 
