@@ -50,9 +50,9 @@ class Target:
 
     def __init__(self, parameters):
 
-        self.d=float(parameters["Diameter"])
-        self.atype=parameters["atype"]
-        self.delta=float(parameters['Friction angle'])
+        self.d = float(parameters["Diameter"])
+        self.atype = parameters["atype"]
+        self.delta = float(parameters['Static Friction angle'])
         self.landslide = True if parameters["Landslide"].lower()=='yes' else False
         self.YORP = True if parameters["YORP"].lower()=='yes' else False
         self.collision = True if parameters["Collision"].lower()=='yes' else False
@@ -71,37 +71,48 @@ class Target:
             self.qconst1, self.qconst2 = 2e3, 4e5 
             self.k1, self.k2 = 0.15, 1
             
-        self.M= (math.pi / 6) * self.dens * self.d**3
-        self.jinertia= [2/5 * self.M * (self.d/2)**2]*3
+        self.M = (math.pi / 6) * self.dens * self.d**3
+        self.jinertia = [2/5 * self.M * (self.d/2)**2]*3
         
-        self.omega=[0,0,2*np.pi/(float(parameters['Rotation period'])*3600)]
-        self.kvg=0.3
-        self.K=float(parameters["K"])
-        self.grav=G*self.M/(self.d/2)**2
-        self.obliq=float(parameters["Obliquity"])
+        self.omega = [0,0,2*np.pi/(float(parameters['Rotation period'])*3600)]
+        self.kvg = 0.3
+        self.crater_coeff = 0.62
+        self.K = float(parameters["K"])
+        self.grav = G*self.M/(self.d/2)**2
+        self.obliq = float(parameters["Obliquity"])
         velave = float(parameters["Impactor velocity"])
-        self.dstarave=qstarf(self, math.pi / 4, velave)[2]
+        self.dstarave = qstarf(self, math.pi / 4, velave)[2]
         # Set the seed for NumPy's random number generator
         np.random.seed(int(time.time()/float(parameters['run'])))
-        self.coeff_f,self.coeff_g = (1,1) #shape_gen(self.K) #change
-        self.sma= float(parameters['Semi major axis'])
+        self.coeff_f,self.coeff_g = (1,1)#shape_gen(self.K) #change make it (1,1) if removing stochasticity
+        self.sma = float(parameters['Semi major axis'])
         self.f_spline, self.g_spline = read_f_g_spline(parameters)
-        self.wave_speed = float(parameters["P wave speed"])*(self.grav/1.6*1500/self.dens)**(1/4) 
-        self.k_s = 1/3*100*self.wave_speed
+        self.K_0 = float(parameters["Bulk Modulus"])
+        self.mu_0 = float(parameters["Shear Modulus"])
+        self.wave_speed_P = np.sqrt(self.K_0+4/3*self.mu_0)*(((self.d/2)**2/15/self.dens)*(4*np.pi*G*self.dens-2*self.omega[2]**2))**(1/4)
+        self.wave_speed_S = np.sqrt(self.mu_0)*(((self.d/2)**2/15/self.dens)*(4*np.pi*G*self.dens-2*self.omega[2]**2))**(1/4)
+        self.failure_mode = parameters['Failure wave']
+        if self.failure_mode == "P-wave":
+            self.wave_speed =self.wave_speed_P
+        else:
+            self.wave_speed = self.wave_speed_S 
+        self.k_s = float(parameters["Seismic Diffusivity"])
         self.efficiency = float(parameters["Seismic efficiency"])
-        self.f = float(parameters["Frequency"])
+        self.beta = float(parameters["Beta"])
+        self.f = ((2*self.efficiency)/(np.pi*self.beta**2))**(1/3)*2*self.wave_speed_P/0.1 #change_P, we need to fix on this
         self.Q = float(parameters["Q"])
-        self.k_d = np.pi*self.f/self.Q*np.sqrt(3/4/np.pi/G/self.dens)
-        self.N = 50
-        self.roots = parallel_root_computation(300,50,self.d)
-        self.theta = np.linspace(np.pi/20, np.pi,self.N)
+        self.k_d = 2*np.pi*self.f/self.Q
+        self.N = 50 
+        self.roots = parallel_root_computation(300,50,self.d) 
+        self.theta = np.linspace(np.pi/12, np.pi,self.N) 
         self.energy, self.t_max = compute_energy(self)
         self.cohesion_cons = float(parameters["Cohesion constant"])
         self.cohesion_linear = float(parameters["Cohesion linear"])
         self.omegaLimit = (G*4/3 * math.pi*self.dens)**0.5
-        self.rgrav=None 
+        self.rgrav = None 
         self.tgrav = None
-        self.t_lan =None
+        self.t_lan = None
+        self.epsilon = 0
         
     
     """ Not currently in use. Using new parallel version from difusion_spherical.py"""

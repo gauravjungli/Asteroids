@@ -17,7 +17,7 @@ from scipy.interpolate import  CubicSpline
 """Main YORP function that updates the spin state."""
 
 def YORP(target, parameters, impacttime, oldtime, myomega):
-    print("Simulating YORP")
+ #   print("Simulating YORP")
     if  not target.YORP:
         return
     # which omega to use because it is being changed by the yorp

@@ -12,7 +12,7 @@ set(SOURCE_FILES
      src/Omega.cpp
      src/BC.cpp
      src/Characteristics.cpp
-     src/axisymmetric.cpp
+     src/axisymmetric_new.cpp
     src/gravity.cpp
      src/IC.cpp
     src/IO.cpp

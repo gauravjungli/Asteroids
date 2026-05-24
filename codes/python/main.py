@@ -71,10 +71,10 @@ if __name__=="__main__":
         Collision(target,istuff[i],myomega)
         
         if istuff[i].explicit:
-            print("Calling landslide")
+            #print("Calling landslide")
             Height(parameters,target,istuff[i])
             Landslides(target,parameters,istuff[i].impacttime,myomega)
-            if parameters["stoc_yorp"].lower()=='yes' and int(parameters["slides"])%10==0:
+            if parameters["stoc_yorp"].lower()=='yes' and int(parameters["slides"])%int(parameters['N_stoch'])==0:
                 target.coeff_f, target.coeff_g = shape_gen(target.K)
 
                

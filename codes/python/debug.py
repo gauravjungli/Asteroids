@@ -63,8 +63,8 @@ def debug_main():
 #for plotting the data
 def debug_plot():
     parameters ={}
-    parameters['run'] = 1
-    parameters['Output folder'] = 'Debug'
+    parameters['run'] = 0
+    parameters['Output folder'] = '1D/Thesis/New_2.1'
     Parameter(parameters,'output')
     return parameters
     
@@ -80,17 +80,15 @@ def debug_post_process(parameters):
 #for debugging cpp codes
 def debug_cpp():
     
-    pdb.set_trace()
+    #pdb.set_trace()
     parameters={"run":0}
     inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
     data_dict=read_xlsx_to_input_field_dict(inputfile)
     Parameters(data_dict,parameters)
     
 
-    parameters['Rotation period'] = 10
-    parameters['dump'] = 50
-    parameters['Friction angle'] = 45
-   # parameters['Output folder'] = f'Spherical_{parameters["Rotation period"]}_{parameters["Friction angle"]}'
+   
+   # parameters['Output folder'] = f'Spherical_{parameters["Rotation period"]}_{parameters["Static Friction angle"]}'
     Initialize_simulations(parameters)
     
     parameters['run'] = 1
@@ -99,9 +97,7 @@ def debug_cpp():
     Initialize(parameters, target)
     
     parameters['slides'] = 1
-    parameters['Seismic_shaking_time'] = 0.0
-    parameters['Landslide simulation period'] = 5
-    parameters['omega']=0.0
+   # parameters['omega'] =0
     
     parameters['verbose_dir']=Output_File(parameters,"output",['data',f"landslides_{parameters['slides']}"])
     
@@ -121,4 +117,4 @@ def debug_cpp():
 
 if __name__ == "__main__":
     parameters = {}
-#    parameters = debug_cpp()
+    parameters = debug_plot()

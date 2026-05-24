@@ -14,7 +14,6 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 from matplotlib.figure import Figure
 from pathlib import Path
-import glob
 import os
 import pdb
 from IO import Output_File, ExportOmega
@@ -28,7 +27,7 @@ from matplotlib.animation import FuncAnimation
 from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.cm import ScalarMappable
 from scipy.ndimage import gaussian_filter1d
-from Fit import Fit
+from Fit import Fit, Fit_radius
 
 def show_shape(parameters):
     #pdb.set_trace()
@@ -38,7 +37,7 @@ def show_shape(parameters):
     file2=os.path.join(file1,'dia.txt')
     epsilon=np.loadtxt(file2,dtype=float)[:,2]
 
-    for count in range(1000):
+    for count in range(1,10000,1):
         
         
         file=os.path.join(file1,f'field_{(count+1)}.csv')
@@ -124,7 +123,7 @@ def post_process(parameters):
     myomega=[[x[i,0],np.mean(x[i,1:N+1]),np.std(x[i,1:N+1])] for i in range(length) ]
     ExportOmega(parameters=parameters,myomega=myomega)
     
-    shape=np.ones((length+1,res+1,N))*float(parameters['Diameter'])/2
+    shape=np.ones((length+1,res+1,N))
         
     for i in range (0,N):
         
@@ -144,7 +143,6 @@ def post_process(parameters):
             try:
                 slides=np.loadtxt(file2,dtype=float,ndmin = 2)
                 epsilon = slides[:,2]
-                Gamma = slides[:,3]
                 dia =  slides[:,1]
             except FileNotFoundError:
                 print(f"File {file2} does not exist. Post processing can't be done")
@@ -162,11 +160,8 @@ def post_process(parameters):
                     print(f"File {file2} does not exist. Post processing can't be done")
                     return
                 
-                #base[j,:] = np.sqrt((1+Gamma[j]*w[:,1]+epsilon[j]*w[:,2])**2+(epsilon[j]*Gamma[j]*w[:,2]*w[:,3])**2)*dia[j]/2
-                base[j,:] = (w[:,1]+epsilon[j]*w[:,2])*dia[j]/2
+                base[j,:] = Fit_radius(w,epsilon[j])*dia[j]/2
 
-        
-            
             for j in range(1,length+1):
                 index=np.searchsorted(slides[:,0], x[j-1,0],side='right')
                 if index==0:

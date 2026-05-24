@@ -60,7 +60,7 @@ class GUI:
             for Input in inputs:
                 self.parameters[Input.Name]=Input.Value
         now=datetime.now()
-        self.parameters['Output folder']= 'Debug'#now.strftime("%Y-%m-%d_%H:%M")#change
+        self.parameters['Output folder']= now.strftime("%Y-%m-%d_%H:%M")
     
     def _quit(self):
         self.root.quit()
@@ -220,10 +220,10 @@ class GUI:
                 
         elif self.current_screen==5:
             #uncomment only when you want to do post process of already simulated data
-            #post_process(self.parameters)
-            #self.create_post_processing_screen()
+            post_process(self.parameters) #change
+            self.create_post_processing_screen() 
             
-            self.create_preview_screen() 
+            #self.create_preview_screen() 
         
         elif self.current_screen==6:
             self.create_simulation_screen()
@@ -624,7 +624,7 @@ class GUI:
         
         #Load and display image (replace 'your_image.png' with your actual image path)
         image = Image.open(os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input","images.png")) 
-        image.thumbnail((600, 300)) 
+        image.thumbnail((900, 450)) 
         photo = ImageTk.PhotoImage(image)
         
         self.welcome_screen.image = photo
@@ -636,8 +636,8 @@ class GUI:
         text_frame.pack(pady=(20, 10), padx=20)  # Adjust padding as needed
         
         # Software information
-        ttk.Label(text_frame, text=r"Stochastic simulation of asteroids:", font=("Times", 36, "bold")).pack()
-        ttk.Label(text_frame, text=r" Landslides,collisions and thermal effects", font=("Times", 28, "bold")).pack()
+        ttk.Label(text_frame, text=r"SPASE", font=("Times", 46, "bold")).pack()
+        ttk.Label(text_frame, text=r" Stochastic Program for Surface Evolution of Asteroids", font=("Times", 28, "bold")).pack()
         # ... (creator information remains the same, but place everything in text_frame instead of welcome_screen)
         
     
@@ -652,7 +652,7 @@ class GUI:
         creators = [
             ("Gaurav", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "gaurav.jpeg")),
             ("Deepayan", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Deepayan.jpeg")),
-          # ("Gauri", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Gauri.jpg")),
+            ("Ishan", os.path.join(os.path.dirname(os.path.dirname(os.getcwd())),"input", "Ishan.jpeg")),
         ]
         
         max_width = 100

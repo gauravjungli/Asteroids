@@ -103,10 +103,10 @@ def main():
     r_grav=-G*density*(grav[:,0]*np.sin(w[:,0])+grav[:,1]*np.cos(w[:,0]))/(4/3*np.pi*density*rad*G)
     t_grav=-G*density*(grav[:,0]*np.cos(w[:,0])-grav[:,1]*np.sin(w[:,0]))/(4/3*np.pi*density*rad*G)
     #fig = plt.figure(figsize=(14,6)) 
-    #plt.plot(w[:,0],r_grav)
-    #plt.plot(w[:,0],t_grav)
+    plt.plot(w[:,0],r_grav)
+    plt.plot(w[:,0],t_grav)
     grav=np.hstack((r_grav.reshape(-1,1),t_grav.reshape(-1,1)))
-    np.savetxt(file1+"/grav.txt",grav)
+  #  np.savetxt(file1+"/grav.txt",grav)
     
     # Close the pool
     pool.close()

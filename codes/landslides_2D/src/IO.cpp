@@ -24,20 +24,21 @@ myfile.close();
 }
 
 
-void Write (const vector<CV>& w, string file)
+void Write_data (const vector<CV>& w, string file)
 {
 ofstream myfile(file);
 if (!myfile) Error("Can't open output file field",file);
 for (int i=0;i<rows;i++)
 {
 for (int j=0;j<cols;j++){
-    int i1 = index(i,j);
-	myfile<<std::setprecision(18)<<w[i1].x<<","<<w[i1].y<<","<<w[i1].b<<","<<w[i1].h<<","<< w[i1].u<<","<<w[i1].v<<","<<w[i1].psi<<"\n";
+    int i0 = index(i,j);
+	myfile<<std::setprecision(18)<<w[i0].x<<","<<w[i0].y<<","<<w[i0].b<<","<<w[i0].h
+    <<","<<w[i0].Ra<<","<< w[i0].dR<<","<< w[i0].ddR<<","<< w[i0].u<<","<<w[i0].v<<","<<w[i0].psi<<"\n";
 }}
 myfile.close();
 }
 
-void Write (const vector<double>& x, const vector<double>& y, const vector<CV>& w, string file)
+void Write_base ( const vector<CV>& w, string file)
 {   
     fs::path base_path=file;
     fs::path file_name= string("base.txt");
@@ -53,14 +54,14 @@ void Write (const vector<double>& x, const vector<double>& y, const vector<CV>& 
     {
         for (int j=0;j<cols;j++)
         {
-            int i1 = index(i,j);
-            myfile<<std::setprecision(18)<<x[i1]<<","<<y[i1]<<","<<(w[i1].b+epsilon/Gamma*w[i1].h)<<","<<0<<"\n";
+            int i0 = index(i,j);
+            myfile<<std::setprecision(18)<<w[i0].x<<","<<w[i0].y<<","<<w[i0].b<<","<<w[i0].h<<","<<w[i0].Ra<<","<<w[i0].dR<<","<<w[i0].ddR<<"\n";
         }
     }
     myfile.close();
 }
 
-void Write ( std::map <std::string, string> par)
+void Write_par ( std::map <std::string, string> par)
 {
 ofstream myfile(par_add,std::ofstream::out);
 if (!myfile) 
@@ -107,15 +108,17 @@ bool Parameters()
 {
 	ifstream myfile;
     fs::path filePath1 = fs::path(par_add) ;
-   // fs::path filePath2 = fs::path("/home/g/Asteroids/output/Bennu/run1/parameters");
+    fs::path filePath2 = fs::path("/home/g/Asteroids/output/Debug/run1/parameters");
     if (fs::exists(filePath1)) {
          myfile.open(filePath1);
         std::cout << "File found in first directory.\n";
     }
-   //  else if (fs::exists(filePath2)) {
-   //     myfile.open(filePath2);
-   //     std::cout << "File found in second directory.\n";
-  //  } 
+    //Should be uncommented for debugging run only. 
+     else if (fs::exists(filePath2)) 
+    {
+        myfile.open(filePath2);
+        std::cout << "File found in second directory.\n"; 
+    }     
     else {
         std::cout << "File not found in either directory.\n";
         return 1;  // Exit if the file doesn't exist in either directory
@@ -168,11 +171,48 @@ void Read_grav( vector<Grav>& g, const string& file)
         // Check if the row is complete
         if (row.size() == 2) 
         {
-            g[i].X1=-1;//row[0]; change
-            g[i].X2=0;//row[1];
-            g[i].X3=0;// row[2];
+            g[i].X1= row[0]; 
+            g[i].X2= row[1];
+            g[i].X3=  0;  //row[2];
             row.clear();
             i++;
         }
     }
+}
+
+void Read_data ( vector<double>& x, vector<double>& y,vector<double>& b,vector<double>& h,vector<double>& Ra,vector<double>& dR,vector<double>& ddR,string file)
+{
+    fs::path base_path = Output_folder;
+
+	fs::path file_name= file;
+	fs::path full_path = base_path.parent_path()/ file_name;
+	string file1=	full_path.string();
+    ifstream myfile(file1);
+
+    std::string line;
+    int i=0;
+    while(getline(myfile,line))
+    {
+        istringstream iss(line);
+        string word1,word2,word3,word4,word5, word6,word7;
+        getline(iss, word1, ',');
+        getline(iss, word2, ',');     
+        getline(iss, word3, ','); 
+        getline(iss, word4, ',');     
+        getline(iss, word5, ',');
+        getline(iss, word6, ',');  
+        getline(iss, word7, ',');
+
+        x[i] = stod(word1);
+        y[i] = stod(word2);
+        b[i] = stod(word3); 
+        h[i] = stod(word4);   
+        Ra[i] = stod(word5);
+        dR[i] = stod(word6);  
+        ddR[i]= stod(word7);
+
+        i++;
+    }
+    myfile.close();
+
 }

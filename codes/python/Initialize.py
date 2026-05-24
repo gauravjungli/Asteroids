@@ -17,8 +17,8 @@ from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 import pdb
 from gravity import Gravitycalc_2D, Gravitycalc
-from axisymmetric import axisymmetric
 from Fit import Fit
+from scipy.ndimage import gaussian_filter1d
 #%%
 """
 This is the first function that is called. It initializes multiple simulations. It is called by GUI at the 
@@ -68,12 +68,12 @@ def Initialize_simulations(parameters,parameters_list=[]):
 def Initialize(parameters,target):
     
 
-    parameters['jinertia1'] = target.jinertia[0] / (target.d / 2)**5 / target.dens
-    parameters['jinertia']  = target.jinertia[2] / (target.d / 2)**5 / target.dens
+    
+    parameters['Maximum acceleration'] = 0
     parameters['slides']    = 0
     parameters['time']      = 0
-    parameters['omega']     = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5  
-    parameters['Current diameter'] = target.d 
+    parameters["k_d"] = target.k_d/(G * (4/3) * math.pi * target.dens)**0.5
+    parameters['omega']     = target.omega[2]/(G * 4 / 3 * math.pi * target.dens) ** 0.5   
     parameters['epsilon']   = float(parameters['epsilon'])   
     #parameters['Seismic_shaking_time'] = target.t_lan/(target.d/2/target.grav)**0.5
     parameters['Mass shed'] = 0
@@ -96,7 +96,7 @@ def Initialize(parameters,target):
         
 
 
-        executable_file=Output_File(parameters,"codes",['build',f'landslides_{dimension}',parameters["executable"]])
+        executable_file = Output_File(parameters,"codes",['build',f'landslides_{dimension}',parameters["executable"]])
         
         try:
             shutil.copy(executable_file, mydir)
@@ -107,8 +107,12 @@ def Initialize(parameters,target):
             print("Permission denied.")
         except Exception as e:  
             print("An error occurred:", e)
-
+     
+    parameters['jinertia1'] = target.jinertia[0] / (target.d / 2)**5 / target.dens
+    parameters['jinertia']  = target.jinertia[2] / (target.d / 2)**5 / target.dens
+    parameters['Current diameter'] = target.d
     Exparameter(parameters)
+    
 #%%
 
 
@@ -132,7 +136,7 @@ class Crater_Impactor:
 def grid_uniform(parameters,target):
     
     def dunes(x,y):
-        x_peak = np.deg2rad(50)
+        x_peak = np.deg2rad(45)
         y_peak = np.deg2rad(180)
         return np.exp(-((x - x_peak)**2 + (y - y_peak)**2) / 0.05)
     
@@ -146,6 +150,7 @@ def grid_uniform(parameters,target):
         with open(mydir+"/base.txt", "w") as file:
             for x in x_values:
                 for y in y_values:
+        
                     file.write(f"{x:.12f},{y:.12f},{base[i,2]:.12f},1\n")  # Format to 6 decimal places for precision
                     i=i+1
                     
@@ -159,35 +164,34 @@ def grid_uniform(parameters,target):
 
     # Define the grid ranges
  
-        x_values, y_values, base = grid(parameters,target) 
+        x_values, y_values, r, dr, ddr, base = grid(parameters,target) 
                 
         base = base/float(parameters['epsilon'])
 
     # Open file to write the grid data
         i=0
+        j=0
         with open(mydir+"/base.txt", "w") as file:
             for x in x_values:
                 for y in y_values:
                     
-                    height = 0;#dunes(x,y) 
-                    file.write(f"{x:.12f},{y:.12f},{base[i]:.12f},{height:.12f}\n") 
+                    height = dunes(x,y) #change
+
+                    file.write(f"{x:.12f},{y:.12f},{base[i]:.12f},{height:.12f},{r[j]:.12f},{dr[j]:.12f},{ddr[j]:.12f}\n") 
                     i+=1
-                    
+                j+=1
         print("Grid data with Bennu basal profile and a dune saved to base.txt")
         
         #crater()
  
 
-        print("Gravity data saved to grav.txt")
-
     if parameters['Dimension'] == '1D':
         #pdb.set_trace() 
         res = int(parameters["Resolution"])
-        dia = float(parameters['Current diameter'])
+        dia = target.d
 
-        epsilon = float(parameters['epsilon'])
+
         base = np.zeros((res,5))
-        base_tot=np.zeros((res,2))
         offset=float(parameters["offset"])
         dx=(math.pi-2*offset)/res 
         parameters['dx'] =dx
@@ -198,8 +202,8 @@ def grid_uniform(parameters,target):
         for i in range(res):
             
             base[i,0] = offset + dx * (i+ 0.5)   
-            #base [i,2] =1 
-        axisymmetric_asteroid(parameters,base)
+           # base [i,2] =1 
+        axisymmetric_asteroid(parameters,target,base)
         parameters["Initial mass"] =  2*np.pi/3*np.trapezoid(((base[2:res-2,1])**3*
                                                    np.sin(base[2:res-2,0])),base[2:res-2,0])*(dia/2)**3
         #base = Fit(parameters,base_old=base)
@@ -207,38 +211,72 @@ def grid_uniform(parameters,target):
         
         np.savetxt(mydir+"/base.txt",base,delimiter=",")
         
-        target.rgrav,target.tgrav =  Gravitycalc(parameters) 
+        target.rgrav,target.tgrav =  Gravitycalc(parameters,target) 
         
+def grid_2D(parameters):
+    
+    nx, ny = int(parameters['X Resolution']), int(parameters['Y Resolution'])
+    
+# Define the grid ranges
+    offset =float(parameters["offset"])
+    dx=(np.pi-2*offset)/(nx)
+    parameters['dx'] = dx
+    
+    dy=(2*np.pi)/(ny)
+    parameters['dy'] = dy
+    
+    x_values = np.linspace(offset+dx/2, np.pi-offset-dx/2, nx)
+    y_values = np.linspace(0+dy/2, 2 * np.pi-dy/2, ny)
+    
+    return x_values, y_values
+    
         
  
 def grid(parameters, target):
-    
+    #pdb.set_trace()
     if parameters['Dimension'] == '2D':
       #  pdb.set_trace()
         nx, ny = int(parameters['X Resolution']), int(parameters['Y Resolution'])
 
-        asteroid_file = Output_File(parameters,"input",["Spherical.npz"])
+        asteroid_file = Output_File(parameters,"input",[f"{parameters['Asteroid']}.npz"])
         radius, lats, lons, devs = load_asteroid_data(asteroid_file)
         
-
+        
+        
         grid1_lats = lats[:, 0]
         grid1_lons = lons[0, :]
         devs_axi =  np.mean(devs,axis=1)
 
         
-    # Define the grid ranges
-        offset =float(parameters["offset"])
-        dx=(np.pi-2*offset)/(nx)
-        dy=(2*np.pi)/(ny)
-        x_values = np.linspace(offset+dx/2, np.pi-offset-dx/2, nx)
-        y_values = np.linspace(0+dy/2, 2 * np.pi-dy/2, ny)
+        x_values, y_values = grid_2D(parameters)
+
         devs_new = regrid_height_profiles(radius,devs, grid1_lats, grid1_lons, x_values, y_values)
         devs_new_axi =  np.mean(devs_new,axis=1)
+        devs_new_1 = devs_new -devs_new_axi.reshape(-1,1)
+        r_vals = 1 + devs_new_axi/radius
+    
+        # Calculate first derivative: dr/dtheta
+        r_smooth = gaussian_filter1d(r_vals, sigma=2)
+        dr = np.gradient(r_smooth, x_values, edge_order=2)
         
-        parameters['Current Diameter'] = 2 * radius*1000
-        target.rgrav,target.tgrav = Gravitycalc_2D(parameters,grid1_lats,grid1_lons,devs_axi,radius,x_values,y_values,devs_new_axi)
-        devs_new_non = devs_new.ravel()/radius
-        return x_values, y_values, devs_new_non
+        dr_smooth = gaussian_filter1d(dr, sigma=2)
+        # Calculate second derivative: d^2r/dtheta^2
+        d2r = np.gradient(dr_smooth, x_values, edge_order=2)
+       # print(np.max(d2r),np.min(d2r))
+        #to accomodate for the fact that the normal to axisymmtric surface and sphere is not aligned
+        cos_theta = r_vals/np.sqrt(r_vals**2+dr**2)
+        sin_theta = dr/np.sqrt(r_vals**2+dr**2)
+        d_surface = np.gradient(devs_new, x_values, axis=0)/(devs_new + radius)
+        cos_theta_matrix =  np.tile(cos_theta.reshape(-1,1),(1,ny))
+        sin_theta_matrix =  np.tile(sin_theta.reshape(-1,1),(1,ny))
+        devs_new_2 = devs_new_1/(cos_theta_matrix + d_surface*sin_theta_matrix)
+        
+        
+        target.d = 2 * radius*1000
+        target.rgrav,target.tgrav = Gravitycalc_2D(parameters,grid1_lats,grid1_lons,devs_axi,radius,x_values,y_values,devs_new_axi,r_vals,dr)
+        devs_new_non = devs_new_2.ravel()/radius
+        
+        return x_values, y_values, r_vals, dr, d2r, devs_new_non
     
     
     
@@ -350,7 +388,7 @@ def plot_deviation_map(lats_rad, lons_rad, deviations, title="Asteroid Surface D
     plt.show()   
     
     
-def axisymmetric_asteroid(parameters,base):
+def axisymmetric_asteroid(parameters,target,base):
     
     asteroid_name = parameters['Asteroid']
     
@@ -375,7 +413,8 @@ def axisymmetric_asteroid(parameters,base):
         
         r_vals = devs_new_axi
     
-        parameters['Current diameter'] = 2 * radius*1000
+        
+        target.d = 2 * radius*1000
         # Calculate first derivative: dr/dtheta
         dr_dtheta = np.gradient(r_vals, x_values, edge_order=2)
         

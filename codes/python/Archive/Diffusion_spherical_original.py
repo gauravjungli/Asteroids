@@ -60,7 +60,7 @@ def find_roots(n, R, num_roots=5, step=1.0):
         lower = upper
     return np.array(roots)
 
-def  energy(n,m,theta,t,roots,R=500/2,f=1,Q=1500,E=1,k_s=0.3e+3):
+def  energy(n,m,theta,t,roots,R=100/2,f=0.38,Q=1500,E=1e+6,k_s=0.3e+3):
     k_d=np.pi*2*f/Q
     G = 3/2 
     r = R
@@ -78,10 +78,9 @@ def  energy(n,m,theta,t,roots,R=500/2,f=1,Q=1500,E=1,k_s=0.3e+3):
 if __name__=="__main__":
     n=300
     m=50
-    R=500/2
+    R=468/2
 
-    t=np.exp(np.linspace(2,8,1000))
-    
+    t=np.exp(np.linspace(0,6,1000))
 
     roots = np.zeros((n+1,m))
 
@@ -94,10 +93,11 @@ if __name__=="__main__":
        # print(f"First {m} roots for {n}th order Bessel equation: {roots[i,:]}")
 
     
-    theta = np.cos(np.linspace(np.pi/6, np.pi,20)) 
-    G = energy(n=n,m=m,R=R,theta=np.cos(np.pi/2),t=t,roots=roots)
-    #print(G)
-    plt.plot(t,(G),label='Spherical',linewidth = 2)
+    theta = np.cos(np.linspace(np.pi/12, np.pi,20)) 
+    G = energy(n=n,m=m,R=R,theta=np.cos(np.pi/12+np.pi/50),t=t,roots=roots)
+    G_grad = np.gradient(G,t)
+
+    plt.plot(t,G_grad,label='Spherical',linewidth = 2)
     plt.xscale('log')  # Set x-axis to logarithmic scale
     plt.yscale('log')  # Set x-axis to logarithmic scale
     plt.xlabel('Time (t)',fontsize=16)
@@ -105,7 +105,7 @@ if __name__=="__main__":
    # plt.title(r'$\epsilon_s(t)$ vs Time (log scale)',fontsize=16)
     plt.yticks(fontsize=14)
     plt.xticks(fontsize=14)
-    plt.legend(fontsize=16)
+    plt.legend(fontsize=14)
     plt.grid(True)
     plt.legend()
     plt.show()

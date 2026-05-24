@@ -121,7 +121,8 @@ def read_xlsx_to_input_field_dict(filename):
             # Strip leading/trailing spaces from options
             input_field.Options = [option.strip() for option in input_field.Options]
 
-            input_fields.append(input_field)
+            if input_field.Name:
+                input_fields.append(input_field)
 
         # Add the list of InputFields to the dictionary using the sheet name as the key
         data_dict[sheet_name] = input_fields
@@ -204,6 +205,19 @@ def ExportOmega(myomega,parameters):
         resultExport = file.write("\n".join(["\t".join(map(str, omega)) for omega in myomega]))
     if resultExport == -1:
         print("Failed in exporting the data")
+        
+def ExportImpactor(istuff,parameters):
+    filename='impactors.txt'
+    mydir=Output_File(parameters,"output",[filename])
+    
+    resultExport = ""
+    with open(mydir, "w") as f:
+        for impactors in istuff:
+        # Access specific attributes and write them
+            f.write(f"{impactors.impacttime}  {impactors.d}\n")
+            f.flush() 
+    if resultExport == -1:
+        print("Failed in exporting the impactor")
 
 
 def load_asteroid_data(filename):

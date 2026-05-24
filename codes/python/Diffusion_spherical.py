@@ -7,20 +7,22 @@ Created on Thu Aug 22 22:04:49 2024
 """
 
 import numpy as np
-from scipy.special import jv, jvp,legendre_p_all, hyp2f1  # Hypergeometric function  # Bessel function of first kind and its derivative and Legendre polynomial
-from scipy.optimize import root_scalar, brentq
+from scipy.special import jv, jvp,legendre_p_all  # Hypergeometric function  # Bessel function of first kind and its derivative and Legendre polynomial
+from scipy.optimize import root_scalar
 from numba import jit
 import time
 import math
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
-from scipy.interpolate import make_interp_spline, CubicSpline
+from scipy.interpolate import make_interp_spline
+import traceback
 
-def find_threshold_time(E0,t0,theta,target):
+def find_threshold_time(E0,t0,theta,target,rgrav):
     """Find the time at which energy falls below 10% of its initial value."""
-    #change currently it is approximated for a spherical body
-    Gamma = 1
-    f = 1
-    threshold = target.dens*(Gamma*(target.grav-(target.omega[2]*np.sin(theta))**2*target.d/2)/2/np.pi/f)**2/2
+ 
+    Gamma = 0.25
+    f = target.f
+
+    threshold = target.dens*(Gamma*(rgrav-(target.omega[2]*np.sin(theta))**2*target.d/2)/2/np.pi/f)**2/2
     
     # Define search range
     left, right = t0, 10000*t0  # Adjust upper bound as needed
@@ -87,6 +89,7 @@ def max_time_optimized(t, theta, legendre, roots, k_d, k_s, d):
             exp_term = np.exp(-root_ij_squared * k_s_t)
             value += B * legendre_i * exp_term * (k_d + root_ij_squared * k_s)
     
+   # print(value,t,theta,k_s,k_d)
     return value
 
 # This function computes all necessary values and passes them to the optimized function
@@ -106,20 +109,40 @@ def max_time(t, theta, target):
 
 
 def compute_energy(target):
+    
     N =target.N 
     theta = np.cos(target.theta) 
     t = np.zeros(N)
     E = np.zeros(N)
-    t_lan =  np.zeros(N)
+
     for i in range(N):
-        lower = t[i-1] if i>0 else 1e-1
-        upper =  (i+1)*4*(target.d/500)
-        t[i]= root_scalar(max_time,bracket=[lower,upper],args=(theta[i],target),method='brentq').root
-        E[i] = energy(theta=theta[i],t=t[i], target=target)
-       # print ("Time               Energy             cos(theta)")
-       # print (t[i],E[i],theta[i],t_lan[i])
-    avg_lan = np.average(t_lan)   
+        upper =  (i+1)*100*(target.d/500)
+        if i==0:
+            lower = upper
+            max_iters = 100
+            count = 0
+            while max_time(lower, theta[i], target) > 0 and count < max_iters:
+                upper = lower
+                lower = lower/2
+                count+=1
+        else:
+            
+            lower = t[i-1]/2 
+        
+        try:
+            t[i]= root_scalar(max_time,bracket=[lower,upper],args=(theta[i],target),method='brentq').root
+            E[i] = energy(theta=theta[i],t=t[i], target=target)
+        except ValueError as e:
+            t[i]=1
+            print(t[i],E[i])
+            print("No root found",i,target.f,target.wave_speed_P,target.d,lower)
+            print(e)
+            print("--- Full Traceback ---")
+            traceback.print_exc()
+            print("----------------------")
+
     return E,t
+
     
 
 def compute_time(target,impactor):
@@ -129,14 +152,14 @@ def compute_time(target,impactor):
     t_lan =  np.zeros(N)
     E = 1/2*impactor.M*(impactor.vel**2)*target.efficiency
     for i in range(N):
-        t_lan[i] =  find_threshold_time( E0=E, t0=t[i],theta=theta[i],target=target)
+        t_lan[i] =  find_threshold_time( E0=E, t0=t[i],theta=theta[i],target=target,rgrav=target.grav) #needs improvement for non-spherical case
 
     avg_lan = np.average(t_lan)  
     print (f"Seismic shaking time is {avg_lan}")
     return avg_lan
 
 
-def compute_height(parameters,target=None,impactor=None,grid=None,dimension='1D'):
+def compute_height(parameters,target=None,impactor=None,grid=None,dimension='1D',crater_depth=None):
     
     
     # Define constants and variables (replace these with actual values)
@@ -147,43 +170,78 @@ def compute_height(parameters,target=None,impactor=None,grid=None,dimension='1D'
     rho = target.dens   
     Nx = int(parameters['X Resolution']) 
     Ny = int(parameters['Y Resolution']) 
-    #rgrav=make_interp_spline(x, y)             
+
     E = 1/2*impactor.M*(impactor.vel**2)*target.efficiency*target.energy
-    v_p = target.wave_speed   
+    v_p = target.wave_speed_P  
+    v_s = target.wave_speed_S 
+    mu_t = v_s**2*rho
+    lambda_t = (v_p**2-2*v_s**2)*rho
+    
     
     if  dimension != '1D':
-        nx, ny = int(parameters['X Resolution']), int(parameters['Y Resolution'])
-
-        offset =float(parameters["offset"])
-        dx=(np.pi-2*offset)/(nx)
-        dy=(2*np.pi)/(ny)
-        grid2 = np.linspace(offset+dx/2, np.pi-offset-dx/2, nx)
+        
+        grid2 =np.zeros((Nx,4))
+        grid2[:,0] = grid[::Ny,0]
+        grid2[:,1] = grid[::Ny,4]
+        grid2[:,2] =grid[::Ny,3]
+        grid2[:,3] = grid[::Ny,5]
+       
     else:
         grid2=grid
         
-    r_grav = make_interp_spline(grid2[2:-2], target.rgrav[2:-2])
-    t_grav = make_interp_spline(grid2[2:-2], target.tgrav[2:-2]) 
+    r_grav = make_interp_spline(grid2[2:-2,0], target.rgrav[2:-2])
+    t_grav = make_interp_spline(grid2[2:-2,0], target.tgrav[2:-2]) 
+    f_base = make_interp_spline(grid2[2:-2,0], grid2[2:-2,1])
+    f_dbase = make_interp_spline(grid2[2:-2,0], grid2[2:-2,3])
+
+
+    base = f_base(theta)*R
+    dbase = f_dbase(theta)*R
+    metric = np.sqrt(base**2 + dbase**2)
+    J =  metric*base*np.sin(theta)
+    kappa_phi_g = 1/J*(dbase*np.sin(theta)+base*np.cos(theta))
+    kappa_phi_n = -1/J*(dbase*np.cos(theta)-base*np.sin(theta))
     rgrav = r_grav(theta)
     tgrav = t_grav(theta)
-    peak_p = v_p*np.sqrt(2*rho*E)
+    normal_p = rho*np.abs(rgrav + (target.omega[2]*base*np.sin(theta))**2*kappa_phi_n)
+    tangential_p = rho*np.abs(tgrav + (target.omega[2]*base*np.sin(theta))**2*kappa_phi_g)
     
-    normal_p = rho*np.abs(rgrav + target.omega[2]**2*R*np.sin(theta)**2)
-    tangential_p = rho*np.abs(tgrav+target.omega[2]**2*R*np.sin(theta)*np.cos(theta))
-    height = (peak_p*np.tan(target.delta*pi/180)-target.cohesion_cons)/(np.tan(target.delta*pi/180)*normal_p
-                   -tangential_p +target.cohesion_linear)
+    if target.failure_mode == "P-wave":
+        gamma_max = np.sqrt(2*E/(lambda_t+2*mu_t))*(lambda_t*np.tan(target.delta*pi/180)+mu_t*np.tan(np.pi/4+target.delta*pi/360))
+    else:
+        gamma_max = v_s*np.sqrt(2*rho*E)/np.cos(target.delta*pi/180)
+        
+    alpha = (np.tan(target.delta*pi/180)*normal_p -tangential_p +target.cohesion_linear)
+
+    height = (gamma_max-target.cohesion_cons)/alpha
+    Gamma = np.abs(2*np.pi*target.f/rgrav*np.sqrt(2*E/target.dens))
     
+    if height[-1]<0:
+        
+        print("No global sesmic shaking")
+        
+        return 0, 0
+        
+    
+    avg_Gamma = np.trapezoid(Gamma*J*height,theta)/np.trapezoid(J*height,theta)
     if dimension != '1D':
+        theta = np.append(0,theta)
+        max_height = np.max(height)
+        height =np.append(max_height,height)
+        height = np.clip(height, a_min=0, a_max=crater_depth)
         
         theta_new, phi_new = transform_spherical_coords(grid[:,0], grid[:,1], impactor.Theta, impactor.Phi)
         h_interp=make_interp_spline(theta,height)
         height_new = h_interp(theta_new)
-        return height_new*(1-grid[:,3])/R  #Contains the flag to check whether the grid lies inside the crater
+        height_new = np.clip(height_new, a_min=0, a_max=max_height)
+
+        return height_new/R, avg_Gamma  #Contains the flag to check whether the grid lies inside the crater
     else:
-      
-        avg_height = np.trapezoid(height*np.sin(theta),theta)/2
-        H = avg_height/(R)
+      #  f_h = make_interp_spline(target.theta, height)
+        avg_height = np.trapezoid(height*J,theta)/(np.trapezoid(J,theta))
+        H = avg_height/R
         
-        return H
+        return H, avg_Gamma
 
 
 
@@ -272,7 +330,7 @@ def parallel_root_computation(n, m, d):
             i, result = future.result()
             roots[i, :] = result
     end =time.time()
-    print(f"Time taken in finding roots:{end-start}")
+   # print(f"Time taken in finding roots:{end-start}")
     return roots
 
 #%%

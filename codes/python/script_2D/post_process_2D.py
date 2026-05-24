@@ -16,14 +16,19 @@ import matplotlib.animation as animation
 import pyvista as pv
 from IO import extract_number
 import pdb
+from pathlib import Path
 
 # Load CSV file
 def load_data(file_path):
-    data = pd.read_csv(file_path, header=None)
-    theta, phi = data[0], data[1]  # Convert to radians
-    base_height, flow_height = data[2], data[3]
-    vel_x, vel_y = data[4], data[5]
-    return theta, phi, base_height, flow_height, vel_x, vel_y
+    # usecols defines which columns to read
+    # unpack=True allows you to assign them to variables directly
+    theta, phi, base_height, flow_height,R,dR, ddR, vel_x, vel_y,psi = np.loadtxt(
+        file_path, 
+        delimiter=',', 
+        unpack=True
+    )
+    
+    return theta, phi, base_height, flow_height,R,dR,ddR, vel_x, vel_y,psi
 
 def get_color_limits_vel(folder_path):
     file_paths = sorted(glob.glob(f"{folder_path}/field_*.csv"))
@@ -40,8 +45,8 @@ def get_color_limits_height(folder_path,epsilon):
     min_val, max_val = float('inf'), float('-inf')
     i=0
     for file_path in file_paths:
-        _, _, base, flow_height, vel_x, _ = load_data(file_path)
-        flow_height =(flow_height +base)*epsilon[i]*250
+        _, _, base, flow_height,*others = load_data(file_path)
+        flow_height =(flow_height)*epsilon*250
         i=i+1
         min_val = min(min_val, flow_height.min())
         max_val = max(max_val, flow_height.max())
@@ -50,25 +55,36 @@ def get_color_limits_height(folder_path,epsilon):
 # Plot height as contour
 def plot_height(theta, phi, flow_height, time_step,vmin,vmax):
     plt.rcParams.update({'font.size' : 14})
-    custom_levels = np.arange(-1.0, 1.0, 0.15)
-    sc = plt.tricontourf(phi*180/np.pi, theta*180/np.pi, flow_height, levels = custom_levels, cmap='viridis')#,vmin=-4,vmax=4)
-    plt.colorbar(sc, label='Height')
-    plt.xlabel('Phi (degree)')
-    plt.ylabel('Theta (degree)')
+    my_levels = np.linspace(vmin,vmax, 11)
+    sc = plt.tricontourf(phi, theta, flow_height, cmap='viridis',levels=10)#my_levels,vmin=vmin,vmax=vmax)
+   # plt.colorbar(sc, label='Height')
+    plt.xlabel(r' $\phi$')
+    plt.ylabel(r'$\theta$')
+    plt.colorbar(sc, location='right',label ='Height',extend='both')
+    #plt.title(f"{time_step+1} impacts")
     #plt.title(f'Flow Height Contour (Time Step {time_step})')
-    plt.draw()
-    plt.pause(0.5)
+    #plt.draw()
+    #plt.pause(0.5)
     #plt.axis('equal')
     plt.minorticks_on()
     plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
-    plt.tick_params(labelsize=14)
+
     plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
-    plt.title(f"{time_step+1} impacts")
+    yticks = [ np.pi/6, np.pi/3, np.pi/2, 2*np.pi/3, 5*np.pi/6]
+    ylabels = [r'${\pi}/{6}$', r'${\pi}/{3}$', r'${\pi}/{2}$', r'${2\pi}/{3}$', r'${5\pi}/{6}$' ]
+    xticks = [0,  np.pi/3,  2*np.pi/3,   np.pi,  8*np.pi/6,  10*np.pi/6,   2*np.pi]
+    xlabels = [ '0', r'$\dfrac{\pi}{3}$', r'$\dfrac{2\pi}{3}$', r'$\pi$'
+               , r'$\dfrac{4\pi}{3}$', r'$\dfrac{5\pi}{3}$',  r'$2\pi$']
+    plt.xticks(xticks,xlabels)
+    plt.yticks(yticks,ylabels)
+    plt.grid()
     #plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
     #plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
     #plt.legend(loc='best')
     #plt.legend(fontsize=14) 
-    plt.savefig(f'/home/g/Asteroids/output/Spherical_2D_3.5/img/{time_step}.png',dpi = 300)
+    
+    plt.savefig(f'/home/g/Asteroids/output/Spherical_1/img/{time_step}.svg',dpi = 300,bbox_inches='tight')
+    
 
 # Plot velocity as quiver
 def plot_velocity(theta, phi, vel_x, vel_y, time_step):
@@ -113,23 +129,37 @@ def main(folder_path, output_file="animation.mp4"):
 
 
 # Main function to execute visualization
-def plot_height_main(folder_path,epsilon,Gamma):  
-    
-    vmin, vmax = get_color_limits_height(folder_path)  # Get global color limits
-    file_paths = sorted(glob.glob(f"{folder_path}/field_*.csv"),key=extract_number)
-   # print(file_paths)
-    plt.figure(figsize=(8, 6))
-    plt.ion()  # Turn on interactive mode
-    for i, file_path in enumerate(file_paths):
-        print(f"Processing: {file_path}")
-        theta, phi, base_height, flow_height, vel_x, vel_y = load_data(file_path)
+def plot_height_main(parameters,file,epsilon):  
+    path = Path(file)
+    #pdb.set_trace()
+    plt.figure(figsize=(10, 6))
+    folder_paths = [x for x in path.iterdir() if x.is_dir()]
+    folder_paths = sorted(folder_paths, key=lambda p: p.stat().st_mtime)
+    vmin, vmax = (0,0.5)#get_color_limits_height(folder_path,epsilon)  # Get global color limits
+    j=0
+    for folder_path in folder_paths:
+        file_paths = sorted(glob.glob(f"{folder_path}/field_0.csv"),key=extract_number)
+       # print(file_paths)
         
-        plt.clf()
-
-        plot_height(theta, phi, (flow_height*epsilon)*250, i,vmin,vmax)
-        #plot_velocity(theta, phi, vel_x, vel_y, i)
-        time.sleep(1)  # Add delay to observe each step
-        print(vmin,vmax)
+        plt.ion()  # Turn on interactive mode
+        for i, file_path in enumerate(file_paths):
+            if i%1==0 :
+                print(f"Processing: {file_path}")
+                theta, phi, base, height, R,dR, ddR,u,v,psi = load_data(file_path)
+                
+                mass = np.sum(np.sin(theta[400:39600])*height[400:39600]*float(parameters['dx'])**float(parameters['dy']))
+                
+                plt.clf()
+                Min =0
+                Max =40000-Min
+                result = (np.array(base+height))# - np.array(height[::-1]))/max((np.max(np.array(height[Min:Max]))),1e-8)*100
+                print(mass)
+                j=j+1
+                plot_height(theta, phi,result, j,vmin,vmax)
+                
+                #plot_velocity(theta, phi, vel_x, vel_y, i)
+               # time.sleep(1)  # Add delay to observe each step
+                #print(vmin,vmax)
 
 
 # Main function to execute visualization
@@ -176,11 +206,10 @@ def plot_vel_main(folder_path):
         
         
 # Example usage
-# file1 = "/home/g/Asteroids/output/Crater/run1/data/dia.txt"
-# epsilon=np.loadtxt(file1,dtype=float)[:,2]
-# Gamma = np.loadtxt(file1,dtype=float)[:,3]
-# for i in range(1,2):
-#   #  plot_height_main(f"/home/g/Asteroids/output/Crater/run1/data/landslides_{i}",epsilon[i],Gamma[i])  # Uncomment and replace with your folder path
+#file1 = "/home/g/Asteroids/output/Debug/run1/data/landslides_1"
+
+ #for i in range(1,2):
+ #    plot_height_main(f"/home/g/Asteroids/output/Crater/run1/data/landslides_{i}",epsilon[i],Gamma[i])  # Uncomment and replace with your folder path
 #     plt.close()
 
 # plot_surface_main("/home/g/Asteroids/output/crater_3/run1/data")  # Uncomment and replace with your folder path

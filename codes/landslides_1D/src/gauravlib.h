@@ -29,7 +29,7 @@ extern const double xmin;
 extern const double weight;
 extern const double finalt;
 extern const double Delta;
-extern const double theta;
+extern double theta;
 extern const double slides;
 extern const double epsilon;
 extern const double omega;
@@ -38,15 +38,21 @@ extern const double past_time;
 extern const double dia;
 extern const double min_h;
 extern const double min_u;
-extern double delta;
 extern const string par_add;
 extern const string fric_type;
 extern const string Output_folder;
 extern const string verbose_dir;
 extern const string verbose;
-extern const double seismic_time;
+extern const string solver;
+extern const string reconst;
+
 extern double mass_shed;
 extern double k_d;
+extern bool limiter;
+extern bool restart;
+extern const double Mu;
+extern  double mu;
+extern const double Gamma_max;
 //------------------------------------------------------------------------------
 
 //Class for storing a 2D gravity field
@@ -76,13 +82,19 @@ class AMB{
 class CV
 {
     public:
-        double w, p, q, r,h,u,u_c,v,V,b,db,ddb,x,psi,metric,theta,phi_norm,phi_tan,phi,J;
+        double w, p, q, r ;
+        double P,Q,R;
+        double h,u,v,V;
+        double b,db,ddb,x;
+        double psi;
+        double theta_b, phi_b, phi_norm_b, phi_tan_b, J_b, R_phi_b;
+        double metric, theta, phi_norm, phi_tan, phi,J, R_phi;
         Grav g;
-        CV(double h, double u,double u_c, double v, double b, double db, double ddb, Grav g, double x);
+        CV(double h, double u, double v, double b, double db, double ddb, Grav g, double x);
       //  CV(const CV& temp);
       //  CV& operator=(const CV& temp);
         void Modify(double p, double q, double r);
-     
+        void Modify_U(double P, double Q, double R);
 };
 
  template <typename T>
@@ -130,7 +142,7 @@ std::string to_string(double value, int precision);
 ///// bc.cpp
 //Boundary conditions
 void BC(vector<CV>& w1 ,vector<CV>& w2);
-
+ void BC(vector<CV>& w );
 //---------------------------------------------------------------------------------
 
 //////// gavity.cpp
@@ -198,6 +210,8 @@ double Ax(CV wl, CV wr, string s);
 //values at edges
 void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr);
 void Reconstruct(CV& wl, CV& wr, CV w1, CV w2, CV w3 );
+void Reconstruct(CV& w, CV w1, CV w2, CV w3, int sign );
+void Reconstruct_U(CV& w, CV w1, CV w2, CV w3, int sign );
 void Balancing (CV& w, CV& wl, CV& wr);
 //--------------------------------------------------------------------------------------------------------
 
@@ -209,7 +223,7 @@ void Predictor(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt);
 void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_init, double dt);
 void Time_step(vector <CV>& wl, vector <CV>& wr, double & dt, double & t, int & timesteps);
 void CFL(vector<CV>& wl,vector<CV>& wr, double & dt);
-
+void RK3(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt);
 //------------------------------------------------------------------------------------------------------------
 
 ///////// Omega.cpp
@@ -228,7 +242,7 @@ double J_Psi(CV w);
 
 
 ////////
-//double sin(double x);
+
 
 
 #endif

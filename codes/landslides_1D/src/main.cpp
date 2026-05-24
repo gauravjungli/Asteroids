@@ -3,7 +3,7 @@
 #include <chrono>
 
 std::map <std::string, string> par;
-//for the debugging mode only
+
 
 const string par_add = "parameters";
 bool set_parameter = Parameters();
@@ -14,26 +14,31 @@ const int dump = int(stod(par["dump"]));
 const double offset = stod(par["offset"]);
 const double xmax =   PI;
 const double xmin =   0;
-const double weight = stod(par["Correction weight"]); 
-const double finalt = stod(par["Landslide simulation period"]);
-const double Delta = stod(par["Friction angle"]); 
-const double theta = stod(par["Minmod Limiter"]); 
+const double weight = 0.5; 
+const string solver = par["Solver"];
+const string reconst = par["Reconstruction"];
+const double finalt = stod(par["Maximum simulation period"]);
+const double Delta = stod(par["Dynamic Friction angle"]); 
+double theta = stod(par["Minmod Limiter"]); 
 const double slides = stod(par["slides"]);
 const double epsilon = stod(par["epsilon"]); 
-const double omega = stod(par["omega"]);
+const double omega = stod(par["omega"]); 
 const double dx = stod(par["dx"]);
 const double past_time = stod(par["time"]);
 const double dia = stod(par["Current diameter"]);
-const double min_h = 1E-15;
+const double min_h = 1E-12;
 const double min_u = 1E-15;
-const double seismic_time =  stod(par["Seismic_shaking_time"]); 
-double delta = Delta;
+const double Mu = tan(Delta* PI / 180);
+double mu = tan(Delta* PI / 180);
+const double Gamma_max = stod(par["Maximum acceleration"]);
 const string fric_type = par["Friction type"];
 const string Output_folder = par["Data folder"];
 const string verbose_dir = par["verbose_dir"];
 const string verbose = par["verbose"];
 double mass_shed = stod(par["Mass shed"]);
 double k_d = stod(par["k_d"]);
+bool limiter = true; 
+bool restart = false;
 int main()
 {
 
@@ -50,7 +55,7 @@ int main()
         std::cout.rdbuf(outfile.rdbuf()); // Redirect cout	
         std::cerr.rdbuf(outfile.rdbuf()); // Redirect cerr
 	}
-	vector<Grav> g(res+1);
+	vector<Grav> g(res);
 	fs::path base_path = file;
 	Init_grav(g,base_path.parent_path());
 	
@@ -74,7 +79,7 @@ int main()
 	dia_file<< past_time <<"\t"<<std::setprecision(18)<<"\t"<< dia << "\t" << epsilon <<"\t"<<mass_shed<< endl;
 
 	myfile<<"Impact number -->  "<<slides<<endl;
-	myfile<<"Impact time -->  "<<past_time<<endl<<"Seismic shaking duration --> "<< seismic_time<<endl;
+	myfile<<"Impact time -->  "<<past_time<<endl;
 	myfile<<" Initial Inertia as per python module --> "<<par["jinertia"]<<endl ;
 
 
@@ -86,8 +91,23 @@ int main()
 	double Ang_Mom=stod(par["jinertia"])*omega;
 
 	myfile<<"Initial omega --> "<<omega<<endl<<" Initial Inertia --> "<<par["jinertia"]<<endl ;
-
+	
 	March(w,wl,wr,Ang_Shed);
+
+	if (restart)
+	{	
+		cout <<"Restarting simulation with the first order scheme"<<endl;
+		Ang_Shed=0;
+		restart= false;
+		theta = 0;
+		mass_shed = stod(par["Mass shed"]);
+		w.clear(); 
+		wl.clear();
+		wr.clear();
+		Initial_Condition(w,wl,wr,g);
+		March(w,wl,wr,Ang_Shed);
+	}
+
 	
 	par["jinertia"]=to_string(Inertia(w,1),15);
 	par["jinertia1"]=to_string(Inertia(w,2),15);
@@ -103,7 +123,7 @@ int main()
 
 	auto end = sc.now();
 	auto time_span = static_cast<chrono::duration<double>>(end - start);   // measure time span between start & end
-   	cout<<"Operation took: "<<time_span.count()<<" seconds !!! "<<endl;
+   	cout<<"Operation took: "<<time_span.count()<<" seconds !!! "<<"  "<<endl;
 	myfile<<"----------------------------------------------------------------------------"<<endl;
 	myfile<<"----------------------------------------------------------------------------"<<endl;
 	myfile.close();

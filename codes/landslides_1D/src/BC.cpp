@@ -7,13 +7,29 @@
 	//wall boundary conditions at pole
 
 
-	w1[0]=CV(w2[3].h,w2[3].u,-w2[3].u_c, w2[3].v, w2[3].b,w2[3].db,w2[3].ddb, w2[3].g, w2[0].x);
+	w1[0]= CV(w2[3].h, -w2[3].u,  w2[3].v, w2[3].b, w2[3].db, w2[3].ddb, w2[3].g, w2[3].x);
 
-	w1[1]=CV(w2[2].h,w2[2].u,-w2[2].u_c, w2[2].v,w2[2].b,w2[2].db,w2[2].ddb, w2[2].g, w2[1].x);
+	w1[1]= CV(w2[2].h, -w2[2].u,  w2[2].v, w2[2].b, w2[2].db, w2[2].ddb, w2[2].g, w2[2].x);
 
-	w1[res-2]=CV(w2[res-3].h,w2[res-3].u, -w2[res-3].u_c, w2[res-3].v,w2[res-3].b,w2[res-3].db,w2[res-3].ddb,w2[res-3].g,w2[res-3].x);
+	w1[res-2]= CV(w2[res-3].h, -w2[res-3].u, w2[res-3].v, w2[res-3].b, w2[res-3].db, w2[res-3].ddb, w2[res-3].g, w2[res-3].x);
 
-	w1[res-1]=CV(w2[res-4].h,w2[res-4].u, -w2[res-4].u_c,w2[res-4].v,w2[res-4].b,w2[res-4].db,w2[res-4].ddb,w2[res-4].g,w2[res-4].x);
+	w1[res-1]= CV(w2[res-4].h, -w2[res-4].u, w2[res-4].v, w2[res-4].b, w2[res-4].db, w2[res-4].ddb, w2[res-4].g, w2[res-4].x);
+	
+}
+
+//Currently working best
+ void BC(vector<CV>& w )
+{
+	//wall boundary conditions at pole
+
+
+	w[0]= CV(w[3].h, -w[3].u, w[3].v, w[3].b, w[3].db, w[3].ddb, w[3].g, w[0].x);
+
+	w[1]= CV(w[2].h, -w[2].u, w[2].v, w[2].b, w[2].db, w[2].ddb, w[2].g, w[1].x);
+
+	w[res-2]= CV(w[res-3].h, -w[res-3].u, w[res-3].v, w[res-3].b, w[res-3].db, w[res-3].ddb, w[res-3].g, w[res-2].x);
+
+	w[res-1]= CV(w[res-4].h, -w[res-4].u, w[res-4].v, w[res-4].b, w[res-4].db, w[res-4].ddb, w[res-4].g, w[res-1].x);
 	
 }
 

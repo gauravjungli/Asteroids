@@ -38,5 +38,3 @@ if __name__ == "__main__":
     gui.root.mainloop()
     print("End of GUI")
     
-
-    

@@ -25,14 +25,17 @@ void Initial_Condition (vector<CV> & w, vector<CV> & wl, vector<CV> & wr,vector<
             double dbase = 0;
             double ddbase = 0;
             double base =1;
-            CV temp(h[j],u[j],u[j],v[j],base,dbase ,ddbase, g[j],x[j]);
+
+           // h[j] = 1; // + exp(-pow((x[j]-x[500]),2)/(2*0.5*0.5)); 
+
+            CV temp(h[j],u[j],v[j],base,dbase ,ddbase, g[j],x[j]);
 
             if (j>0 and j<res-1)
             {
              dbase = db[j];
              ddbase = ddb[j];
              base = b[j];
-             temp = CV(h[j],u[j],u[j],v[j],base,dbase,ddbase,g[j],x[j]);
+             temp = CV(h[j],u[j],v[j],base,dbase,ddbase,g[j],x[j]);
             }
             
             w.push_back(temp);
@@ -42,7 +45,7 @@ void Initial_Condition (vector<CV> & w, vector<CV> & wl, vector<CV> & wr,vector<
             base = (b[j-1]+b[j])/2;
             dbase = (db[j-1]+db[j])/2;
             ddbase = (ddb[j-1]+ddb[j])/2;          
-            temp = CV(h[j],u[j],u[j],v[j],base,dbase,ddbase,(g[j-1]+g[j])/2,(x[j-1]+x[j])/2);
+            temp = CV(h[j],u[j],v[j],base,dbase,ddbase,(g[j-1]+g[j])/2,(x[j-1]+x[j])/2);
             }
 
             wl.push_back(temp);
@@ -53,7 +56,7 @@ void Initial_Condition (vector<CV> & w, vector<CV> & wl, vector<CV> & wr,vector<
             base = (b[j+1]+b[j])/2;
             dbase = (db[j+1]+db[j])/2;
             ddbase = (ddb[j+1]+ddb[j])/2;
-            temp = CV(h[j],u[j],u[j],v[j],base, dbase, ddbase, (g[j+1]+g[j])/2,(x[j+1]+x[j])/2);
+            temp = CV(h[j],u[j],v[j],base, dbase, ddbase, (g[j+1]+g[j])/2,(x[j+1]+x[j])/2);
             }  
             
             wr.push_back(temp); 

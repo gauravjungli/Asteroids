@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Define constants (replace these with your actual values)
-f = 10  # Frequency
+f = 1  # Frequency
 Q = 1000  # Quality factor
 Ks = 0.3e+3  # Constant Ks
 R = 250
@@ -51,5 +51,5 @@ def epsilon_s():
 
 # Evaluate epsilon_s for a given time
 epsilon_value = epsilon_s()
-plt.plot(t, epsilon_value,'-.',label=r'Cubical at $L\sqrt{3}$',linewidth = 2 )
+plt.plot(t, epsilon_value, '-.', label=r'Cubical at $2R$', linewidth = 2 )
 plt.legend()

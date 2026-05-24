@@ -1,30 +1,34 @@
 #include "gauravlib.h"
 
-CV::CV(double h, double u,double u_c, double v, double b, double db, double ddb, Grav g, double x )
+CV::CV(double h, double u, double v, double b, double db, double ddb, Grav g, double x )
 {	
  	if (h<=min_h) 
 	{  if (h<0) std::cout<<"Much smaller values encountered "<<h<<"  "<<x<< endl;
 	h=min_h; u=min_u; v=min_u;
 	} 
 
-    this->h=h; this->u=u; this->v=v; this->b=b; this->u_c = u_c; V = v+omega/phi;
+    this->h=h; this->u=u; this->v=v; this->b=b;
 	this->db=db; this->ddb=ddb;
 	
     metric = sqrt(b*b +db*db);
     theta = (b*b + 2*db*db - b*ddb)/pow(metric,3);
 
-	phi = 1/(b*sin(x));
+	phi =  1/(b*sin(x));
     phi_norm = (b*sin(x)-db*cos(x))/(b*metric*sin(x));
 		if (epsilon*theta*h<-1)
 		cout<<"Very large value of theta "<< theta<< " at " << x<< endl;
     phi_tan = (b*cos(x)+ db*sin(x))/(b*metric*sin(x));
-	J =metric/phi;
+	J =  metric/phi; 
+	V = v + omega/phi;
 	this->g= g;
 	this->x=x;
 	psi=Psi(*this);
     this->p= J*h; 
 	this->q= J*u*h; 
 	this->r= J*V*h/phi; 
+	this->P= h; 
+	this->Q= u*h; 
+	this->R= V*h; 
 }
 
 
@@ -37,18 +41,32 @@ void CV::Modify(double p, double q, double r)
     std::cout<<"Much smaller values encountered in Modify "<<h<<"  "<<x<<"   "<<p<<"    "<<q<<"    "<<r<<"   "<< endl;
 	h = min_h; u = sign(q)*min_u; v = sign(r*phi/p-omega/phi)*min_u; V = v+omega/phi;
 
-	//J= J_basal*(1+ epsilon*h*theta/2);
 	p=J*h;
 	q=J*u*h; 
 	r=J*V*h/phi; 
     } 
+
+
 	this->p=p; this->q=q; this->r=r; 
-	//J = J_basal*(1+ epsilon*h*theta/2);
+	
 	u = q/p;
-	u_c =u;
-	v = r*phi/p-omega/phi;
-	V = v+omega/phi;
+	V = r*phi/p;
+	v = V - omega/phi;
 	psi=Psi(*this);
+	P = h; Q =h*u; R = h*V;
+
+}
+
+void CV::Modify_U(double P, double Q, double R)
+{	
+    h=P;
+	this->P=P; this->Q=Q; this->R=R; 
+	
+	u = Q/P;
+	V = R/P;
+	v = V-omega/phi;
+	p = J*P; q= J*Q; r= J*R/phi;
+	psi = Psi(*this);
 
 }
 
@@ -57,9 +75,9 @@ FS Flux( CV w )
 
 {
 	FS f;
-	 f.p =  w.u_c*w.h/w.phi; 
-	 f.q = (w.u_c*w.u + epsilon*w.psi*w.h/2)*w.h/w.phi;
-	 f.r = w.u_c*(w.V)*w.h/(w.phi*w.phi); 
+	 f.p =  w.u*w.h/w.phi; 
+	 f.q = (w.u*w.u + epsilon*w.psi*w.h/2)*w.h/w.phi;
+	 f.r = w.u*(w.V)*w.h/(w.phi*w.phi); 
 	return f;
 }
 
@@ -67,12 +85,13 @@ FS Flux( CV w )
 FS Source( CV w, CV w1, CV w2, CV w3, CV w4) 
 {
 	FS source;
-	FS bf=Body_force( w,  w1,  w2, w3,  w4);
+	FS bf=Body_force( w, w1, w2, w3, w4);
 	FS fr=Friction(w);
-	source.p=0;
-	double pressure = (pow(w.v+omega/w.phi,2)+epsilon*w.psi*w.h/2)*(1/w3.phi+1/w4.phi-1/w1.phi-1/w2.phi)/(2*dx); 
+	source.p = 0;
+	double pressure = (pow(w.V,2) + epsilon*w.psi*w.h/2)*(1/w3.phi+1/w4.phi-1/w1.phi-1/w2.phi)/(2*dx) +
+						epsilon*w.h/2*(w3.g.X1+w4.g.X1-w1.g.X1-w2.g.X1)/(2*dx*w.phi); 
 	source.q = (w.g.X2*w.J+pressure)*w.h ;// - epsilon*(w3.g.X1+w4.g.X1-w1.g.X1-w2.g.X1)/(2*dx*w.phi)*w.h*w.h/2;
-	source.r = 0;//-2*w.phi_tan/w.phi/w.phi*w.J_basal*epsilon*w.theta*w.h*omega*w.u;
+	source.r = 0;
 	return source;
 }
 
@@ -81,11 +100,15 @@ FS Friction (CV w)
 {
 	FS fr;
 	double mu=tan(delta* PI / 180);
+
+	if (pow(w.u,2)+pow(w.v,2)>0)
+
+	{
 		
 		fr.q=(mu*w.u/pow(pow(w.u,2)+pow(w.v,2),0.5))*w.psi*w.J*w.h;
 	
 		fr.r=mu*w.v/pow(pow(w.u,2)+pow(w.v,2),0.5)*w.psi*w.J*w.h/w.phi;
-
+	}
 	return fr;
 }
 
@@ -121,8 +144,8 @@ double root,base;
 double Psi(CV w)
 {
 	
-return	-( w.u*w.u*w.theta+ (pow(w.v+omega/w.phi,2)*w.phi_norm+ 
-		w.g.X1));
+return	-( w.u*w.u*w.theta+ pow(w.v+omega/w.phi,2)*w.phi_norm+ 
+		w.g.X1);
 }
 
 

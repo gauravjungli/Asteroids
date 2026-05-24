@@ -11,7 +11,7 @@ from IO import Output_File
 import matplotlib.pyplot as plt
 # Import color normalization tools
 import matplotlib.colors as mcolors
-from Initialize import grid
+from Initialize import grid_2D
 # Optional: for 3D plotting if you want to visualize
 # from mpl_toolkits.mplot3d import Axes3D # Already implicitly imported by projection='3d'
 
@@ -86,7 +86,7 @@ def add_gaussian_crater_to_grid(
     if not (rho_grid.shape == theta_grid.shape == phi_grid.shape):
         raise ValueError("Input grid shapes must match")
 
-    print(f"Adding crater at theta={np.degrees(crater_theta):.1f} deg, phi={np.degrees(crater_phi):.1f} deg")
+    #print(f"Adding crater at theta={np.degrees(crater_theta):.1f} deg, phi={np.degrees(crater_phi):.1f} deg")
 
     # Calculate angular distance from EACH grid point to the crater center
     angular_distances = calculate_angular_distance(theta_grid, phi_grid, crater_theta, crater_phi)
@@ -100,7 +100,7 @@ def add_gaussian_crater_to_grid(
     threshold_angle = 2.0 * sigma_depression
     mask_within_2sigma = angular_distances <= threshold_angle
     num_marked = np.sum(mask_within_2sigma)
-    print(f"  Marking {num_marked} points within 2-sigma angular distance ({np.degrees(threshold_angle):.2f} deg).")
+ #   print(f"  Marking {num_marked} points within 2-sigma angular distance ({np.degrees(threshold_angle):.2f} deg).")
     # --- End of mask calculation ---
 
 
@@ -124,7 +124,7 @@ def add_gaussian_crater_to_grid(
 
     modified_rho_grid = rho_grid - depression + rim_displacement
     # modified_rho_grid = np.maximum(modified_rho_grid, 0.0) # Optional floor
-    print("Crater calculation complete.")
+  #  print("Crater calculation complete.")
     return modified_rho_grid, mask_within_2sigma
 
 def crater_radius_to_angle(crater_radius, sphere_radius):
@@ -150,25 +150,23 @@ def crater_radius_to_angle(crater_radius, sphere_radius):
 def Crater(parameters,target,impactor):
     
     # 1. Define the Spherical Grid
-    initial_sphere_radius = target.d/2 # Let's say this is in 'units'
-    
-    mydir=Output_File (parameters,"output",["base.txt"]) #change
-
-    epsilon=float(parameters["epsilon"])
+    initial_sphere_radius = target.d/2 
+    epsilon =float(parameters['epsilon'])
+    mydir=Output_File (parameters,"output",["base.txt"]) 
     
     base=np.loadtxt(mydir,delimiter=",",dtype=float)
     n_theta = int(parameters['X Resolution'])
     n_phi = int(parameters['Y Resolution'])
     
-    theta, phi, _ = grid(parameters, target)
+    theta, phi = grid_2D(parameters)
     phi_grid, theta_grid = np.meshgrid(phi, theta)
     
     
     expected_rows = n_theta * n_phi
     if base.shape[0] != expected_rows:
         raise ValueError(f"Input data has {base.shape[0]} rows, but expected {expected_rows} based on n_theta={n_theta}, n_phi={n_phi}")
-    if base.shape[1] != 4:
-        raise ValueError(f"Input data must have 4 columns (theta, phi, rho, height), but found {base.shape[1]}")
+    if base.shape[1] != 7:
+        raise ValueError(f"Input data must have 7 columns (theta, phi, rho, height), but found {base.shape[1]}")
 
 
 
@@ -181,20 +179,20 @@ def Crater(parameters,target,impactor):
     # when the input data was created/flattened.
     rho_grid_initial = rho_values_flat.reshape((n_theta, n_phi))
     rho_grid_initial = initial_sphere_radius*(1+epsilon*rho_grid_initial)
-    print(f"Reshaped initial rho_grid shape: {rho_grid_initial.shape}")
+  #  print(f"Reshaped initial rho_grid shape: {rho_grid_initial.shape}")
     
 
     # --- Define Crater Parameters (using physical radius) ---
     crater_theta = impactor.Theta
     crater_phi = impactor.Phi
     # --- > Define physical radius FIRST < ---
-    crater_physical_radius = 10*impactor.d # In the same 'units' as initial_sphere_radius
+    crater_physical_radius = (impactor.M/target.dens)**(1/3)*0.62*(target.grav*impactor.d/2/impactor.vel**2)**(-0.17)# 15*impactor.d # In the same 'units' as initial_sphere_radius
     # --- > CONVERT physical radius to angular radius < ---
     crater_radius_angle = crater_radius_to_angle(crater_physical_radius, initial_sphere_radius)
     # --- > Use the calculated angle below < ---
     print(f"Crater : Physical Radius={crater_physical_radius} -> Angular Radius={np.degrees(crater_radius_angle):.2f} degrees")
 
-    crater_depth = 0.4*crater_physical_radius 
+    crater_depth = 0.3*crater_physical_radius 
     crater_rim_h = 0.0 # No rim
     crater_rim_w = 1.5
 
@@ -211,13 +209,13 @@ def Crater(parameters,target,impactor):
     # Ensure the flattening order is consistent (default 'C' or row-major)
     theta_flat = theta_grid.ravel()
     phi_flat = phi_grid.ravel()
-    rho_mod_flat = (rho_grid_mod.ravel()/initial_sphere_radius -1 )/epsilon
+    rho_mod_flat = (rho_grid_mod.ravel()/initial_sphere_radius -1 )
     mask_flat_int = mask.ravel().astype(int)
     # 2. Stack them as columns [theta, phi, rho_modified]
     # This creates an array of shape (n_theta * n_phi, 3)
     output_spherical_data = np.column_stack((theta_flat, phi_flat, rho_mod_flat, mask_flat_int))
 
-    print(f"Output data shape: {output_spherical_data.shape}")
+   # print(f"Output data shape: {output_spherical_data.shape}")
 
 
 
@@ -258,4 +256,4 @@ def Crater(parameters,target,impactor):
     ############################################################################################
     
     
-    return output_spherical_data
+    return output_spherical_data, crater_depth

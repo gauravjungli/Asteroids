@@ -13,14 +13,14 @@ import numpy as np
 import os
 from collisions import G
 import time
-from Diffusion_spherical import  compute_height,compute_time
+from Diffusion_spherical import  compute_height,compute_time, compute_energy
 from IO import Parameter, Exparameter, Output_File
 from scipy.optimize import least_squares
 from gravity import Gravitycalc
 from script_2D.Crater import Crater
 import pdb
 from scipy.interpolate import UnivariateSpline, CubicSpline  , interp1d  
-from Fit import Fit 
+from Fit import Fit, Fit_2D
 
   
  #%%  
@@ -45,8 +45,25 @@ def Height(parameters,target,impactor=None):
     
     min_epsilon = float(parameters['Minimum epsilon'])
     max_epsilon = float(parameters['Maximum epsilon'])
+    K_0 = target.K_0
+    mu_0 = target.mu_0
+    dens =target.dens
+    radius = target.d/2
+    omega = target.omega[2]
+    beta = target.beta
+    target.wave_speed_P = np.sqrt(K_0+4/3*mu_0)*((radius**2/15/dens)*(4*np.pi*G*dens-2*omega**2))**(1/4)
+    target.wave_speed_S = np.sqrt(mu_0)*((radius**2/15/dens)*(4*np.pi*G*dens-2*omega**2))**(1/4)  
+    target.f = ((2*impactor.dens*target.efficiency)/(np.pi*beta**2*dens))**(1/3)*2*target.wave_speed_P/impactor.d
+    target.k_d = 2*np.pi*target.f/target.Q
+    target.energy, target.t_max = compute_energy(target)
+
+ 
     
-     
+    if target.failure_mode == "P-wave":
+        target.wave_speed =target.wave_speed_P
+    else:
+        target.wave_speed =target.wave_speed_S 
+    
     if parameters['Dimension'] == '1D':
         
         res=int(parameters["Resolution"])
@@ -54,10 +71,16 @@ def Height(parameters,target,impactor=None):
         
         if impactor:
             #compute landslide duration
-            target.t_lan = compute_time(target,impactor)
-            H = compute_height(parameters,target=target,impactor=impactor,grid = base[:,0],dimension='1D') 
-            print("The average failure height is ", H )
-            epsilon = np.clip(H,min_epsilon,max_epsilon)
+            #target.t_lan = compute_time(target,impactor)
+            H, target.Gamma = compute_height(parameters,target=target,impactor=impactor,grid = base,dimension='1D') 
+            print("The average failure height, maximum acceleration and diameter are ", H, target.Gamma, impactor.d )
+            if H<min_epsilon:
+                print("Not enough energetic imactor. No landslide simulated")
+                parameters['epsilon']=H
+                return
+            if (target.Gamma*np.exp(-target.k_d/2*1/(G*4/3*3.14*1250)**(0.5)*0.3)<1):
+                return
+            epsilon = np.clip(H,min_epsilon,max_epsilon) #change_P make it constant if you don't want impactor dependent failure height
             
             print(f'the destablization height is {epsilon} and the impactor diameter is {impactor.d}\
                   and impactor velocity is {impactor.vel}' )
@@ -72,17 +95,25 @@ def Height(parameters,target,impactor=None):
         base[:,2] = -height[:]
         base = Fit(parameters,base_old=base)
         
-        base[:,2]=height[:]        
+        base[:,2]=height[:] #np.load('/home/g/Asteroids/output/check_5/height.npy')#height[:]        //change
     
     else:
-        base = Crater(parameters,target,impactor) #Fourth column contains the flag to check whether the point lies inside the crater
+        
+        crater_data, crater_depth = Crater(parameters,target,impactor) #Fourth column contains the flag to check whether the point lies inside the crater
         #pdb.set_trace()
-        H=compute_height(parameters,target=target,impactor=impactor,grid=base,dimension='2D')
-        epsilon = (np.min(H) + np.max(H))/2
-        epsilon = np.clip(epsilon,min_epsilon,max_epsilon)
+        
+        H,target.Gamma = compute_height(parameters,target=target,impactor=impactor,grid=base,dimension='2D',crater_depth = crater_depth)
+        H = H#*(1-crater_data[:,3])
+        if (target.Gamma*np.exp(-target.k_d/2*1/(G*4/3*3.14*1250)**(0.5)*0.3)<0.5):
+            return
+       # epsilon = (np.min(H) + np.max(H))/2
+       # epsilon = np.clip(epsilon,min_epsilon,max_epsilon)
+
+        base[:,2] = (crater_data[:,2]- H[:])/epsilon 
         base[:,3] = H[:]/epsilon  
-        base[:,2] = (base[:,2]-base[:,3])
-        parameters['epsilon'] = epsilon   
+        
+        
+      #  parameters['epsilon'] = epsilon   
     print(f"The epsilon: {parameters['epsilon']}")
 
     
@@ -115,16 +146,21 @@ def Landslides(target,parameters,impacttime,myomega):
     if float(parameters['epsilon'])<float(parameters['Minimum epsilon']):
         print(f"Value of epsilon {float(parameters['epsilon'])} too small to simulate landslide")
         return
+    if (target.Gamma*np.exp(-target.k_d/2*1/(G*4/3*3.14*target.dens)**(0.5)*0.3)<1):
+        print("Too small time for global landslides. Not simulating global landslide")
+        return
 
     parameters["omega"] = target.omega[2] /(G * (4/3) * math.pi * target.dens)**0.5
-    parameters['Seismic_shaking_time'] = target.t_lan/(target.d/2/target.grav)**0.5
+    parameters['Maximum acceleration'] = target.Gamma
     parameters["slides"] = int(parameters["slides"])+1
     parameters["Current diameter"] = target.d
     parameters["jinertia"]=target.jinertia[2]/(target.d/2)**5/target.dens
     parameters["jinertia1"]=target.jinertia[0]/(target.d/2)**5/target.dens
     parameters["time"]=impacttime
-    parameters["k_d"] = target.k_d
+    parameters["k_d"] = target.k_d/(G * (4/3) * math.pi * target.dens)**0.5
     
+    
+    print("The value of k_d is and the frequency is", parameters["k_d"], target.f)
     if bool(parameters['verbose']):
         parameters['verbose_dir']=Output_File(parameters,"output",['data',f"landslides_{parameters['slides']}"])
        
@@ -174,17 +210,23 @@ def Landslides(target,parameters,impacttime,myomega):
         Fit(parameters)
         Parameter(parameters,"output")
     
-        target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
-        target.d = float( parameters["Current diameter"])
-    
-        r = target.d / 2
-        target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
-        target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
-    
-        if int(parameters["slides"])%2==0 or float(parameters["omega"])>0.95:#change
+        
+        target.epsilon+=float(parameters["epsilon"])
+        if target.epsilon>=0.001 or float(parameters["omega"])>0.95: 
             print("Updating gravity")
-            target.rgrav, target.tgrav = Gravitycalc(parameters)
+            target.epsilon = 0
+            target.rgrav, target.tgrav = Gravitycalc(parameters,target)
     
+    else:
+        Fit_2D(parameters)
+        
+    target.omega[2] = float(parameters["omega"]) * (G * (4/3) * math.pi * target.dens )**0.5
+    target.roots = target.roots*target.d/float(parameters["Current diameter"])
+    target.d = float( parameters["Current diameter"])
+    
+    r = target.d / 2
+    target.jinertia[2] = float(parameters["jinertia"]) * r**5 * target.dens
+    target.jinertia[0] = target.jinertia[1] = float(parameters["jinertia1"]) * r**5 * target.dens
     
     myomega.append([impacttime,target.omega[2]])
     print("Omega after the Landslides", target.omega[2])

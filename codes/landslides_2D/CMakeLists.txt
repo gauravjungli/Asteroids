@@ -11,15 +11,14 @@ set(SOURCE_FILES
      
      src/bc.cpp
      src/Characteristics.cpp
-     src/Sphere.cpp
+     src/axisymmetric_new.cpp
     src/gravity.cpp
      src/IC.cpp
     src/IO.cpp
     src/March.cpp
-     src/pressure_shed.cpp
+    src/Omega.cpp
     src/solver.cpp
-     src/topography.cpp
-   src/TVD.cpp 
+    src/TVD.cpp 
     src/FS.cpp
 )
 

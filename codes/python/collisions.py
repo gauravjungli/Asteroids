@@ -10,9 +10,9 @@ import math
 
 from scipy.interpolate import make_interp_spline
 from scipy.constants import gravitational_constant
-from IO import Output_File
+from IO import Output_File, ExportImpactor
 import random
-G=gravitational_constant
+G = gravitational_constant
 probi = 2.85e-24
 
 import numpy as np
@@ -34,12 +34,12 @@ class Impactor:
     
     def __init__(self,tmaxby,low,high,cumdistr,file,explicit=True):
         if explicit:
-            self.phi   = math.acos(1 - 2 * np.random.random()) / 2
-            self.vel   = self.velocity(file) 
+            self.phi   = math.acos(1 - 2 * np.random.random())/2
+            self.vel   = self.velocity(file)
             self.d     = self.dia(low,high,cumdistr)  
-            self.theta = 2 * math.pi * np.random.random()
-            self.Phi = 2 * math.pi * np.random.random()
-            self.Theta = np.clip(math.acos(1 - 2 * np.random.random()),np.pi/6,5*np.pi/6)
+            self.theta = 2 * math.pi* np.random.random()
+            self.Phi =  2 * math.pi * np.random.random() 
+            self.Theta =  np.clip(math.acos(1 - 2 * np.random.random()),np.pi/6,5*np.pi/6) #
         else:
             self.d     = math.exp((math.log(low) + math.log(high)) / 2)
             self.phi   = math.pi / 4
@@ -48,12 +48,13 @@ class Impactor:
             self.Phi = 0
             self.Theta   = math.pi / 2
         if np.random.randint(1, 4) == 1:
-            self.dens  = 2500
+            self.dens  = 2500 
         else:
             self.dens  = 1500
         self.impacttime= np.random.uniform(0, tmaxby)
         self.M         = (math.pi / 6) * self.dens * self.d**3
         self.explicit  = explicit
+        
         
     def dia(self,low,high,cumdistr):
         d=np.random.randint(low=low, high=high)
@@ -109,7 +110,7 @@ def Collision(target,impactor,myomega):
     
     if  not target.collision:
         return
-    print(f" obliquity before impact is {target.obliq} and angular velocity is {target.omega}")
+   # print(f" obliquity before impact is {target.obliq} and angular velocity is {target.omega}")
     zeta = zetaf(impactor.phi, target.d, target.atype)
     amomentum =  np.multiply(target.omega,target.jinertia)
     delamomentum = target.d/2 * impactor.M * impactor.vel * math.sin(impactor.phi) * zeta * np.array([-math.sin(impactor.theta)
@@ -126,7 +127,7 @@ def Collision(target,impactor,myomega):
     delomegdrain =  omegdrainf(target,impactor)
     delomega = delomega + [0,0,delomegdrain]
     target.omega = target.omega + delomega
-    print(f"New obliquity after impact is {target.obliq} and angular velocity is {target.omega}")
+  #  print(f"New obliquity after impact is {target.obliq} and angular velocity is {target.omega}")
     myomega.append([impactor.impacttime,target.omega[2]])
     print("Omega after the collision", target.omega[2])
         
@@ -191,7 +192,7 @@ def wobblecalcf(target,impacttime,time):
     if wobble < math.radians(1):
         target.omega[0] = math.sqrt(target.omega[0]**2 + target.omega[1]**2) * math.cos(np.random.uniform(0, 2 * math.pi))
         target.omega[1] = math.sqrt(target.omega[0]**2 + target.omega[1]**2) * math.sin(np.random.uniform(0, 2 * math.pi))
-        print("No wobble")
+       # print("No wobble")
         return
     
     trelax =math.log(wobble / math.radians(1.0)) / 2 * 1.1 * 1e-3 / (target.d/1000) ** 2 / np.linalg.norm(target.omega) ** 3
@@ -279,7 +280,20 @@ def Istuff(parameters,target,tmaxby,cumdistr):
     
     #Find minimum energy for the global failure
     energy_cons =  (math.pi* target.efficiency*velave**2*target.dens/12)*target.energy[-1]
-    energy_min = target.cohesion_cons**2/(2*target.wave_speed**2*target.dens*np.tan(target.delta*math.pi/180)**2)
+    
+    energy_min=0
+    
+    rho = target.dens 
+    v_p = target.wave_speed_P  
+    v_s = target.wave_speed_S 
+    mu_t = v_s**2*rho
+    lambda_t = (v_p**2-2*v_s**2)*rho
+    
+    
+    if target.failure_mode == "P-wave":
+        energy_min = (lambda_t+2*mu_t)*target.cohesion_cons**2/2/(lambda_t*np.tan(target.delta*math.pi/180)+mu_t*np.tan(np.pi/4+target.delta*math.pi/360))**2
+    else:
+        energy_min = target.cohesion_cons**2*np.cos(target.delta*math.pi/180)**2/(2*target.wave_speed**2*target.dens)
     
     #Find minimum explicit diameter
     dexplicit =  (energy_min/energy_cons)**(1/3)
@@ -295,13 +309,14 @@ def Istuff(parameters,target,tmaxby,cumdistr):
     nexpimpactors = round(prob * (nexplicit-numgtd))
     #Number of impactors using Poisson's distribution
     nexpimpactors = poisson_from_exponential(nexpimpactors)
+    #Added only to simulate manual collisional history 
+    #nexpimpactors = 1#int(25/1.75*tmaxby/1e+6)
     print(f'Number of expected impactor is {nexpimpactors}')
-    density = 1500
     
     #Not in use currently
-    dimplicit = ((G**2*target.dens**3*target.d**5)/(9*target.efficiency*density*velave**2*target.f**2))**(1/3)*(
-                np.exp(2*math.pi*target.f*target.d**2/(target.k_s*math.pi**2*target.Q)))
-    binimplicit = astnum(dimplicit,cumdistr)[1]
+   # dimplicit = ((G**2*target.dens**3*target.d**5)/(9*target.efficiency*density*velave**2*target.f**2))**(1/3)*(
+      #          np.exp(2*math.pi*target.f*target.d**2/(target.k_s*math.pi**2*target.Q)))
+   # binimplicit = astnum(dimplicit,cumdistr)[1]
     
     #File containing velocity distribution
     vel_dist = parameters['Velocity file']
@@ -309,15 +324,21 @@ def Istuff(parameters,target,tmaxby,cumdistr):
 
     #Create collisional history for the explicit impactors
     istuff=[]
-    #  Added only to simulate manual collisional history
-    #nexpimpactors = 20
+     
     for j in range(nexpimpactors):
         istuff.append(Impactor(tmaxby=tmaxby, low=numgtd, high=nexplicit, cumdistr=cumdistr,file=file, explicit=True))
+    # Added to simulate impacts at equal intervals
+      #  istuff[j].impacttime =j* tmaxby/(nexpimpactors)
+    
+    # data =np.loadtxt("/home/g/Asteroids/output/Trial_4/run1/impactors.txt",dtype=float)
+ 
+    # for i in range(nexpimpactors):
 
-    #Create collisional history for the implicit impactors
-    #implicit impactors are not required and are hence removed from further simulations
-   # for j in range(binexplicit+1, min(binimplicit,len(cumdistr)-1)):
-   #     istuff.append(Impactor(tmaxby=tmaxby, low=cumdistr[j,0], high=cumdistr[j+1,0], cumdistr=cumdistr,file=file, explicit=False))
+    #     istuff[i].impacttime = data[i,0] 
+    #     istuff[i].d = data[i,1]
+    #     istuff[i].M =(math.pi / 6) * istuff[i].dens * istuff[i].d**3
+    #        
+    ExportImpactor(istuff,parameters)
     
     #Sort with the impact time
     istuff.sort(key=lambda x: x.impacttime)

@@ -21,9 +21,9 @@ FS Minmod(FS w, FS v) // calculate minmod
 }
 
 
-double Derivative( double w1, double w2, double w3)
+double Derivative( double w1, double w2, double w3,double dsize)
 {
 	double w;	
-	w= Minmod(theta * (w2 - w1) / dx, (w3 - w1) / 2 / dx, theta * (w3 - w2) / dx);
+	w= Minmod(theta * (w2 - w1) / dsize, (w3 - w1) / 2 / dsize, theta * (w3 - w2) / dsize);
 	return w;		 
 }
