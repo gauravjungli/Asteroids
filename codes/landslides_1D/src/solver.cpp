@@ -14,16 +14,21 @@ FS Hx( CV wl, CV wr)
 	 
 	double a_plus = max(er,0.0);
 	double a_minus = min(el,0.0);
-
-	if ((a_plus-a_minus)>0)
-
-	w = (fl*a_plus - fr*a_minus + (Wr-Wl)*a_plus*a_minus)/(a_plus-a_minus);
-
-	else
-
-	w=(fl+fr)/2-(Wr-Wl)*max(abs(el),abs(er))/2; 
-
 	
+	if (Central_scheme=="New")
+	{
+		if ((a_plus-a_minus)>1e-8) 
+
+			w = (fl*a_plus - fr*a_minus + (Wr-Wl)*a_plus*a_minus)/(a_plus-a_minus);
+
+		else
+
+			w=(fl+fr)/2-(Wr-Wl)*max(abs(el),abs(er))/2; 
+
+	}
+	else
+		w=(fl+fr)/2-(Wr-Wl)*max(abs(el),abs(er))/2;
+
 	return w;
 }
 

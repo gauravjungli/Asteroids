@@ -67,7 +67,7 @@ FS Friction (CV w, FS bf)
 
 	if (pow(pow(w.u,2)+pow(w.v,2),0.5)>1e-4) 
 	{
-		//std::cout<<"Inside the if of q"<<endl;
+		
 		fr.q=(mu*w.u/pow(pow(w.u,2)+pow(w.v,2),0.5))*w.psi*(1+3*epsilon*w.b);
 	}
 	else 

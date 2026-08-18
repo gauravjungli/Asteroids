@@ -28,11 +28,9 @@ def regrid(lat_low_2d,lon_low_2d,height_low_2d,lat_high_2d,lon_high_2d):
     nlon_high =  lat_high_2d.shape[1]
     values_low_res = height_low_2d.flatten()
 
-
     # --- 7. Perform Interpolation ---
     interpolation_method = 'cubic' # Options: 'nearest', 'linear', 'cubic'
 
-    
 
     start_time = time.time()
     interpolated_values_flat = griddata(
@@ -160,7 +158,7 @@ def create_graticule_texture(
 
     return img # Return the PIL Image
 
-def setup_plotter(radius,grid,initial_coords_xyz):
+def setup_old_plotter(radius,grid,initial_coords_xyz):
     # Set up the plotter
     # Use off_screen=True if you *only* want to save the animation file
     # Use off_screen=False (or omit) if you want an interactive window first
@@ -172,7 +170,7 @@ def setup_plotter(radius,grid,initial_coords_xyz):
     # Simple map: grey at the start (vmin=0), yellow at the end (vmax)
     nodes = [0.0, 0.5, 1.0]
 # Corresponding colors at the nodes
-    colors = ["grey","green","yellow"]
+    colors = ["blue","green","yellow"]
 
 # Create the colormap using from_list with (node, color) pairs
     grey_red_yellow_cmap = mcolors.LinearSegmentedColormap.from_list(
@@ -191,8 +189,7 @@ def setup_plotter(radius,grid,initial_coords_xyz):
     # 'scalar_bar_args' customizes the color bar
     
     graticule_pil_image = create_graticule_texture(
-       width=300, height=200, n_lat_lines=10, n_lon_lines=15, line_color="blue"
-   )
+       width=300, height=200, n_lat_lines=10, n_lon_lines=15, line_color="blue")
 
    ## *** CORRECTED STEP: Convert PIL Image to NumPy array ***
     graticule_numpy_array = np.array(graticule_pil_image)
@@ -221,7 +218,7 @@ def setup_plotter(radius,grid,initial_coords_xyz):
                      scalars='fluid_height',
                      cmap=grey_red_yellow_cmap,
                      clim=clim,
-                    # texture=graticule_texture, #it is just for a sphere
+                     #texture=graticule_texture, #it is just for a sphere
                      #smooth_shading=True,
                      scalar_bar_args = scalar_bar_args,
                      name='surface') # Give the actor a name for easy updates
@@ -264,15 +261,96 @@ def setup_plotter(radius,grid,initial_coords_xyz):
     plotter.reset_camera_clipping_range()
     return plotter
 
-def save_3D_plot(parameters,file):
-  #  pdb.set_trace()  
+def setup_plotter(radius, grid, initial_coords_xyz):
+    vmin = 0
+    vmax = 1
+    clim = [vmin, vmax]
     
-    file1 = file+'/run1/base.txt'
+    # --- Define Custom Colormap ---
+    nodes = [0.0, 0.5, 1.0]
+    colors = ["grey", "green", "yellow"] # Note: kept your colors, but renamed variable to match
+    grey_green_yellow_cmap = mcolors.LinearSegmentedColormap.from_list(
+        "GreyGreenYellowMap", list(zip(nodes, colors))
+    )
     
-    epsilon = float(parameters['epsilon'])
-    radius = float(parameters['Current diameter'])/2
-    n_lat = int(parameters['X Resolution'])
-    n_lon = int(parameters['Y Resolution'])
+    plotter = pv.Plotter(off_screen=False, window_size=[1000, 800])
+    camera_distance_factor = 3.0    
+    min_camera_distance = 2.0       
+    
+    # --- Define Scalar Bar Customization ---
+    scalar_bar_args = {
+        'title': " Height (m)",  
+        'title_font_size': 30,            
+        'label_font_size': 30,            
+        'position_x': 0.88,               
+        'position_y': 0.30,               
+        'vertical': True,               
+        'n_labels': 5,                   
+        'fmt': "%.1f",                   
+        'color': 'black',                
+        'shadow': True,                  
+        'interactive': False,            
+    }
+    
+    # 1. Add the main fluid surface (Removed the texture argument)
+    plotter.add_mesh(grid,
+                     scalars='fluid_height',
+                     cmap=grey_green_yellow_cmap,
+                     clim=clim,
+                     scalar_bar_args=scalar_bar_args,
+                     name='surface')
+                     
+    # === NEW: Add Latitude and Longitude Lines ===
+    # Create a sphere just slightly larger than the base radius to prevent z-fighting
+    lat_lon_grid = pv.Sphere(
+        radius=radius * 1.01, 
+        theta_resolution=15, # Number of longitude lines
+        phi_resolution=10    # Number of latitude lines
+    )
+    
+    # Add it to the plotter as a wireframe
+    plotter.add_mesh(lat_lon_grid, 
+                     style='wireframe', 
+                     color='blue', 
+                     line_width=1.5,
+                     name='graticule_lines')
+
+    plotter.camera.zoom(1.5)
+    plotter.background_color = 'white' 
+    
+    # === Update Camera ===
+    lat_idx, lon_idx = (int(50), int(100)) 
+    peak_coord_3d = initial_coords_xyz[lat_idx, lon_idx, :] 
+
+    plotter.camera.focal_point = peak_coord_3d
+
+    vector_to_peak = peak_coord_3d - [0, 0, 0] 
+    norm_vector_to_peak = np.linalg.norm(vector_to_peak)
+
+    if norm_vector_to_peak > 1e-9: 
+        unit_vector_to_peak = vector_to_peak / norm_vector_to_peak
+    else:
+        unit_vector_to_peak = np.array([0, 0, 1.0]) 
+
+    desired_distance = max(min_camera_distance, camera_distance_factor * radius)
+    
+    # === CORRECTED STEP: Actually apply the camera position ===
+    # Set camera position along the vector away from the focal point
+    plotter.camera.position = peak_coord_3d + (unit_vector_to_peak * desired_distance)
+
+    plotter.reset_camera_clipping_range()
+    
+    return plotter
+
+def save_3D_plot(target):
+    #pdb.set_trace()  
+    
+    #file1 = file+'/run1/base.txt'
+    file1 = Output_File(target,'output',['base.txt'])
+    epsilon = target.epsilon
+    radius = target.d/2
+    n_lat = target.x_res
+    n_lon = target.y_res
    
 
     if os.path.exists(file1):
@@ -286,7 +364,6 @@ def save_3D_plot(parameters,file):
         r = w[:,4]
         dr = w[:,5]
 
-    
         metric = r**2 + dr**2
          
         rad = np.sqrt((2*r**2*np.sqrt(metric)*(base) + metric*((base)**2 + r**2  ))/metric)
@@ -304,9 +381,6 @@ def save_3D_plot(parameters,file):
     initial_coords_xyz = np.stack((x.reshape((n_lat,n_lon)), y.reshape((n_lat,n_lon)), z.reshape((n_lat,n_lon))), axis=-1)
     
     lons = phi.reshape((n_lat,n_lon))
-    lats =theta.reshape((n_lat,n_lon))
-
-
 
     grid = pv.StructuredGrid()
     #grid.texture_map_to_sphere(inplace=True)  #it is just for a sphere
@@ -317,9 +391,9 @@ def save_3D_plot(parameters,file):
     grid.point_data['fluid_height'] = initial_height
     grid.point_data.active_scalars_name = 'fluid_height' # Explicitly set active scalar
     
-    plotter =  setup_plotter(radius,grid,initial_coords_xyz)
+    plotter =  setup_old_plotter(radius,grid,initial_coords_xyz)
     
-    main_dir=parameters['verbose_dir']
+    main_dir = Output_File(target,'output',['data','landslides_1'])
     
 
     # Get and sort files by number within the subdirectory
@@ -329,14 +403,15 @@ def save_3D_plot(parameters,file):
     print("Starting animation generation (saving to MP4)...")
         # Open a movie file (requires ffmpeg)
     try:
-        plotter.open_movie("/home/g/Asteroids/output/Bennu_200/Bennu.mp4") # Adjust framerate as needed
+        movie = Output_File(target,'output',['animation.mp4'])
+        plotter.open_movie(movie) # Adjust framerate as needed
 
-        frame_dir = file+"/frames"
+        frame_dir = Output_File(target,'output',['frames'])
         if not os.path.exists(frame_dir):
             os.makedirs(frame_dir)
         i=0
         for file in dirFiles:
-            if i%10==0:
+            if i%1==0:
                 myfile = os.path.join(main_dir,file)
                 w=np.loadtxt(myfile,delimiter=",",dtype=float)
                 
@@ -347,11 +422,10 @@ def save_3D_plot(parameters,file):
                 r = w[:,4]
                 dr = w[:,5]
     
-            
                 metric = r**2 + dr**2
                  
                 rad = np.sqrt((2*r**2*np.sqrt(metric)*(base) + metric*((base)**2 + r**2  ))/metric)
-                print("maximum radial distance is ", max(rad) )
+                print(file )
                 z = np.cos(theta)*r + 1/np.sqrt(metric)*(base*dr*np.sin(theta)+np.cos(theta)*r*base)
                 theta_new = np.arccos(z/rad)
                 
@@ -369,19 +443,164 @@ def save_3D_plot(parameters,file):
                 current_peak_pos = current_points[max_idx]
     
                 # Point the camera at the new peak location
-                plotter.camera.focal_point = (0,0,0)
+                plotter.camera.focal_point =(0,0,0)
                 
                 # Update scalars on the mesh
                 actor = plotter.actors['surface']
                 mesh_in_plotter = actor.mapper.dataset
                 mesh_in_plotter.points = current_points
-                plotter.camera.elevation = -20 -0*i*0.05
-                plotter.camera.azimuth = 135 - min(100,i*1.0)
+                plotter.camera.elevation = -25 #-i*0.1
+                plotter.camera.azimuth = 135 #- min(100,i*1.0)
                 plotter.camera.distance = radius * 2.0
                # plotter.camera.zoom(1.25)
                 plotter.render()
                 
                 mesh_in_plotter.point_data['fluid_height'] = height*radius
+                mesh_in_plotter.point_data.active_scalars_name = 'fluid_height'
+                actor.mapper.scalar_range = clim
+           
+            
+            
+                print('saved frames:',i)
+                filename = os.path.join(frame_dir, f"frame_{i:04d}.png")
+                plotter.screenshot(filename, transparent_background=True)
+            i=i+1
+            # Write the current view as a frame to the movie file
+        #    plotter.write_frame()
+
+# ... rest of the loop ...
+    
+        # Finalize and close the movie file and plotter
+        plotter.close()
+        print("Animation saved successfully to Bennu.mp4")
+    
+    except ImportError:
+        print("\nERROR: Failed to save animation.")
+        print("Saving MP4 requires 'imageio' and 'imageio-ffmpeg'.")
+        print("Install them using: pip install imageio imageio-ffmpeg")
+    except FileNotFoundError:
+        print("\nERROR: Failed to save animation.")
+        print("Could not find ffmpeg.")
+        print("Please ensure ffmpeg is installed and accessible in your system's PATH.")
+    except Exception as e:
+        print(f"\nAn error occurred during animation saving: {e}")
+    
+#%%
+def save_3D_plot_evol(target):
+    #pdb.set_trace()  
+    
+    #file1 = file+'/run1/base.txt'
+    file1 = Output_File(target,'output',['base.txt'])
+    epsilon = target.epsilon
+    radius = target.d/2
+    n_lat = target.x_res
+    n_lon = target.y_res
+   
+
+    if os.path.exists(file1):
+       
+        w = np.loadtxt(file1,delimiter=",",dtype='float')
+        
+        theta = w[:,0]
+        phi = w[:,1]
+        base = epsilon*w[:,2]
+
+        r = w[:,4]
+        dr = w[:,5]
+
+        metric = r**2 + dr**2
+         
+        rad = np.sqrt((2*r**2*np.sqrt(metric)*(base) + metric*((base)**2 + r**2  ))/metric)
+        print("maximum radial distance is ", max(rad) )
+        z = np.cos(theta)*r + 1/np.sqrt(metric)*(base*dr*np.sin(theta)+np.cos(theta)*r*base)
+        theta_new = np.arccos(z/rad)
+        
+        x = radius*rad*np.sin(theta_new)*np.cos(phi)
+        y = radius*rad*np.sin(theta_new)*np.sin(phi)
+        z = radius*rad*np.cos(theta_new)
+        
+
+    initial_points = np.vstack((x,   y,  z)).T
+    
+    initial_coords_xyz = np.stack((x.reshape((n_lat,n_lon)), y.reshape((n_lat,n_lon)), z.reshape((n_lat,n_lon))), axis=-1)
+    
+    lons = phi.reshape((n_lat,n_lon))
+
+    grid = pv.StructuredGrid()
+    #grid.texture_map_to_sphere(inplace=True)  #it is just for a sphere
+    grid.dimensions =(n_lat,n_lon,1)
+    grid.points = initial_points
+    initial_height = np.full_like(lons,0)
+    initial_height = initial_height.ravel(order='C')
+    grid.point_data['fluid_height'] = initial_height
+    grid.point_data.active_scalars_name = 'fluid_height' # Explicitly set active scalar
+    
+    plotter =  setup_old_plotter(radius,grid,initial_coords_xyz)
+    
+    main_dir = Output_File(target,'output',['data'])
+    
+
+    # Get and sort files by number within the subdirectory
+    dirFiles = sorted( [f for f in os.listdir(main_dir) if f.lower().endswith('.csv')], key=extract_number)
+    
+        
+    print("Starting animation generation (saving to MP4)...")
+        # Open a movie file (requires ffmpeg)
+    try:
+        movie = Output_File(target,'output',['animation.mp4'])
+        plotter.open_movie(movie) # Adjust framerate as needed
+
+        frame_dir = Output_File(target,'output',['frames'])
+        if not os.path.exists(frame_dir):
+            os.makedirs(frame_dir)
+        i=0
+        for file in dirFiles:
+            if i%1==0:
+                myfile = os.path.join(main_dir,file)
+                w=np.loadtxt(myfile,delimiter=",",dtype=float)
+                
+                theta = w[:,0]
+                phi = w[:,1]
+                base = epsilon*w[:,2]
+                height =  epsilon*w[:,3]
+                r = w[:,4]
+                dr = w[:,5]
+    
+                metric = r**2 + dr**2
+                 
+                rad = np.sqrt((2*r**2*np.sqrt(metric)*(base) + metric*((base)**2 + r**2  ))/metric)
+                print(file )
+                z = np.cos(theta)*r + 1/np.sqrt(metric)*(base*dr*np.sin(theta)+np.cos(theta)*r*base)
+                theta_new = np.arccos(z/rad)
+                
+                x = radius*rad*np.sin(theta_new)*np.cos(phi)
+                y = radius*rad*np.sin(theta_new)*np.sin(phi)
+                z = radius*rad*np.cos(theta_new)
+                
+                current_points = np.vstack((x,   y,  z)).T
+                
+                v = ((r+height+base)*radius-radius)
+                vmax = np.nanmax(v)
+                vmin = np.nanmin(v)
+                clim = [vmin, vmax]
+                
+                max_idx = np.argmax(height)
+                current_peak_pos = current_points[max_idx]
+    
+                # Point the camera at the new peak location
+                plotter.camera.focal_point =(0,0,0)
+                
+                # Update scalars on the mesh
+                actor = plotter.actors['surface']
+                mesh_in_plotter = actor.mapper.dataset
+                mesh_in_plotter.points = current_points
+                plotter.camera.elevation = -25 #-i*0.1
+                plotter.camera.azimuth = 135 #- min(100,i*1.0)
+                plotter.camera.distance = radius * 2.0
+               # plotter.camera.zoom(1.25)
+                plotter.render()
+                
+                mesh_in_plotter.point_data['fluid_height'] = v
                 mesh_in_plotter.point_data.active_scalars_name = 'fluid_height'
                 actor.mapper.scalar_range = clim
            

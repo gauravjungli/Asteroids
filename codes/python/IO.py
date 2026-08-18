@@ -137,7 +137,7 @@ def read_xlsx_to_input_field_dict(filename):
 
 def Parameter(parameters,filetype):
 
-    inputfile = Output_File(parameters, filetype ,["parameters"])
+    inputfile = Output_File_old(parameters, filetype ,["parameters"])
     #print("Reading parameter from the following input file:", inputfile )
     if not os.path.exists(inputfile):
         print("Parameter file does not exist")
@@ -161,7 +161,7 @@ Writes the parameter dict to the parameters file.
 
 def Exparameter(parameters, filetype="output"):
        
-    mydir=Output_File (parameters,filetype,["parameters"])
+    mydir=Output_File_old (parameters,filetype,["parameters"])
     with open(mydir,"w") as f:
         for key in parameters.keys():
             f.writelines(["-"*100,"\n"])
@@ -171,13 +171,25 @@ def Exparameter(parameters, filetype="output"):
 #%%
 """ Returns the folder location for writng and reading"""
 
-def Output_File (parameters,filetype="",filenames=[]):
+def Output_File (target,filetype="",filenames=[]):
     
     directory = os.path.dirname(os.path.dirname(os.getcwd()))
     filenames1=copy.deepcopy(filenames)
     if filetype=="output":
-        output_folder=parameters['Output folder']
-        if int(parameters['run'])>0:
+        output_folder= target.folder
+        if target.number>0:
+            filenames1.insert(0,"run"+str(target.number))
+        filenames1.insert(0,output_folder)
+        
+    return os.path.join(directory,filetype,*filenames1)
+
+def Output_File_old (parameters,filetype="",filenames=[]):
+    
+    directory = os.path.dirname(os.path.dirname(os.getcwd()))
+    filenames1=copy.deepcopy(filenames)
+    if filetype=="output":
+        output_folder= parameters["Output folder"]
+        if float(parameters["run"])>0:
             filenames1.insert(0,"run"+str(parameters["run"]))
         filenames1.insert(0,output_folder)
         
@@ -188,7 +200,7 @@ def Output_File (parameters,filetype="",filenames=[]):
 
 def Cumdistr(parameters):
     
-    pathcum = Output_File(parameters,"input",["cumpopulation", f"{parameters['Cummulative distribution']}.txt"])
+    pathcum = Output_File_old(parameters,"input",["cumpopulation", f"{parameters['Cummulative distribution']}.txt"])
     cumdistr = np.loadtxt(pathcum)
     cumdistr[:,0]=cumdistr[:,0]*1000
     return cumdistr
@@ -196,9 +208,9 @@ def Cumdistr(parameters):
 #%% 
 """ Exports value of omega to the file. """
 
-def ExportOmega(myomega,parameters):
+def ExportOmega(parameters,myomega):
     filename=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    mydir=Output_File(parameters,"output",[filename])
+    mydir=Output_File_old(parameters,"output",[filename])
     
     resultExport = ""
     with open(mydir, "w") as file:
@@ -206,9 +218,9 @@ def ExportOmega(myomega,parameters):
     if resultExport == -1:
         print("Failed in exporting the data")
         
-def ExportImpactor(istuff,parameters):
+def ExportImpactor(istuff,target):
     filename='impactors.txt'
-    mydir=Output_File(parameters,"output",[filename])
+    mydir=Output_File(target,"output",[filename])
     
     resultExport = ""
     with open(mydir, "w") as f:

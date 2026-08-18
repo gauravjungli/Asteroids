@@ -19,6 +19,7 @@ const string solver = par["Solver"];
 const string reconst = par["Reconstruction"];
 const double finalt = stod(par["Maximum simulation period"]);
 const double Delta = stod(par["Dynamic Friction angle"]); 
+const double Static_Delta = stod(par["Static Friction angle"]); 
 double theta = stod(par["Minmod Limiter"]); 
 const double slides = stod(par["slides"]);
 const double epsilon = stod(par["epsilon"]); 
@@ -26,15 +27,18 @@ const double omega = stod(par["omega"]);
 const double dx = stod(par["dx"]);
 const double past_time = stod(par["time"]);
 const double dia = stod(par["Current diameter"]);
-const double min_h = 1E-12;
-const double min_u = 1E-15;
+const double min_h = 1E-9;
+const double min_u = 1E-12;
 const double Mu = tan(Delta* PI / 180);
+const double min_psi = pow(epsilon,1);
 double mu = tan(Delta* PI / 180);
 const double Gamma_max = stod(par["Maximum acceleration"]);
 const string fric_type = par["Friction type"];
 const string Output_folder = par["Data folder"];
 const string verbose_dir = par["verbose_dir"];
 const string verbose = par["verbose"];
+string Central_scheme ="New";
+
 double mass_shed = stod(par["Mass shed"]);
 double k_d = stod(par["k_d"]);
 bool limiter = true; 
@@ -51,10 +55,12 @@ int main()
 
 	std::streambuf *coutbuf = std::cout.rdbuf(); 
     std::streambuf *cerrbuf = std::cerr.rdbuf(); 
-    if (outfile.is_open()) {
-        std::cout.rdbuf(outfile.rdbuf()); // Redirect cout	
-        std::cerr.rdbuf(outfile.rdbuf()); // Redirect cerr
-	}
+
+     if (!Debug and outfile.is_open()) { 
+          std::cout.rdbuf(outfile.rdbuf()); // Redirect cout	
+          std::cerr.rdbuf(outfile.rdbuf()); // Redirect cerr
+	  }
+
 	vector<Grav> g(res);
 	fs::path base_path = file;
 	Init_grav(g,base_path.parent_path());
@@ -92,7 +98,7 @@ int main()
 
 	myfile<<"Initial omega --> "<<omega<<endl<<" Initial Inertia --> "<<par["jinertia"]<<endl ;
 	
-	March(w,wl,wr,Ang_Shed);
+	March(w,wl,wr,Ang_Shed); 
 
 	if (restart)
 	{	
@@ -114,21 +120,29 @@ int main()
 	par["omega"]=to_string((Ang_Mom-Ang_Shed)/stod(par["jinertia"]),15);
 	par["Mass shed"] = to_string(mass_shed,15);
 	
-	Write_data(w,file1);
-	Write_base(w,base_path.parent_path()); 
-	Write_par(par); 
+	if (!Debug)
+	{
+	 Write_final_data(w,file1);
+	 Write_base(w,base_path.parent_path()); 
+	 Write_par(par); 
+	}
 
 	myfile<<"Initial Angular Momentum --> "<<Ang_Mom<<endl<<" Total Angular Momentum Shed --> "<<Ang_Shed<<endl<<" Total Mass Shed --> "<<mass_shed<<endl ;
 	myfile<<"Final omega --> "<<par["omega"]<<endl<<" Final Inertia--> "<<par["jinertia"]<<endl ;
 
 	auto end = sc.now();
 	auto time_span = static_cast<chrono::duration<double>>(end - start);   // measure time span between start & end
-   	cout<<"Operation took: "<<time_span.count()<<" seconds !!! "<<"  "<<endl;
+   	myfile<<"Operation took: "<<time_span.count()<<" seconds !!! "<<"  "<<endl;
 	myfile<<"----------------------------------------------------------------------------"<<endl;
 	myfile<<"----------------------------------------------------------------------------"<<endl;
 	myfile.close();
-	std::cout.rdbuf(coutbuf); 
-    std::cerr.rdbuf(cerrbuf);
+
+	if(!Debug)
+	{
+		std::cout.rdbuf(coutbuf); 
+    	std::cerr.rdbuf(cerrbuf);
+	}
+
 	outfile.close();
 	dia_file.close();
 	return 0;

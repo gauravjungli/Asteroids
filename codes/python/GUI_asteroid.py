@@ -13,12 +13,12 @@ import sys
 import os
 from datetime import datetime
 from Initialize import  Initialize_simulations
-from IO import Output_File
+from IO import Output_File_old
 import  subprocess
 import threading
 import queue
 from plots import show_shape, show_omega, post_process, show_plots, show_3D_plots
-
+from IO import Parameter
 from tkinter import filedialog
 from matplotlib.animation import  FFMpegWriter
 
@@ -55,7 +55,8 @@ class GUI:
     
     def Parameters(self):
         for name in self.screen_options:
-            self.parameters[name]="Yes"
+            if name not in self.parameters:
+                self.parameters[name]="Yes"
             inputs=self.screen_options[name]
             for Input in inputs:
                 self.parameters[Input.Name]=Input.Value
@@ -111,10 +112,10 @@ class GUI:
         #stdout_data, stderr_data = process.communicate(timeout=15)
         #return_code = process.returncode
 
-        #print(f"Parent: Child STDOUT:\n{stdout_data}")
+        # print(f"Parent: Child STDOUT:\n{stdout_data}")
         #if stderr_data: # Only print if there's something in stderr
-          #  print(f"Parent: Child STDERR:\n{stderr_data}")
-        #print(f"Parent: Child Return Code: {return_code}")
+        #    print(f"Parent: Child STDERR:\n{stderr_data}")
+        # print(f"Parent: Child Return Code: {return_code}")
         
         self.processes[index] = process
         self.read_output(process, progress_queue)
@@ -147,8 +148,8 @@ class GUI:
                 post_process(self.parameters)
                 ttk.Label(text_frame, text=" Post processing complete.", font=("Times", 16, "bold")).pack(pady=10)
                 ttk.Label(text_frame, text=f"Outputs are written in  {self.parameters['Output folder']} folder ", font=("Times", 16, "bold")).pack(pady=10)
-    
-                self.create_buttons(self.root,next_button_text="Show time evolution", back_button_text="",packing="pack")
+                if self.parameters["Single run"].lower() == 'no':
+                    self.create_buttons(self.root,next_button_text="Show time evolution", back_button_text="",packing="pack")
             self.create_buttons(self.root,next_button_text="Start another simulation", back_button_text="Exit",packing="pack")
 
         else:      
@@ -176,7 +177,7 @@ class GUI:
         while True:
 
             self.current_screen+=1
-            if  self.current_screen>4 or self.parameters[self.screen_list[self.current_screen]]=="Yes":
+            if  self.current_screen>4 or (self.parameters[self.screen_list[self.current_screen]]=="Yes" and self.parameters["Visualization"].lower()=="no"):
                 break            
             
         self.show_next_screen()
@@ -209,21 +210,23 @@ class GUI:
             print("Simulation aborted by the user")
             sys.exit()
             
-        elif self.current_screen== 0:
+        elif self.current_screen == 0:
             self.create_welcome_screen()
         
-        elif self.current_screen<5:
+        elif self.current_screen < 5:
             if self.welcome_screen: 
                 self.welcome_screen.destroy()
                 self.root.deiconify()
             self.create_checklist_screen(self.screen_list[self.current_screen]) 
                 
-        elif self.current_screen==5:
-            #uncomment only when you want to do post process of already simulated data
-            post_process(self.parameters) #change
-            self.create_post_processing_screen() 
+        elif self.current_screen == 5:
             
-            #self.create_preview_screen() 
+            if self.parameters["Visualization"].lower()=="yes":
+                Parameter(self.parameters,"output")
+                post_process(self.parameters) 
+                self.create_post_processing_screen()
+            else:
+                self.create_preview_screen() 
         
         elif self.current_screen==6:
             self.create_simulation_screen()
@@ -232,6 +235,7 @@ class GUI:
             self.create_progressbar_screen()
 
         elif self.current_screen==8:
+            
             self.create_post_processing_screen()
             
 
@@ -267,13 +271,13 @@ class GUI:
     def create_buttons(self,root,packing="grid",next_button_text="Next",back_button_text="Back",row=1,column=0,
                        columnspan=1,myfont=('Helvetica', 16), *args):
         
-        button_frame = ttk.Frame(root)
+        button_frame = ttk.Frame(root, height = 60)
         if self.current_screen==4:
             next_button_text="Preview"
         if packing=="grid":
             button_frame.grid(row=row, column=column,columnspan=columnspan, padx=10, pady=10, sticky="nsew")
         else:
-            button_frame.pack(expand=True, fill="both")
+            button_frame.pack( fill=tk.X)
         
         # Centering the buttons (same as before)
         button_frame.grid_columnconfigure(0, weight=1) 
@@ -377,7 +381,7 @@ class GUI:
         self.progress = ttk.Progressbar(self.progress_window, orient='horizontal', length=200, mode='determinate')
         self.progress.pack(pady=10)
         self.progress_window.geometry("300x100+1000+500")
-        filename=Output_File(self.parameters,"output")
+        filename=Output_File_old(self.parameters,"output")
         file_path = filedialog.asksaveasfilename ( initialdir =filename,
            defaultextension = ".mp4", filetypes = [("MP4 files", "*.mp4")],
            initialfile = "animation.mp4" )
@@ -444,7 +448,7 @@ class GUI:
             
 ##############################################################################################
     
-    def create_checklist_screen(self,name):  # Added use_entry argument
+    def create_checklist_screen(self,name):  
         inputs=self.screen_options[name]
     
         frame = ttk.LabelFrame(self.root, text=name)
@@ -476,25 +480,94 @@ class GUI:
     
     def create_preview_screen(self):
 
-        j=0
-        column=0
+              # --- 1. Parent Frame & Master Grid Weights ---
+        main_frame = ttk.Frame(self.root)
+        
+        # Use pack to force the main_frame to fill the entire application window
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Keep the grid weights for the inside of main_frame so the Canvas expands
+        main_frame.grid_rowconfigure(0, weight=1)    
+        main_frame.grid_columnconfigure(0, weight=1)
+        
+        # --- 2. Scrollbars and Canvas ---
+        x_scrollbar = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL)
+        y_scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL)
+        
+        my_canvas = tk.Canvas(main_frame, xscrollcommand=x_scrollbar.set, yscrollcommand=y_scrollbar.set, highlightthickness=0)
+        
+        my_canvas.grid(row=0, column=0, sticky="nsew")
+        y_scrollbar.grid(row=0, column=1, sticky="ns")
+        x_scrollbar.grid(row=1, column=0, sticky="ew")
+        
+        y_scrollbar.config(command=my_canvas.yview)
+        x_scrollbar.config(command=my_canvas.xview)
+        
+        # --- 3. The Inner Scrollable Frame ---
+        scrollable_frame = ttk.Frame(my_canvas)
+        
+        # CRITICAL FIX: Tell the inner frame's columns to expand to fill space!
+        scrollable_frame.grid_columnconfigure(0, weight=1)
+        scrollable_frame.grid_columnconfigure(1, weight=1)
+        
+        # Create window inside canvas
+        canvas_window = my_canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        
+        # Update scrollregion when inner frame changes size
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: my_canvas.configure(scrollregion=my_canvas.bbox("all"))
+        )
+        
+        # Force the inner frame to match the Canvas dimensions
+        def _on_canvas_configure(event):
+            # Match Canvas width
+            my_canvas.itemconfig(canvas_window, width=event.width)
+            
+            # Match Canvas height if content is small, otherwise allow scrolling (height=0)
+            if scrollable_frame.winfo_reqheight() < event.height:
+                my_canvas.itemconfig(canvas_window, height=event.height)
+            else:
+                my_canvas.itemconfig(canvas_window, height=0)
+        
+        my_canvas.bind("<Configure>", _on_canvas_configure)
+        
+        # --- 4. Your Dynamic Grid Loop ---
+        j = 0
+        column = 0
         
         for name in self.screen_options:
-            if self.parameters[name]=="Yes":
-
-                inputs=self.screen_options[name]
-                frame = ttk.LabelFrame(self.root, text=name)
+            if self.parameters[name] == "Yes":
+                inputs = self.screen_options[name]
+                
+                # Parent is the inner scrollable_frame
+                frame = ttk.LabelFrame(scrollable_frame, text=name)
                 frame.grid(row=j, column=column, padx=10, pady=10, sticky="nsew")
+                
+                # Make the inside of the LabelFrame expand too (if needed for your widgets)
                 frame.grid_columnconfigure(0, weight=1)
                 frame.grid_columnconfigure(1, weight=1)
-                j+=column
-                column= int(not bool(column))
-
+                
+                # Alternating logic
+                j += column
+                column = int(not bool(column))
+        
+                # Load content into the frame
                 self.load_frame(frame, inputs)
-                self.disable_all_widgets(frame) 
+                self.disable_all_widgets(frame)
+        
+        # --- 5. Mouse Wheel Scrolling (Linux/Cross-platform) ---
+        def _on_arrow_keys(event):
+            if event.keysym == 'Up':
+                my_canvas.yview_scroll(-1, "units")
+            elif event.keysym == 'Down':
+                my_canvas.yview_scroll(1, "units")
+        
+        my_canvas.bind_all("<Button-4>", lambda e: _on_arrow_keys(e) or my_canvas.yview_scroll(-1, "units")) # Linux Up
+        my_canvas.bind_all("<Button-5>", lambda e: _on_arrow_keys(e) or my_canvas.yview_scroll(1, "units")) # Linux Down
 
 
-        self.create_buttons(self.root,next_button_text="Start simulation", back_button_text="Back",row=j+1,column=0,columnspan=2)
+        self.create_buttons(self.root,next_button_text="Start simulation", back_button_text="Back",packing="pack",row=1,column=0,columnspan=2)
 #self.center_window(self.root)
  
 ###############################################################################################        

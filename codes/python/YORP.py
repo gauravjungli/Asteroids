@@ -7,28 +7,45 @@ Created on Thu May 16 12:06:35 2024
 """
 
 import numpy as np
-from landslides import Height, Landslides
+from landslides import  Landslides
+from Height import Height
 from collisions import G, wobblecalcf
 import math
 import subprocess
 from IO import Output_File
 from scipy.interpolate import  CubicSpline
+import sys
 
 """Main YORP function that updates the spin state."""
 
-def YORP(target, parameters, impacttime, oldtime, myomega):
+def YORP( parameters, target, impacttime, oldtime, myomega):
  #   print("Simulating YORP")
+    check_time = math.ceil(oldtime / 1000) * 1000
     if  not target.YORP:
         return
     # which omega to use because it is being changed by the yorp
     wobblecalcf(target, impacttime, oldtime)
 
     t_yorp = oldtime
-    file = Output_File(parameters, "output", ["output.yorp"])
+    print_time = oldtime
+    file = Output_File(target, "output", ["output.yorp"])
     
-
     h_yorp = float(parameters["h_yorp"])
+    
+    omega_crit, omega_shed =  Critical_omega(target)
+    
+    if (omega_shed<omega_crit):
+        
+        print("Shedding starts before the landslide.")
+    
     while impacttime > t_yorp+1:
+        
+        if (t_yorp>print_time):
+            print_time +=1000
+            with open(file, "a") as output_file:
+                output_file.write(f"{t_yorp:12.6e} { target.omega[2]:12.8e} {target.obliq:12.8e} {omega_crit:12.8e} {omega_shed:12.8e}\n")
+            
+        
         if impacttime-t_yorp < h_yorp:
             h_yorp = impacttime-t_yorp
         t_yorp += h_yorp
@@ -43,19 +60,32 @@ def YORP(target, parameters, impacttime, oldtime, myomega):
                 target.coeff_f, target.coeff_g = shape_gen(target.K,parameters['Nature'])
 
         rk4(parameters, target)
-
-        with open(file, "a") as output_file:
-            output_file.write(f"{t_yorp:12.6e} { target.omega[2]:12.8e} {target.obliq:12.8e}\n")
-
-        
         
        
-        if target.omega[2] > 0.95*target.omegaLimit:
-            print("Too fast spinning causing landslides")
+        if not target.collision:
+            print(min(99,round(t_yorp/impacttime*100)),file=sys.__stdout__,flush=True)
+            sys.stdout.flush()
+       
+        if t_yorp > check_time and target.omega[2] > 1.0*omega_crit:
+            
+            target.fast_rotation_flag = True
+            
             myomega.append([t_yorp, target.omega[2]])
-            # parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
-            Height(parameters, target)
-            Landslides(target, parameters,t_yorp,myomega)
+            Height(target)
+            Landslides( parameters,target,t_yorp,myomega)
+            
+            target.fast_rotation_flag = False
+            check_time = t_yorp + 1000
+            
+            omega_crit, omega_shed =  Critical_omega(target)
+            
+            
+            if (omega_shed<omega_crit):
+                
+                print("Shedding starts before the landslide.")
+                
+    
+            
     myomega.append([t_yorp, target.omega[2]])
     print("Omega after the yorp effect:", target.omega[2])
 
@@ -328,8 +358,6 @@ def Yorp(target,parameters,impacttime,oldtime,myomega):
         myomega.append([min(impacttime,oldtime), target.omega[2]])
         if target.omega[2] > 0.9*omegaLimit:
             print("Too fast spinning causing landslides")
-            #parameters["uni_h"]=min(max((target.omega[2]-0.9*omegaLimit)/(omegaLimit)*(0.2/float(parameters["epsilon"])),1),10)
-            #print(parameters["uni_h"])
             Height(parameters,target)
             Landslides(target,parameters,min(impacttime,oldtime),myomega)
         
@@ -339,7 +367,7 @@ def Yorp(target,parameters,impacttime,oldtime,myomega):
 
 #%%
 
-def read_f_g_spline(parameters):
+def read_f_g_spline(target):
     """
     Reads data from files, creates spline interpolations for f and g functions.
 
@@ -354,7 +382,7 @@ def read_f_g_spline(parameters):
 
     # --- Read data for the f function ---
     f = []
-    mydir=Output_File(parameters,"input",["yorp_f.txt"])
+    mydir=Output_File(target,"input",["yorp_f.txt"])
     with open(mydir, 'r') as file:
         for line in file:
             x, y = map(float, line.split(","))
@@ -366,7 +394,7 @@ def read_f_g_spline(parameters):
     f_spline = CubicSpline(f[:,0], f[:,1])
 
     g= []
-    mydir=Output_File(parameters,"input",["yorp_g.txt"])
+    mydir=Output_File(target,"input",["yorp_g.txt"])
     with open(mydir, 'r') as file:
         for line in file:
             x, y = map(float, line.split(","))
@@ -379,4 +407,105 @@ def read_f_g_spline(parameters):
 
     return f_spline, g_spline
 
+
+#%%
+
+
+def Critical_omega(target):
+    """
+    Computes valid rotation rates (omega) for the condition -mu * f_n = |f_theta|.
+    Assumes u_phi = 0 and n = 0.
+    
+    Parameters:
+    - theta: 1D numpy array of polar angles in radians.
+    - R: 1D numpy array of radial distances corresponding to theta.
+    - mu: Coefficient of friction (scalar).
+    - bn0: Static normal force component (scalar or matching array).
+    - btheta0: Static tangential force component (scalar or matching array).
+    - R_phi: Radius of curvature of the phi-curve (scalar or matching array).
+    
+    Returns:
+    - A dictionary containing arrays for the computed curvatures and the valid 
+      omega roots for both the positive and negative f_theta cases.
+    """
+    mydir = Output_File (target,"output",["base.txt"])
+
+    base = np.loadtxt(mydir,delimiter=",",dtype=float)
+    # 1. Numerically differentiate R with respect to theta
+    # np.gradient uses second-order accurate central differences
+    Res= target.res
+    theta = base[2:Res-2,0]
+    R = base[2:Res-2,1]*target.d/2
+    R_prime = base[2:Res-2,3]*target.d/2#np.gradient(R, theta)
+    mu = np.tan(math.radians(target.delta))
+    b_n = target.rgrav[2:Res-2]
+    b_theta = target.tgrav[2:Res-2]
+    # 2. Compute the normalization factor N
+    N = np.sqrt(R**2 + R_prime**2)
+    rho = target.dens
+    # 3. Compute base curvatures (kappa_phi_n and kappa_phi_g)
+    # Using errstate to suppress warnings at theta = 0 or pi where sin(theta) = 0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        # Corrected denominator including R
+        denom = R * np.sin(theta) * N
+        
+        R_cos_prime = R_prime * np.cos(theta) - R * np.sin(theta)
+        R_sin_prime = R_prime * np.sin(theta) + R * np.cos(theta)
+        
+        # Since n=0, the full curvatures equal their base components
+        kappa_phi_n = -R_cos_prime / denom
+        kappa_phi_g = R_sin_prime / denom
+        R_phi = R*np.sin(theta)
+        
+        c_0 =target.cohesion_cons
+        c_1 = target.cohesion_linear
+    # Initialize output dictionary with NaNs for the physical roots
+    results = {
+        'theta': theta,
+        'R': R,
+        'R_prime': R_prime,
+        'kappa_phi_n': kappa_phi_n,
+        'kappa_phi_g': kappa_phi_g,
+        'omega_case_A': np.full_like(theta, 1, dtype=float),
+        'omega_case_B': np.full_like(theta, 1, dtype=float)
+    }
+    
+    # ---------------------------------------------------------
+    # Case A: Assuming f_theta >= 0 (-mu * f_n = f_theta)
+    # ---------------------------------------------------------
+    
+    
+    num_A = c_0*c_1/rho -(mu * b_n + b_theta)
+    den_A = kappa_phi_g + mu * kappa_phi_n
+    
+    with np.errstate(divide='ignore', invalid='ignore'):
+        omega_sq_A = num_A / ((R_phi**2) * den_A)
+        f_theta_A = b_theta + (R_phi**2) * kappa_phi_g * omega_sq_A
+        
+        # Mask for valid physical solutions
+        valid_mask_A = (omega_sq_A >= 0) & (f_theta_A >= -1e-9) & ~np.isnan(omega_sq_A)
+        results['omega_case_A'][valid_mask_A] = np.sqrt(omega_sq_A[valid_mask_A])
+
+    # ---------------------------------------------------------
+    # Case B: Assuming f_theta < 0 (-mu * f_n = -f_theta)
+    # ---------------------------------------------------------
+    num_B = c_0*c_1/rho - mu * b_n + b_theta
+    den_B = - kappa_phi_g + mu * kappa_phi_n
+    
+    with np.errstate(divide='ignore', invalid='ignore'):
+        omega_sq_B = num_B / ((R_phi**2) * den_B)
+        f_theta_B = b_theta + (R_phi**2) * kappa_phi_g * omega_sq_B
+        
+        # Mask for valid physical solutions
+        valid_mask_B = (omega_sq_B >= 0) & (f_theta_B < 1e-9) & ~np.isnan(omega_sq_B)
+        results['omega_case_B'][valid_mask_B] = np.sqrt(omega_sq_B[valid_mask_B])
+        
+    crit_omega_A = np.min(results['omega_case_A'])
+    crit_omega_B = np.min(results['omega_case_B'])
+    
+    shed_omega = np.sqrt(np.maximum(0,-b_n/kappa_phi_n))/R_phi
+    
+    
+    
+    return min(crit_omega_A,crit_omega_B),min(shed_omega)
 

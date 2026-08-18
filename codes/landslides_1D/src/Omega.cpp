@@ -24,12 +24,16 @@ void Shed(vector<CV>& w, double& Ang_Shed)
 bool shed = false;
 for ( int j = 2; j < res-2; j++)
 {
- 	if (w[j].psi <= epsilon*epsilon ) 
+ 	if (w[j].psi <= min_psi) 
 	{	
 		Ang_Shed += (Ang_mom_reg(w[j])+Jinertia1_reg(w[j])*omega)*dx;
 		mass_shed +=  2*PI*epsilon*pow(dia/2,3)*w[j].p*dx;
-		w[j]=CV(  min_h,sign(w[j].u)*min_u,sign(w[j].v)*min_u,w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x  );
-		//w[j].psi = epsilon*epsilon;
+
+		//w[j]=CV(  min_h,sign(w[j].u)*min_u,sign(w[j].v)*min_u,w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x  );
+		w[j]=CV(  max(1e-6,w[j].h/2),w[j].u/2,w[j].v/2,w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x  );
+		
+		Ang_Shed -= (Ang_mom_reg(w[j])+Jinertia1_reg(w[j])*omega)*dx;
+		mass_shed -=  2*PI*epsilon*pow(dia/2,3)*w[j].p*dx;
 		shed = true;
 	} 
 

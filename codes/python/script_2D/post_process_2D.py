@@ -83,7 +83,7 @@ def plot_height(theta, phi, flow_height, time_step,vmin,vmax):
     #plt.legend(loc='best')
     #plt.legend(fontsize=14) 
     
-    plt.savefig(f'/home/g/Asteroids/output/Spherical_1/img/{time_step}.svg',dpi = 300,bbox_inches='tight')
+    plt.savefig(f'/home/g/Asteroids/output/Spherical_2D_2/img/{time_step}.png',dpi = 300,bbox_inches='tight')
     
 
 # Plot velocity as quiver
@@ -129,7 +129,7 @@ def main(folder_path, output_file="animation.mp4"):
 
 
 # Main function to execute visualization
-def plot_height_main(parameters,file,epsilon):  
+def plot_height_main(parameters,file):  
     path = Path(file)
     #pdb.set_trace()
     plt.figure(figsize=(10, 6))
@@ -138,7 +138,7 @@ def plot_height_main(parameters,file,epsilon):
     vmin, vmax = (0,0.5)#get_color_limits_height(folder_path,epsilon)  # Get global color limits
     j=0
     for folder_path in folder_paths:
-        file_paths = sorted(glob.glob(f"{folder_path}/field_0.csv"),key=extract_number)
+        file_paths = sorted(glob.glob(f"{folder_path}/*.csv"),key=extract_number)
        # print(file_paths)
         
         plt.ion()  # Turn on interactive mode
@@ -166,7 +166,7 @@ def plot_height_main(parameters,file,epsilon):
 def plot_surface_main(folder_path):
     
     #pdb.set_trace()
-    file1 = "/home/g/Asteroids/output/Spherical_2D_3.5/run1/data/dia.txt"
+    file1 = "/home/g/Asteroids/output/Spherical_2D_2/run1/data/dia.txt"
     epsilon=np.loadtxt(file1,dtype=float)[:,2]
     Gamma = np.loadtxt(file1,dtype=float)[:,3]
     vmin, vmax = (0,0) #get_color_limits_height(folder_path,epsilon)  # Get global color limits

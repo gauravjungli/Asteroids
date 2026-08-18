@@ -147,18 +147,18 @@ def crater_radius_to_angle(crater_radius, sphere_radius):
     return float(crater_radius) / float(sphere_radius)
 
 
-def Crater(parameters,target,impactor):
+def Crater(target,impactor):
     
     # 1. Define the Spherical Grid
     initial_sphere_radius = target.d/2 
-    epsilon =float(parameters['epsilon'])
-    mydir=Output_File (parameters,"output",["base.txt"]) 
+    epsilon = target.epsilon
+    mydir=Output_File (target,"output",["base.txt"]) 
     
     base=np.loadtxt(mydir,delimiter=",",dtype=float)
-    n_theta = int(parameters['X Resolution'])
-    n_phi = int(parameters['Y Resolution'])
+    n_theta = target.x_res
+    n_phi = target.y_res
     
-    theta, phi = grid_2D(parameters)
+    theta, phi = grid_2D(target)
     phi_grid, theta_grid = np.meshgrid(phi, theta)
     
     

@@ -5,20 +5,14 @@ Created on Fri Jun 20 18:16:49 2025
 
 @author: g
 """
-
+from IO import Output_File
 from circle_fit import taubinSVD
 import numpy as np
 import matplotlib.pyplot as plt
-
-from IO import Parameter, Exparameter, Output_File
-from scipy.optimize import least_squares
-import os
-
 import pdb
-from scipy.interpolate import UnivariateSpline, CubicSpline  , interp1d 
-from scipy.signal import savgol_filter
+from scipy.interpolate import  interp1d 
 from scipy.ndimage import gaussian_filter1d
-from skimage.restoration import denoise_tv_chambolle
+import os
 #%%
 
 
@@ -33,13 +27,13 @@ def Fit_radius(base_old,epsilon):
     base  = base_old[2:Res-2,1]    
     height = epsilon*base_old[2:Res-2,2]
     
-    height = gaussian_filter1d(height, sigma=2)
+    height = gaussian_filter1d(height, sigma=int(len(theta)/200))
 
     dbase = base_old[2:Res-2,3]
 
     metric = base**2 + dbase**2
 
-    rad = np.sqrt((2*base**2*np.sqrt(metric)*height + metric*(height**2 + base**2  ))/metric)
+    rad = np.sqrt(( 2*base**2*np.sqrt(metric)*height + metric*(height**2 + base**2 ) )/metric)
    # rad_mean = np.mean(rad)
     #print("maximum radial distance is ", max(rad) )
     z = np.cos(theta)*base + 1/np.sqrt(metric)*(height*dbase*np.sin(theta)+np.cos(theta)*base*height)
@@ -55,17 +49,16 @@ def Fit_radius(base_old,epsilon):
 
 
 
-def Fit(parameters,epsilon=None,base_old=None):
+def Fit(target,epsilon=None,base_old=None):
     
-    dia = float(parameters["Current diameter"])
-    Res = int(parameters["Resolution"])
+    dia = target.d
+    Res =target.res
     
-    if epsilon is None:
-        epsilon = float(parameters["epsilon"])
+    epsilon = target.epsilon 
         
-    initial_mass = float(parameters['Initial mass'])
-    shed_mass = float(parameters['Mass shed'])
-    file = Output_File(parameters,"output",["base.txt"])
+    initial_mass = target.initial_mass
+    shed_mass = target.shed_mass
+    file = Output_File(target,"output",["base.txt"])
     max_curv =50
     max_slope = 10
     
@@ -83,10 +76,24 @@ def Fit(parameters,epsilon=None,base_old=None):
     theta = base_old[2:Res-2,0]
     base  = base_old[2:Res-2,1]    
     height = epsilon*base_old[2:Res-2,2]
+    jinertia =  np.trapezoid(2*np.pi/5*np.sin(base_old[1:Res-1,0])**3*base_old[1:Res-1,1]**5,base_old[1:Res-1,0])
     
-    height = gaussian_filter1d(height, sigma=2)
+    if not impact_flag:
+        
+        fig, ax = plt.subplots()
+        ax.plot(theta,height) 
     
-    plot=False
+    height = gaussian_filter1d(height, sigma=int(Res/200))
+    
+    if not impact_flag:
+        
+        ax.plot(theta,height)
+        save_folder =  Output_File(target,"output",["height_profile"])
+        os.makedirs(save_folder, exist_ok=True) 
+        fig.savefig(save_folder + f"/height_{target.slides}.png")
+        plt.close(fig)
+    
+    plot = False
     if plot:
         plt.plot(theta,height/epsilon,'-r') 
         plt.plot(theta,base_old[2:Res-2,2])
@@ -114,33 +121,41 @@ def Fit(parameters,epsilon=None,base_old=None):
     
     shape[2:Res-2,1] = (shape[2:Res-2,1])*dia_ratio
     print("The dia ratio is ", dia_ratio)
-    shape[0,1]= float(parameters["Diameter"])/dia
+    shape[0,1]= shape[2,1]
     shape[1,1]= shape[0,1]
     shape[Res-1,1] = shape[1,1]
     shape[Res-2,1] = shape[0,1]
     
     # Derivatives
-    spline_deriv1_smooth =gaussian_filter1d(shape[2:Res-2,1], sigma =int(5) )
+    spline_deriv1_smooth =gaussian_filter1d(shape[2:Res-2,1], sigma =int(Res/100) )
     
     shape[2:Res-2,3] =  np.gradient(spline_deriv1_smooth, shape[2:Res-2,0]) 
    
-    plot=False
-    if plot:
-        plt.plot(shape[2:Res-2,0],np.gradient(shape[2:Res-2,1], shape[2:Res-2,0]),'-r')
-        plt.plot(shape[2:Res-2,0],shape[2:Res-2,3])
-        plt.draw()
-        plt.pause(0.5)
+    
+    if not impact_flag:
+        fig, ax = plt.subplots()
+        ax.plot(shape[2:Res-2,0],np.gradient(shape[2:Res-2,1], shape[2:Res-2,0]),'-r')
+        save_folder =  Output_File(target,"output",["first_derivative"])
+        os.makedirs(save_folder, exist_ok=True) 
+        ax.plot(shape[2:Res-2,0],shape[2:Res-2,3])
+        fig.savefig(save_folder + f"/derivative_{target.slides}.png")
+        plt.close(fig)
+
    
-    spline_deriv2_smooth = gaussian_filter1d(shape[2:Res-2,3], sigma=int(5))
+    spline_deriv2_smooth = gaussian_filter1d(shape[2:Res-2,3], sigma=int(Res/100))
 
     shape[2:Res-2,4] = np.gradient(spline_deriv2_smooth,shape[2:Res-2,0])
 
-    plot=False
-    if plot:
-        plt.plot(shape[2:Res-2,0],np.gradient(np.gradient(shape[2:Res-2,1], shape[2:Res-2,0]),shape[2:Res-2,0]),'-r')
-        plt.plot(shape[2:Res-2,0],shape[2:Res-2,4])
-        plt.draw()
-        plt.pause(0.5)
+
+    if not impact_flag:
+        fig, ax = plt.subplots()
+        ax.plot(shape[2:Res-2,0],np.gradient(np.gradient(shape[2:Res-2,1], shape[2:Res-2,0]),shape[2:Res-2,0]),'-r')
+        save_folder =  Output_File(target,"output",["Second_derivative"])
+        os.makedirs(save_folder, exist_ok=True) 
+        ax.plot(shape[2:Res-2,0],shape[2:Res-2,4])
+        fig.savefig(save_folder + f"/second_derivative_{target.slides}.png")
+        plt.close(fig)
+        
     
     if max(shape[:,4])>max_curv or min(shape[:,4])<-max_curv:
         print("Too large value of curvature",max(shape[2:Res-2,4]), "   ", min(shape[2:Res-2,4]) )
@@ -165,52 +180,28 @@ def Fit(parameters,epsilon=None,base_old=None):
     
     print("The maximum value of second derivative is ", max(shape[:,4]))
     print("The minimum value of second derivative is ", min(shape[:,4]))
-   # print("The maximum value of first derivative is ", max(shape[:,3]))
-   # print("The minimum value of first derivative is ", min(shape[:,3]))
 
-    parameters["Current diameter"] = float(radius)*dia
+
+    #Updating the diameter. It is only place where the diameter is updated
+    target.d = float(radius)*dia
 
     jinertia =  np.trapezoid(2*np.pi/5*np.sin(shape[1:Res-1,0])**3*shape[1:Res-1,1]**5,shape[1:Res-1,0])
     jinertia1 = np.trapezoid(np.pi/5*(-np.sin(shape[1:Res-1,0])**3+2*np.sin(shape[1:Res-1,0]))*shape[1:Res-1,1]**5,shape[1:Res-1,0])
    # print(jinertia,'      ' ,jinertia1)
-    parameters["jinertia"] = jinertia
-    parameters["jinertia1"] = jinertia1
-    Exparameter(parameters)
+    target.jinertia[2] = jinertia*(target.d/2)**5 * target.dens
+    target.jinertia[0] = target.jinertia[0]  = jinertia1*(target.d/2)**5 * target.dens
+
     if not impact_flag:
         np.savetxt(file,shape,delimiter=",") 
     else:
         return shape
-   # print ("The best fit value of r is ", r)
+   
   
 
-
-   # rad_sorted_dev = (rad_sorted - rad_mean)/epsilon
-
-    
-    # s = 1e-6
-    # while(True):
-    
-    #      spline_smooth = UnivariateSpline(theta_sorted,rad_sorted_dev, s=s, k=3) # k=3 for cubic spline
-    #      spline_deriv2_smooth = spline_smooth.derivative(n=2)
-    #      ddbase = spline_deriv2_smooth(theta)*epsilon 
-    #      spline_deriv1_smooth = spline_smooth.derivative(n=1)
-    #      dbase = spline_deriv1_smooth(theta)*epsilon
-    #      # plt.clf()
-    #      # plt.plot(theta,rad)
-    #      # plt.plot(theta,spline_smooth(theta)*epsilon + rad_mean )
-    #      # plt.draw()
-         
-    #      print(f'Extreme values of curvature are  {max(ddbase)}  and {min(ddbase)}')
-    #      if ((max(ddbase)<max_curv and min(ddbase)>-max_curv) or s>Res):
-    #          break
-    #      else:
-    #          s= 1.1*s
-    # print(f"Using s value as {s}")
-
 #To be completed later
-def Fit_2D(parameters):
+def Fit_2D(target):
     
-    file = Output_File(parameters,"output",["base.txt"])
+    file = Output_File(target,"output",["base.txt"])
 
     #Flag to check whether it is called after an impact or just to fit the shape
    

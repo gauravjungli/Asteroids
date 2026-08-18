@@ -320,7 +320,7 @@ def Istuff(parameters,target,tmaxby,cumdistr):
     
     #File containing velocity distribution
     vel_dist = parameters['Velocity file']
-    file =Output_File(parameters,'input',[vel_dist])
+    file =Output_File(target,'input',[vel_dist])
 
     #Create collisional history for the explicit impactors
     istuff=[]
@@ -338,7 +338,7 @@ def Istuff(parameters,target,tmaxby,cumdistr):
     #     istuff[i].d = data[i,1]
     #     istuff[i].M =(math.pi / 6) * istuff[i].dens * istuff[i].d**3
     #        
-    ExportImpactor(istuff,parameters)
+    ExportImpactor(istuff,target)
     
     #Sort with the impact time
     istuff.sort(key=lambda x: x.impacttime)

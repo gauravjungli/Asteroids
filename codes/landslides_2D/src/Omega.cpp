@@ -28,7 +28,7 @@ for (int i =2;i<rows-2;i++)
 
  	if (w[i0].psi <= epsilon*epsilon ) 
 	{	
-		Ang_Shed += (Ang_mom_reg(w[i0])+Jinertia1_reg(w[i0])*omega)*dx*dy;
+		Ang_Shed += (Ang_mom_reg(w[i0]))*dx*dy;
 		mass_shed +=  epsilon*pow(dia/2,3)*w[i0].p*dx*dy;
 		w[i0]=CV(  min_h,sign(w[i0].u)*min_u,sign(w[i0].v)*min_u,w[i0].b,w[i0].Ra,w[i0].dR,w[i0].ddR,w[i0].g,w[i0].x,w[i0].y  );
 

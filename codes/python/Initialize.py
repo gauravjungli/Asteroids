@@ -5,7 +5,7 @@ Created on Sat Mar 29 16:59:36 2025
 
 @author: g
 """
-from IO import Output_File, Exparameter, load_asteroid_data
+from IO import Output_File, Output_File_old, Exparameter, load_asteroid_data
 import os
 import subprocess
 from collisions import G
@@ -35,7 +35,7 @@ def Initialize_simulations(parameters,parameters_list=[]):
         for key in parameters:
             new_parameters[key]=parameters[key]
         new_parameters['run']=i
-        mydir=Output_File (new_parameters,"output")
+        mydir=Output_File_old (new_parameters,"output")
         if os.path.exists(mydir):
             subprocess.run(["rm", "-r", mydir])
         else:
@@ -78,25 +78,16 @@ def Initialize(parameters,target):
     #parameters['Seismic_shaking_time'] = target.t_lan/(target.d/2/target.grav)**0.5
     parameters['Mass shed'] = 0
     parameters['Initial mass'] = 0
-    mydir = Output_File(parameters,"output")
-    
-    
-    file = Output_File(parameters, "output", ["output.yorp"])
-    with open(file, "w") as output_file:  # Overwrites existing files
-        output_file.write(
-            f"{0 :12.6e} {target.omega[2]:12.8e} {target.obliq:12.8e}\n")
+    mydir = Output_File(target,"output")
         
      
     grid_uniform(parameters,target)
     
     if target.landslide:
         
-        dimension = parameters['Dimension'] 
-              
-        
+        dimension = target.dim
 
-
-        executable_file = Output_File(parameters,"codes",['build',f'landslides_{dimension}',parameters["executable"]])
+        executable_file = Output_File(target,"codes",['build',f'landslides_{dimension}',parameters["executable"]])
         
         try:
             shutil.copy(executable_file, mydir)
@@ -157,16 +148,16 @@ def grid_uniform(parameters,target):
         print("Grid data with crater height profile saved to base.txt")
         
         
-    mydir = Output_File(parameters,"output")
+    mydir = Output_File(target,"output")
 
-    if parameters['Dimension'] == '2D':
+    if target.dim == '2D':
         
 
     # Define the grid ranges
  
         x_values, y_values, r, dr, ddr, base = grid(parameters,target) 
                 
-        base = base/float(parameters['epsilon'])
+        base = base/target.epsilon
 
     # Open file to write the grid data
         i=0
@@ -185,16 +176,17 @@ def grid_uniform(parameters,target):
         #crater()
  
 
-    if parameters['Dimension'] == '1D':
+    if target.dim == '1D':
         #pdb.set_trace() 
-        res = int(parameters["Resolution"])
+        res = target.res
         dia = target.d
 
 
         base = np.zeros((res,5))
-        offset=float(parameters["offset"])
+        offset = target.offset
         dx=(math.pi-2*offset)/res 
         parameters['dx'] =dx
+        target.dx = dx
         #c = 500   #uncomment for single run with given shape
         #a = 1000
         #D = (a**2*c)**(1/3) 
@@ -203,27 +195,28 @@ def grid_uniform(parameters,target):
             
             base[i,0] = offset + dx * (i+ 0.5)   
            # base [i,2] =1 
-        axisymmetric_asteroid(parameters,target,base)
-        parameters["Initial mass"] =  2*np.pi/3*np.trapezoid(((base[2:res-2,1])**3*
+        axisymmetric_asteroid(target,base)
+        target.initial_mass =  2*np.pi/3*np.trapezoid(((base[2:res-2,1])**3*
                                                    np.sin(base[2:res-2,0])),base[2:res-2,0])*(dia/2)**3
         #base = Fit(parameters,base_old=base)
         #axisymmetric(base,a/2,c/2,D/2)
         
         np.savetxt(mydir+"/base.txt",base,delimiter=",")
         
-        target.rgrav,target.tgrav =  Gravitycalc(parameters,target) 
+        target.rgrav,target.tgrav =  Gravitycalc(target) 
         
-def grid_2D(parameters):
+def grid_2D(parameters,target):
     
-    nx, ny = int(parameters['X Resolution']), int(parameters['Y Resolution'])
+    nx, ny = target.x_res, target.y_res
     
 # Define the grid ranges
-    offset =float(parameters["offset"])
+    offset = target.offset
     dx=(np.pi-2*offset)/(nx)
     parameters['dx'] = dx
-    
+    target.dx = dx
     dy=(2*np.pi)/(ny)
     parameters['dy'] = dy
+    target.dy =dy
     
     x_values = np.linspace(offset+dx/2, np.pi-offset-dx/2, nx)
     y_values = np.linspace(0+dy/2, 2 * np.pi-dy/2, ny)
@@ -232,23 +225,21 @@ def grid_2D(parameters):
     
         
  
-def grid(parameters, target):
+def grid( target):
     #pdb.set_trace()
-    if parameters['Dimension'] == '2D':
+    if target.dim == '2D':
       #  pdb.set_trace()
-        nx, ny = int(parameters['X Resolution']), int(parameters['Y Resolution'])
+        ny = target.y_res
 
-        asteroid_file = Output_File(parameters,"input",[f"{parameters['Asteroid']}.npz"])
+        asteroid_file = Output_File(target,"input",[f"{target.name}.npz"])
         radius, lats, lons, devs = load_asteroid_data(asteroid_file)
-        
-        
         
         grid1_lats = lats[:, 0]
         grid1_lons = lons[0, :]
         devs_axi =  np.mean(devs,axis=1)
 
         
-        x_values, y_values = grid_2D(parameters)
+        x_values, y_values = grid_2D(target)
 
         devs_new = regrid_height_profiles(radius,devs, grid1_lats, grid1_lons, x_values, y_values)
         devs_new_axi =  np.mean(devs_new,axis=1)
@@ -388,9 +379,9 @@ def plot_deviation_map(lats_rad, lons_rad, deviations, title="Asteroid Surface D
     plt.show()   
     
     
-def axisymmetric_asteroid(parameters,target,base):
+def axisymmetric_asteroid(target,base):
     
-    asteroid_name = parameters['Asteroid']
+    asteroid_name = target.name
     
     if asteroid_name == 'Spherical':
         
@@ -399,7 +390,7 @@ def axisymmetric_asteroid(parameters,target,base):
         
     else:
         
-        asteroid_file = Output_File(parameters,"input",[asteroid_name+'.npz'])
+        asteroid_file = Output_File(target,"input",[asteroid_name+'.npz'])
         radius, lats, lons, devs = load_asteroid_data(asteroid_file)
         
         grid1_lats = lats[:, 0]

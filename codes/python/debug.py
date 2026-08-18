@@ -11,21 +11,20 @@ debug_plot: This us used for creating the parameter files required for making pl
 debug_cpp: For debugging the cpp files. It initializes the simulation as well as saves all the files like gravity and basal topography.
 debug_post_process: For doing post processing to save the mean and std shapes
 """
-from IO import Exparameter, Output_File, read_xlsx_to_input_field_dict, Parameter
+from IO import Exparameter, Output_File_old, read_xlsx_to_input_field_dict, Parameter
 from Initialize import Initialize_simulations, Initialize
 import sys
 from Target import Target
 import os
 import math
 import numpy as np
-from landslides import Height
-from script_2D.Crater import Crater
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import pdb
 
 def Parameters(data_dict,parameters):
     for name in data_dict:
-        parameters[name]="Yes"
+       # parameters[name]="Yes"
         inputs=data_dict[name]
         for Input in inputs:
             parameters[Input.Name]=Input.Value
@@ -50,8 +49,9 @@ class Impactor:
         
 # To debug the main script        
 def debug_main():   
+   # pdb.set_trace()
     parameters={"run":0}
-    inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
+    inputfile = Output_File_old(parameters, "input" ,["parameters.xlsx"])
     data_dict=read_xlsx_to_input_field_dict(inputfile)
     Parameters(data_dict,parameters)
     Initialize_simulations(parameters)
@@ -62,27 +62,30 @@ def debug_main():
 
 #for plotting the data
 def debug_plot():
+ #   pdb.set_trace()
     parameters ={}
-    parameters['run'] = 0
-    parameters['Output folder'] = '1D/Thesis/New_2.1'
+    parameters['run'] = 1
+    parameters['Output folder'] = "RF25"
     Parameter(parameters,'output')
     return parameters
     
 # for doing post processing to save the mean and std shapes
-def debug_post_process(parameters):   
+def debug_post_process():  
+    parameters ={}
     parameters["run"] = 0
-    inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
+    inputfile = Output_File_old(parameters, "input" ,["parameters.xlsx"])
     data_dict=read_xlsx_to_input_field_dict(inputfile)
     Parameters(data_dict,parameters)
+    return parameters
    
-    
+ 
 #impactor =Impactor()
 #for debugging cpp codes
 def debug_cpp():
     
     #pdb.set_trace()
     parameters={"run":0}
-    inputfile = Output_File(parameters, "input" ,["parameters.xlsx"])
+    inputfile = Output_File_old(parameters, "input" ,["parameters.xlsx"])
     data_dict=read_xlsx_to_input_field_dict(inputfile)
     Parameters(data_dict,parameters)
     
@@ -99,7 +102,7 @@ def debug_cpp():
     parameters['slides'] = 1
    # parameters['omega'] =0
     
-    parameters['verbose_dir']=Output_File(parameters,"output",['data',f"landslides_{parameters['slides']}"])
+    parameters['verbose_dir'] = Output_File_old(parameters,"output",['data',f"landslides_{parameters['slides']}"])
     
 
     Exparameter(parameters)  
@@ -118,3 +121,4 @@ def debug_cpp():
 if __name__ == "__main__":
     parameters = {}
     parameters = debug_plot()
+    target = Target(parameters)

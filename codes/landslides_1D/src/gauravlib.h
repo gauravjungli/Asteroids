@@ -1,6 +1,12 @@
 #ifndef GAURAV_LIB
 #define GAURAV_LIB
 
+#ifndef NDEBUG
+const bool Debug = true;
+#else
+const bool Debug = false;
+#endif
+
 #include <iostream>
 #include <cmath>
 #include <algorithm>
@@ -45,7 +51,8 @@ extern const string verbose_dir;
 extern const string verbose;
 extern const string solver;
 extern const string reconst;
-
+extern const double Static_Delta;
+extern string Central_scheme;
 extern double mass_shed;
 extern double k_d;
 extern bool limiter;
@@ -53,6 +60,7 @@ extern bool restart;
 extern const double Mu;
 extern  double mu;
 extern const double Gamma_max;
+extern const double min_psi;
 //------------------------------------------------------------------------------
 
 //Class for storing a 2D gravity field
@@ -121,6 +129,7 @@ class FS
 
 //To write files 
 void Write_data(const vector<CV> & w, string file  );
+void Write_final_data(const vector<CV> & w, string file  );
 void Write_base ( const vector<CV>& w, string file);
 void Write( const double om, string file );
 void Write( const double om, const double t, string file );
@@ -186,8 +195,6 @@ FS Source( CV w, CV w1, CV w2, CV w3, CV w4);
 FS Eigen(CV w );
 
 FS Friction (CV w);
-
-FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4);
 
 
 double Ang_mom_reg (CV w);

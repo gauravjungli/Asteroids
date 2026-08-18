@@ -23,12 +23,12 @@ from debug import debug_plot
 from matplotlib.ticker import ScalarFormatter
 #%%
 
-def Gravitycalc(parameters,file,rad):
+def Gravitycalc(target,file,rad):
     
     start =time.time()
-    Res=int(parameters["Resolution"])
+    Res=target.res
     epsilon=1e-3 #This is a different epsilon
-    density=float(parameters["Density"])
+    density=target.dens
     
     try:
         w=np.loadtxt(file,dtype=float,delimiter=",")

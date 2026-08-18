@@ -9,6 +9,9 @@ CV::CV(double h, double u, double v, double b, double db, double ddb, Grav g, do
 	    h=min_h; u=min_u; v=min_u;
 	} 
 
+	if (abs(u)>10)
+			cout <<"Much higher velocity"<< endl;
+
     this->h=h; this->u=u; this->v=v; 
 
     this->b=b; this->db=db; this->ddb=ddb;
@@ -31,7 +34,7 @@ CV::CV(double h, double u, double v, double b, double db, double ddb, Grav g, do
 
     R_phi = R_phi_b*(1+epsilon*phi_norm_b*h/2); 
 
-    phi = phi_b*(1-epsilon*phi_norm_b*h/2); 
+    phi = 1/R_phi; 
 
     theta = theta_b*(1-epsilon*theta_b*h/2); 
 
@@ -39,34 +42,31 @@ CV::CV(double h, double u, double v, double b, double db, double ddb, Grav g, do
 
     phi_tan = phi_tan_b*(1-epsilon*phi_norm_b*h/2);
 
-
-   
-		if (epsilon*theta*h<-1)
+	if (J<0)
 		cout<<"Very large value of theta "<< theta<< " at " << x<<"  bcause of h value becoming "<<h<< endl;
     
 	V = v + omega/phi;
 	this->g= g;
-	this->x=x;
-	psi=Psi(*this);
+	this->x= x;
     this->p= J*h; 
 	this->q= J*J*phi*u*h; 
 	this->r= J*R_phi*V*h; 
 	this->P= h; 
 	this->Q= u*h; 
 	this->R= V*h; 
+	psi=Psi(*this);
 }
 
 
 void CV::Modify(double p, double q, double r)
 {	
-    h=-(J_b - sqrt(2*J_b*epsilon*p*theta_b + 2*J_b*epsilon*p*phi_norm_b + J_b*J_b))/(J_b*epsilon*(theta_b + phi_norm_b));
-	 if (h>100) std::cout<<"Much bigger values encountered in Modify "<<h<<"  "<<x<<"   "<<p<<"    "<<q<<"    "<<r<<"   "<< endl;
+    h=-(1 - sqrt(2*epsilon*p*(theta_b + phi_norm_b)/J_b + 1))/(epsilon*(theta_b + phi_norm_b));
+	 if (h>100) 
+	 std::cout<<"Much bigger values encountered in Modify "<<h<<"  "<<x<<"   "<<p<<"    "<<q<<"    "<<r<<"   "<< endl;
 	if (h<0)
 	{  
-  //  std::cout<<"Much smaller values encountered in Modify "<<h<<"  "<<x<<"   "<<p<<"    "<<q<<"    "<<r<<"   "<< endl;
+    std::cout<<"Much smaller values encountered in Modify "<<h<<"  "<<x<<"   "<<p<<"    "<<q<<"    "<<r<<"   "<< endl;
 	h = min_h; u = sign(q)*min_u; v = sign(r*phi/p-omega*R_phi)*min_u; V = v+omega/phi;
-
-
 
 	p=J_b*h;
 	q=J_b*J_b*phi_b*u*h; 
@@ -77,7 +77,7 @@ void CV::Modify(double p, double q, double r)
 
     R_phi = R_phi_b*(1+epsilon*phi_norm_b*h/2); 
 
-    phi = phi_b*(1-epsilon*phi_norm_b*h/2); 
+    phi = 1/R_phi; 
 
     theta = theta_b*(1-epsilon*theta_b*h/2); 
 
@@ -88,10 +88,14 @@ void CV::Modify(double p, double q, double r)
 	this->p=p; this->q=q; this->r=r; 
 	
 	u = q/p/J/phi;
+
+	if (abs(u)>10)
+		cout <<"Much higher velocity"<< endl;
+
 	V = r*phi/p;
 	v = V - omega*R_phi;
-	psi=Psi(*this);
 	P = h; Q =h*u; R = h*V;
+	psi = Psi(*this);
 
 }
 
@@ -116,7 +120,7 @@ void CV::Modify_U(double P, double Q, double R)
 
     R_phi = R_phi_b*(1+epsilon*phi_norm_b*h/2); 
 
-    phi = phi_b*(1-epsilon*phi_norm_b*h/2); 
+    phi = 1/R_phi; 
 
     theta = theta_b*(1-epsilon*theta_b*h/2); 
 
@@ -125,10 +129,15 @@ void CV::Modify_U(double P, double Q, double R)
     phi_tan = phi_tan_b*(1-epsilon*phi_norm_b*h/2);
 
 	u = Q/P;
+
+	if (abs(u)>10)
+		cout <<"Much higher velocity"<< endl;
+
 	V = R/P;
 	v = V-omega/phi;
 	p = J*P; q= J*J*phi*Q; r= J*R_phi*R;
 	psi = Psi(*this);
+
 
 }
 
@@ -147,7 +156,6 @@ FS Flux( CV w )
 FS Source( CV w, CV w1, CV w2, CV w3, CV w4) 
 {
 	FS source;
-	FS bf=Body_force( w, w1, w2, w3, w4);
 	FS fr=Friction(w);
 	source.p = 0;
 	double term1 = ((pow(w.V,2) + epsilon*w.psi*w.h/2)*w.phi_tan + w.g.X2 + 
@@ -169,44 +177,29 @@ FS Friction (CV w)
 {
 	FS fr;
 
-
-	if (pow(w.u,2)+pow(w.v,2)>0)
-
-	{
-		
-		fr.q=(mu*w.u/pow(pow(w.u,2)+pow(w.v,2),0.5))*w.psi*w.J_b*w.J_b*w.phi_b*w.h;
 	
-		fr.r=mu*w.v/pow(pow(w.u,2)+pow(w.v,2),0.5)*w.psi*w.J_b*w.R_phi_b*w.h;
-	}
+		fr.q = (mu*w.u/pow(pow(w.u,2)+pow(w.v,2)+1e-16,0.5))*w.psi*w.J_b*w.J_b*w.phi_b*w.h;
+	
+		fr.r = mu*w.v/pow(pow(w.u,2)+pow(w.v,2)+1e-16,0.5)*w.psi*w.J_b*w.R_phi_b*w.h;
+	
 	return fr;
-}
-
-FS Body_force (CV w, CV w1, CV w2, CV w3, CV w4)
-{
-	FS bf;
-	bf.q= (omega/w.phi*(omega/w.phi+2*w.v)*(1/w4.phi+1/w3.phi-1/w1.phi-1/w2.phi)/(2*dx) +w.g.X2*w.J);
-	FS hl = Hx(w1,w2);
-	FS hr = Hx(w3,w4);
-	bf.r  = 0;//((w4.u*w4.h/w4.phi)+(w3.u*w3.h/w3.phi)-(w2.u*w2.h/w2.phi)-(w1.u*w1.h/w1.phi))/(2*dx);
-	return bf;
 }
 
 FS Eigen(CV w)
 {
 double root,base;
 	FS e;
-	 double b = epsilon*w.h*w.theta;
-		root = sqrt(-8*w.p*epsilon*(pow(w.phi_b,2)*(pow(w.r*w.phi_b,2)*w.phi_norm_b + pow(w.p,2)*w.g.X1)*pow(w.J_b,3) 
-        - w.p*epsilon*pow(w.phi_b,2)*w.theta_b*(pow(w.r*w.phi_b,2)*w.phi_norm_b + pow(w.p,2)*w.g.X1)*pow(w.J_b,2) 
-        + w.J_b*pow(w.q,2)*w.theta_b - (9*epsilon*w.p*pow(w.q*w.theta_b,2))/8)); 
+	 
+		root = epsilon*pow(w.p,3)*w.J*pow(w.phi,2)*w.psi; 
+
 			if (root<0)
 			{
 				root =0;
-				cout <<"The root is turning out to be negative. Making it zero" << endl;
+			//	cout <<"The root is turning out to be negative. Making it zero" << endl;
 			}
-		e.p = w.q*(-epsilon*w.p*w.theta_b + w.J_b)/(pow(w.J_b,3)*w.p*pow(w.phi_b,2));
-		e.q = (-5*epsilon*w.p*w.q*w.theta_b + 2*w.J_b*w.q + root)/(2*pow(w.J_b,3)*w.p*pow(w.phi_b,2));
-		e.r = (-5*epsilon*w.p*w.q*w.theta_b + 2*w.J_b*w.q - root)/(2*pow(w.J_b,3)*w.p*pow(w.phi_b,2));
+		e.p = w.q/pow(w.J*w.phi,2)/w.p;
+		e.q = (w.q*(1-epsilon*w.theta_b*w.h) + sqrt(root))/(pow(w.J,2)*w.p*pow(w.phi,2));
+		e.r = (w.q*(1-epsilon*w.theta_b*w.h) - sqrt(root))/(pow(w.J,2)*w.p*pow(w.phi,2));
 
 		return e;
 }
@@ -215,29 +208,32 @@ double root,base;
 double Psi(CV w)
 {
 	
-return	-( w.u*w.u*w.theta+ pow(w.V,2)*w.phi_norm+ 
-		w.g.X1);
-}
+	double psi =	-( w.u*w.u*w.theta+ pow(w.V,2)*w.phi_norm + w.g.X1);
 
+	return std::max(0.0,psi);
+}
 
 
 double Ang_mom_reg (CV w)
 {
-	return  2*PI*epsilon*w.v/w.phi*w.p*(1);//+(w.theta/2+w.phi_norm)*epsilon*w.h+pow(epsilon*w.h,2)/3*w.phi_norm*(2*w.theta+w.phi_norm));
-
+	return  2*PI*epsilon*w.v/w.phi*w.p*(1);
 }
+
 double Jinertia1_reg (CV w)
 {
-	return 2*PI*w.p/pow(w.phi,2)*epsilon*(1);//+epsilon/2*(3*w.phi_norm +w.theta)*w.h+pow(epsilon*w.h,2)*w.phi_norm*(w.theta+w.phi_norm));
+	return 2*PI*w.p/pow(w.phi,2)*epsilon;
 }
+
 double Jinertia1_ast (CV w)
 {
-	return 2*PI/5*pow(w.b,2)/pow(w.phi,3);
+	return 2*PI/5*pow(w.b,2)/pow(w.phi_b,3);
 }
+
 double Jinertia2_reg (CV w)
 {
 	return PI*pow(w.b,3)*w.metric*epsilon*w.h*sin(w.x)*(1+pow(cos(w.x),2));
 }
+
 double Jinertia2_ast (CV w)
 {
 	return PI/5*(-pow(sin(w.x),3)+2*sin(w.x))*pow(w.b,5);

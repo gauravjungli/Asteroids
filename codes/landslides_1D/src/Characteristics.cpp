@@ -62,31 +62,33 @@ void Edge(vector<CV>& w, vector<CV>& wl, vector<CV>& wr)
 }
 
  void Reconstruct(CV& wl, CV& wr, CV w1, CV w2, CV w3 )
-  { int sign;
+  { 
+	int sign = 1;
+	if (w2.h<1e-6)
+		sign = 0;
+	if (w1.psi < min_psi or w2.psi < min_psi or w3.psi < min_psi)
+		sign = 0;
 
-	wl.h=w2.h + sign*dx*Derivative(w1.h,w2.h,w3.h)/2;
-	wl.u=w2.u + sign*dx*Derivative(w1.u,w2.u,w3.u)/2;
-	wl.v=w2.v + sign*dx*Derivative(w1.v,w2.v,w3.v)/2;
-
+	wl.h=w2.h - sign*dx*Derivative(w1.h,w2.h,w3.h)/2;
+	wl.u=w2.u - sign*dx*Derivative(w1.u,w2.u,w3.u)/2;
+	wl.v=w2.v - sign*dx*Derivative(w1.v,w2.v,w3.v)/2;
 
 	wr.h=w2.h + sign*dx*Derivative(w1.h,w2.h,w3.h)/2;
 	wr.u=w2.u + sign*dx*Derivative(w1.u,w2.u,w3.u)/2;
 	wr.v=w2.v + sign*dx*Derivative(w1.v,w2.v,w3.v)/2;
-
-
   }
-
 
 
    void Reconstruct_U(CV& w, CV w1, CV w2, CV w3, int sign )
   {
-	if (w2.h<epsilon*epsilon)
+	if (w2.h<1e-6)
 		sign = 0;
 	w.P=w2.P+sign*dx*Derivative(w1.P,w2.P,w3.P)/2;
 	w.Q=w2.Q+sign*dx*Derivative(w1.Q,w2.Q,w3.Q)/2;
 	w.R=w2.R+sign*dx*Derivative(w1.R,w2.R,w3.R)/2;
 
   } 
+
 
    void Reconstruct(CV& w, CV w1, CV w2, CV w3, int sign )
   {

@@ -34,6 +34,16 @@ for (int i=0;i<res;i++)
 myfile.close();
 }
 
+void Write_final_data (const vector<CV>& w, string file)
+{
+ofstream myfile(file);
+if (!myfile) Error("Can't open output file field",file);
+for (int i=0;i<res;i++)
+	myfile<<std::setprecision(18)<<w[i].x<<","<<w[i].b<<","<<w[i].h<<","<< w[i].db
+    <<","<< w[i].ddb<<","<< w[i].u<<","<<w[i].v<<","<<w[i].psi<<","<<w[i].g.X1<<","<<w[i].g.X2<<"\n";
+myfile.close();
+}
+
 void Write_base ( const vector<CV>& w, string file)
 {   
     fs::path base_path=file;
@@ -97,17 +107,17 @@ void deleteDirectoryContents(const std::string& dir_path)
 bool Parameters()
 {   ifstream myfile;
     fs::path filePath1 = fs::path(par_add) ;
-    fs::path filePath2 = fs::path("/home/g/Asteroids/output/Debug2/run1/parameters");
+    fs::path filePath2 = fs::path("/home/g/Asteroids/output/Debug/run1/parameters");
     if (fs::exists(filePath1)) {
          myfile.open(filePath1);
         std::cout << "File found in first directory.\n";
     } 
-    //Should be uncommented for debugging run only. 
-    //  else if (fs::exists(filePath2)) 
-    // {
-    //     myfile.open(filePath2);
-    //     std::cout << "File found in second directory.\n"; 
-    // }    
+    
+     else if (Debug and fs::exists(filePath2)) 
+    {
+        myfile.open(filePath2);
+        std::cout << "File found in second directory.\n"; 
+    }    
     else {
         std::cout << "File not found in either directory.\n";
         return false;  // Exit if the file doesn't exist in either directory

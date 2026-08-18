@@ -49,7 +49,8 @@ class Target:
     """
 
     def __init__(self, parameters):
-
+        
+        self.name = parameters['Asteroid']
         self.d = float(parameters["Diameter"])
         self.atype = parameters["atype"]
         self.delta = float(parameters['Static Friction angle'])
@@ -112,7 +113,24 @@ class Target:
         self.rgrav = None 
         self.tgrav = None
         self.t_lan = None
-        self.epsilon = 0
+        self.fast_rotation_flag = False
+        self.epsilon = float(parameters["epsilon"])
+        self.res = int(parameters["Resolution"])
+        self.x_res = int(parameters['X Resolution'])
+        self.y_res = int(parameters['Y Resolution'])
+        self.initial_mass = None
+        self.offset = float(parameters["offset"])
+
+        self.dx = None
+        self.dy = None
+        self.dim = parameters['Dimension']
+        self.shed_mass = 0
+        self.min_epsilon = float(parameters["Minimum epsilon"])
+        self.max_epsilon = float(parameters["Maximum epsilon"])
+        self.folder = parameters['Output folder']
+        self.number = int(parameters['run'])
+        self.failure = parameters["Failure profile"]
+        self.slides = 0
         
     
     """ Not currently in use. Using new parallel version from difusion_spherical.py"""

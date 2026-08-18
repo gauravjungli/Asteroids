@@ -1,14 +1,14 @@
 #include "gauravlib.h"
 
-void LXF(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
+void LXF(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)//Needs derivation gain and fixing
 {  	
 	BC(w,w);
 	Edge(w,wl,wr);
 	vector<CV> wtemp(w);
 	for (int j = 2; j < res-2; j++)
 	{	
-		double el=max(abs(Ax(wl[j],wr[j-1],"min")),abs(Ax(wl[j],wr[j-1],"max"))); // change to dx/dt 
-		double er=max(abs(Ax(wl[j+1],wr[j],"min")),abs(Ax(wl[j+1],wr[j],"max")));
+		double el = dx/dt;//max(abs(Ax(wl[j],wr[j-1],"min")),abs(Ax(wl[j],wr[j-1],"max"))); // change to dx/dt 
+		double er = dx/dt;//max(abs(Ax(wl[j+1],wr[j],"min")),abs(Ax(wl[j+1],wr[j],"max")));
 		FS hr = Flux(wtemp[j+1]); 
 	    FS hl = Flux(wtemp[j-1]);
 		FS sourcel = Source( wtemp[j-1], wtemp[j-1], wtemp[j-1], wtemp[j], wtemp[j]);
@@ -33,7 +33,6 @@ void LXF(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
 		w[j].Modify( w[j].p, w[j].q, w[j].r);
 
 		FS friction = Friction(w[j]);
-
 
 		if (wtemp[j].psi>0 and mu>epsilon)
 		{
@@ -187,12 +186,16 @@ void Corrector(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, vector<CV>& w_ini
 
 void RK3(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
 {  	
+	
 	BC(w);
 	Edge(w,wl,wr);
+	vector<CV> w0(w);
 	vector<CV> w1(w);
 	vector<CV> w2(w);
+
 	for (int j = 2; j < res-2; j++)
 	{	
+		
 		FS hl = Hx(wr[j-1],wl[j]);
 		FS hr = Hx(wr[j],wl[j+1]);
 
@@ -203,26 +206,8 @@ void RK3(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
 		w1[j].r = w[j].r - ((hr.r - hl.r) / dx - source.r) * dt;
 
 		w1[j].Modify( w1[j].p,  w1[j].q , w1[j].r );
-
-		
-		FS friction = Friction(w[j]);
-
-		if (w[j].psi>0 and mu>epsilon)
-		{
-		 	CV w_new (w1[j]);
-			
-			w_new.Modify(w_new.p,w_new.q-friction.q * dt, w_new.r - friction.r * dt);
-
- 		 	  if(w_new.u*w1[j].u<0)
-				w_new = CV(w_new.h,min_u*sign(w1[j].u),w_new.v,w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x);
-
- 			 if(w_new.v*w1[j].v<0)
-				w_new = CV(w_new.h,w_new.u,min_u*sign(w1[j].v),w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x);  
- 
-			w1[j] = w_new; 
-
-		}
-		}
+	
+	}
 
 	BC(w1);
 	Edge(w1,wl,wr);
@@ -240,25 +225,8 @@ void RK3(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
 
 		w2[j].Modify( w2[j].p,  w2[j].q , w2[j].r );
 
-		
-		FS friction = Friction(w1[j]);
 
-		if (w1[j].psi>0 and mu>epsilon)
-		{
-		 	CV w_new (w2[j]);
-			
-			w_new.Modify(w_new.p,w_new.q-0.25*friction.q * dt, w_new.r - 0.25*friction.r * dt);
-
- 		 	  if(w_new.u*w2[j].u<0)
-				w_new = CV(w_new.h,min_u*sign(w2[j].u),w_new.v,w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x);
-
- 			 if(w_new.v*w2[j].v<0)
-				w_new = CV(w_new.h,w_new.u,min_u*sign(w2[j].v),w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x);  
- 
-			w2[j]=w_new; 
-
-		}
-		}
+	}
 
 	BC(w2);
 	Edge(w2,wl,wr);
@@ -276,14 +244,15 @@ void RK3(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
 
 		w[j].Modify( w[j].p,  w[j].q , w[j].r );
 
-		
-		FS friction = Friction(w2[j]);
 
-		if (w2[j].psi > 0 and mu > epsilon)
+		
+		FS friction = Friction(w[j]);
+
+		if (w[j].psi > 0 and mu > epsilon)
 		{
 		 	CV w_new (w[j]);
 			
-			w_new.Modify(w_new.p, w_new.q-(2.0/3.0)*friction.q * dt, w_new.r - (2.0/3.0)*friction.r * dt);
+			w_new.Modify(w_new.p, w_new.q-(3.0/3.0)*friction.q * dt, w_new.r - (3.0/3.0)*friction.r * dt);
 
  		 	  if(w_new.u*w[j].u<0)
 				w_new = CV(w_new.h,min_u*sign(w[j].u),w_new.v,w[j].b,w[j].db,w[j].ddb,w[j].g,w[j].x);
@@ -294,25 +263,30 @@ void RK3(vector<CV>& w,  vector<CV>& wl, vector<CV>& wr, double dt)
 			w[j]=w_new; 
 
 		}
-		}
+	}	
 	
 }
 
 void March (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double& Ang_Shed)
 {	
 	double dt = dx / 4;
-	static int timesteps=0;
+    int timesteps=0;
 	double sum1=0,sum=0,ang_sum=0,KE=0;
-	
 	
 	if(!filesystem::exists(verbose_dir))
 		filesystem::create_directory(verbose_dir);
-	static double t=0;
+    double t=0;
 	double check_t= 1; 
 	fs::path base_path = Output_folder;
-	fs::path file_name= string("log.txt");
+	fs::path file_name = string("log.txt");
 	fs::path full_path = base_path / file_name;
 	string file1=	full_path.string();
+
+	 file_name = string("time_log.txt");
+	 full_path = base_path / file_name;
+	 string file0=	full_path.string();
+	 ofstream myfile0(file0,std::ofstream::app);
+
 	base_path = verbose_dir;
 	
 	while(t<finalt)
@@ -332,16 +306,21 @@ void March (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double& Ang_Shed)
 			double min_mu =  0.1 ;
 			double alpha =2.0/3 ;
 
-			if (t<100)
+			if (t<10)
 				mu = max(min_mu,Mu*(1-alpha*max(0.0,Gamma_max*exp(-k_d*t/2)-0.25)));
 			else
 				mu = tan(PI/4); 
 		}
 		else if (fric_type=="Constant")
-			mu = Mu;
+			if (t<10)
+				mu = Mu;
+			else
+				mu = tan(1.5*Static_Delta* PI / 180);
+			
 		else
 		{
 			cout<<"No friction type selected. Using the constant friction angle"<<endl;
+			mu = Mu;
 		}
 
 		if (solver == "LXF first order")
@@ -380,8 +359,9 @@ void March (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double& Ang_Shed)
 
 		if (t>check_t)
 		{	
-			std::cout<<std::setprecision(18)<<t<<"  "<<sum<<"  "<<dt<<"  "<<mu<<endl;
-			if (abs(sum)<1E-8)
+			myfile0<<std::setprecision(18)<<t<<"  "<<sum<<"  "<<dt<<"  "<<mass_shed<<endl;
+
+			if (abs(sum)<1E-7)
 			{	
 				break;
 			}	
@@ -403,7 +383,10 @@ void March (vector<CV>& w, vector<CV>& wl, vector<CV>& wr, double& Ang_Shed)
 	myfile<<"Residual Angular Momentum --> " <<ang_sum<<endl;
 	myfile<<"Residual Energy -->"<<sum<<endl;
 	//Ang_Shed+=sum;
-	
+	myfile0<<"-------------------------------------------------------------------------"<<endl;
+	cout << "Simulation ended ----------------------------------------------------------"<<endl;
+	myfile.close();
+	myfile0.close();
 }
 
 
@@ -427,7 +410,7 @@ void CFL(vector<CV>& wl,vector<CV>& wr, double & dt)
 			maxspeed = eig;
 	}
 	//cout<<maxspeed<<endl;
-	dt = min(dx/5,dx/5/maxspeed);
+	dt = min(dx/4,dx/4/maxspeed);
 	if (dt<1E-8)
 	{	
 		cout << " The timestep becomes "<<dt<< endl;

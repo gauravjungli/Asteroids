@@ -9,11 +9,13 @@ from matplotlib.colors import LinearSegmentedColormap, Normalize
 from matplotlib.cm import ScalarMappable
 import os
 import seaborn as sns
-from IO import Output_File, extract_number
+from IO import Output_File_old, extract_number
 import pdb
 from matplotlib.ticker import ScalarFormatter
 from Fit import Fit, Fit_radius
+from scipy.ndimage import gaussian_filter1d
 from collisions import G
+from IO import Parameter
 #from mpl_toolkits.mplot3d import Axes3D
 
 """
@@ -69,7 +71,7 @@ def show_shape (parameters):
             ax.cla()
             #continue
             
-            theta = w[2:Res-2,0]
+            theta = w[:Res-2,0]
             base = w[2:Res-2,1]
             height = epsilon[count-1]*w[2:Res-2,2]
             dbase = w[2:Res-2,3]
@@ -112,14 +114,12 @@ def show_shape (parameters):
 
 def show_height (parameters):
     plt.close()
-    pdb.set_trace()
+   # pdb.set_trace()
     fig,ax = plt.subplots()
     file1 = parameters['Data folder']
     Res = int(parameters['Resolution'])
     file2 = os.path.join(file1,'dia.txt')
     epsilon = np.loadtxt(file2,dtype=float,ndmin=2)[:,2]
-    dia = np.loadtxt(file2,dtype=float,ndmin=2)[:,1]
-    
 
     for count in range(1,1000):        
         #pdb.set_trace()
@@ -128,9 +128,9 @@ def show_height (parameters):
         if os.path.exists(file):
            
             w = np.loadtxt(file,delimiter=",",dtype='float')
-            Fit(parameters,base_old=w)
+       #     Fit(parameters,base_old=w)
             ax.cla()
-            continue
+      #      continue
             
             theta = w[2:Res-2,0]
             base = w[2:Res-2,1]
@@ -138,11 +138,11 @@ def show_height (parameters):
             dbase = w[2:Res-2,3]
             psi = w[2:Res-2,7]
             x = theta
-            y = dbase
+            y = epsilon[count-1]*height + base
 
-            ax.plot(x,y,color='black')
+            ax.plot(x,height)
             
-
+          #  ax.plot(x,base)
 
             title=f'landslide number={count}'
             ax.set_title(title)
@@ -151,7 +151,7 @@ def show_height (parameters):
             plt.show(block=False)
             #plt.grid()
             #fig.canvas.draw_idle()
-            plt.pause(0.5)
+            plt.pause(1.5)
 
 
         else:
@@ -160,27 +160,27 @@ def show_height (parameters):
 #%%    
 
 def show_omega(parameters):
-    pdb.set_trace()
+   # pdb.set_trace()
     #plt.close()
     plt.rcParams.update({'font.size' : 17})
-   # fig,ax1 = plt.subplots()
-    file2='/home/g/Asteroids/output'
+    #fig,ax1 = plt.subplots()
+    file2='/home/g/Asteroids/output/1D/rapids'
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
     file=os.path.join(file2,parameters['Output folder'],f'run{parameters["run"]}',file1)
     if os.path.exists(file):
       
         w=np.loadtxt(file,dtype=float)
         x=w[:,0]
-        y=2*np.pi/w[:,1]/3600
+        y=w[:,1]#2*np.pi/w[:,1]/3600
         plt.plot(x/1e+6,y,'-r',linewidth=2)
         return
         #title="Evolution of time period"
         ax1.set_xlim(0,2.5)
-        ax1.set_ylabel("Time period (hr)")
+        ax1.set_ylabel(r"$\omega$ (1/s)")
         ax1.set_xlabel(" Time (Myr)")
         
         secax = ax1.secondary_yaxis('right', functions=(lambda y: 2*np.pi/(y*3600), lambda y: 2*np.pi/(y*3600)))
-        secax.set_ylabel(r"$\omega$ (1/s)" )
+        secax.set_ylabel("Time period (hr)")
         secax.tick_params(axis='y')
         plt.grid(True)
         #ax.set_title(title)
@@ -193,7 +193,7 @@ def show_omega(parameters):
         formatter = ScalarFormatter(useMathText=True)
         formatter.set_scientific(True)
         formatter.set_powerlimits((-2, 2))
-        secax.yaxis.set_major_formatter(formatter)
+        ax1.yaxis.set_major_formatter(formatter)
         
         plt.pause(0.1)
     #plt.close(fig)
@@ -201,7 +201,7 @@ def show_omega(parameters):
  #%%   
 def show_individual_run(parameters):
     # Function to extract the numerical value from a name (e.g., "dir_10" -> 10)
-    #pdb.set_trace()
+   # pdb.set_trace()
     plt.rcParams.update({'font.size' : 14})
     colors=sns.color_palette("rocket",7)
     main_dir=parameters['Data folder']
@@ -212,7 +212,7 @@ def show_individual_run(parameters):
     Gamma = np.loadtxt(file1,dtype=float,ndmin=2)[:,3]
  
     dx=(math.pi-2*float(parameters["offset"]))/float(parameters["Resolution"])
-    fig = plt.figure(figsize=(6,6))  
+    fig = plt.figure(figsize=(9,6))  
     subdirs = sorted([d for d in os.listdir(main_dir) if os.path.isdir(os.path.join(main_dir, d))], key=extract_number)
     count=0
     
@@ -225,19 +225,19 @@ def show_individual_run(parameters):
         print(omega)
         omega =  0.295239
         dirFiles = sorted( [f for f in os.listdir(subdir_path) if f.lower() != "log.txt"], key=extract_number)
-        print(omega)
+        
         print(subdir)
         os.chdir(subdir_path)
         ang_mom=[]
         lin_mom=[]
         
-        if count<0 or count>1000:
+        if count<0 or count>100:
             count+=1
             continue
         max_sum2=0
         min_sum2 = 1e+12
         count1 = 0
-        N = 1000
+        N = 10000
         TH = np.zeros(N)
         TE = np.zeros(N)
         KE = np.zeros(N)
@@ -247,9 +247,10 @@ def show_individual_run(parameters):
         time = np.zeros(N)
         for file in dirFiles:
      
-      
+            if count1>0:
+                 break
             w=np.loadtxt(file,delimiter=",",dtype=float)
-    
+            
             theta  = w[2:res-2,0]
             base   = w[2:res-2,1]
             height = w[2:res-2,2]
@@ -271,27 +272,22 @@ def show_individual_run(parameters):
             time[count1] = 0.000628318530717958618*100*(count1)
 
             plt.clf()
-           # plt.title("Time="+str(time[count1]))
-            count1+=1
-           # if count1<N:
-            #    continue
-            plt.plot(theta,psi,linewidth=2,linestyle ='-',color='r')
-            #plt.plot(theta[2:res-2],height[2:res-2]*u[2:res-2])
-           # plt.plot(theta[2:res-2],w[2:res-2,7])
- 
-           # plt.plot(x[2:res-2],z1[2:res-2])
-            #plt.plot(x, w_filtered)
+            count1 += 1
+            n = int((res-4)/1)
+
+            plt.plot(theta[:n],height[:n])# - height[res-5:n-1:-1])
+           # plt.plot(theta[:n],10*dbase[:n])
             
             plt.grid()
             plt.tick_params(labelsize=20)
             plt.xlabel('Theta', fontsize=20)
             plt.ylabel('Height', fontsize=20)
-            plt.xlim(0,3.14)
+           # plt.xlim(0,3.14)
             #plt.savefig(f"/home/g/Asteroids/output/check_5/run1/img/img_height{count1}.svg", dpi=300)
-            plt.pause(0.1) 
+            plt.pause(1) 
             
             
-        count +=1
+        count += 1
         
         plot_flag = False
         if plot_flag:
@@ -365,9 +361,9 @@ def plot_grav(parameters):
    # pdb.set_trace()
     Res = int(parameters['Resolution'])
     fig = plt.figure(figsize=(14,6))
-    file =Output_File(parameters,filetype='output',filenames=['base.txt'])
+    file =Output_File_old(parameters,filetype='output',filenames=['base.txt'])
     w=np.loadtxt(file,delimiter=",",dtype=float)
-    file1 =Output_File(parameters,filetype='output',filenames=['grav.txt'])
+    file1 =Output_File_old(parameters,filetype='output',filenames=['grav.txt'])
     x=w[:,0]
     grav=np.loadtxt(file1,delimiter=" ")
     #plt.clf()
@@ -386,6 +382,133 @@ def plot_grav(parameters):
     plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
     
     #plt.savefig('output/grav_20_static.svg', dpi=300,bbox_inches="tight")
+
+#%%
+
+def plot_slope(parameters):
+    #pdb.set_trace()
+    #0,20,43
+    omega = [ 0.7381]
+    numb = [406]
+    #fig = plt.figure(figsize=(14,6))
+    plt.rcParams.update({'font.size' : 14})
+    Res= int(float(parameters["Resolution"])/2)
+    
+    i=0
+    for num in numb:
+        
+        file =Output_File_old(parameters,filetype='output',filenames=[f'data/field_{num}.csv'])
+        base=np.loadtxt(file,delimiter=",",dtype=float)
+    
+        theta = base[2:Res,0]
+        R = base[2:Res,1]
+        R_prime = base[2:Res,3]
+
+        N = np.sqrt(R**2 + R_prime**2)
+        b_n = base[2:Res,8]
+        b_theta = base[2:Res,9]
+        denom = R * np.sin(theta) * N
+    
+        R_cos_prime = R_prime * np.cos(theta) - R * np.sin(theta)
+        R_sin_prime = R_prime * np.sin(theta) + R * np.cos(theta)
+    
+    # Since n=0, the full curvatures equal their base components
+        kappa_phi_n = -R_cos_prime / denom
+        kappa_phi_g = R_sin_prime / denom
+        R_phi = R*np.sin(theta)
+    
+        f_n = b_n +R_phi**2*kappa_phi_n*omega[i]**2
+    
+        f_theta = b_theta +R_phi**2*kappa_phi_g*omega[i]**2
+
+        slope= np.arccos(np.abs(f_n)/np.sqrt(f_n**2+f_theta**2))*180/np.pi
+    
+        plt.plot(theta*180/math.pi, (f_theta),linewidth=2,markersize=8,label ="Rotational failure")
+        plt.plot(theta*180/math.pi, np.abs(f_n),linewidth=2,markersize=8,label ="Rotational failure")
+        
+        i+=1
+    return
+
+    omega = (5.28890715e-04)/(G* (4/3) * math.pi * 1250)**0.5
+    theta = base[2:Res,0]
+    R = 1
+    R_prime = 0
+    N = 1
+    b_n = -1
+    b_theta = 0
+    denom = R * np.sin(theta) * N
+    
+    R_cos_prime = R_prime * np.cos(theta) - R * np.sin(theta)
+    R_sin_prime = R_prime * np.sin(theta) + R * np.cos(theta)
+    
+    # Since n=0, the full curvatures equal their base components
+    kappa_phi_n = -R_cos_prime / denom
+    kappa_phi_g = R_sin_prime / denom
+    R_phi = R*np.sin(theta)
+    
+    f_n = b_n +R_phi**2*kappa_phi_n*omega**2
+    
+    f_theta = b_theta +R_phi**2*kappa_phi_g*omega**2
+
+    slope= np.arccos(np.abs(f_n)/np.sqrt(f_n**2+f_theta**2+1e-12))*180/np.pi
+    
+    #plt.clf()
+    plt.plot(theta*180/math.pi,slope,linewidth=2,markersize=8,label ="Initial slope")
+    plt.axhline(y=30, color='b', linestyle='dashdot', label=' Friction angle')
+    plt.grid()
+    plt.xlabel(r'$\theta$ (degrees)')
+    plt.ylabel('Surface slope')
+    plt.xlim([2,88.7])
+    #plt.ylim([-0.25,0.25])
+    plt.minorticks_on()
+    plt.tick_params(direction='in',right=True, top=True, left=True, bottom=True)
+    plt.tick_params(labelsize=14)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
+    
+#%%
+def plot_slope_old(parameters):
+    #pdb.set_trace()
+    #0,20,43
+    omega =  0
+    #fig = plt.figure(figsize=(14,6))
+    plt.rcParams.update({'font.size' : 14})
+    Res= int(float(parameters["Resolution"])/2)
+    
+    
+        
+    file =Output_File_old(parameters,filetype='output',filenames=['base.txt'])
+    base=np.loadtxt(file,delimiter=",",dtype=float)
+    file =Output_File_old(parameters,filetype='output',filenames=['grav.txt'])
+    grav = np.loadtxt(file,delimiter=" ",dtype=float)
+    theta = base[2:Res,0]
+    R = base[2:Res,1]
+    R_prime = base[2:Res,3]
+
+    N = np.sqrt(R**2 + R_prime**2)
+    b_n = grav[2:Res,0]
+    b_theta = grav[2:Res,1]
+    denom = R * np.sin(theta) * N
+
+    R_cos_prime = R_prime * np.cos(theta) - R * np.sin(theta)
+    R_sin_prime = R_prime * np.sin(theta) + R * np.cos(theta)
+
+# Since n=0, the full curvatures equal their base components
+    kappa_phi_n = -R_cos_prime / denom
+    kappa_phi_g = R_sin_prime / denom
+    R_phi = R*np.sin(theta)
+
+    f_n = b_n +R_phi**2*kappa_phi_n*omega**2
+
+    f_theta = b_theta +R_phi**2*kappa_phi_g*omega**2
+
+    slope= np.arccos(np.abs(f_n)/np.sqrt(f_n**2+f_theta**2))*180/np.pi
+
+    #plt.plot(theta*180/math.pi, (f_theta),linewidth=2,markersize=8,label ="Rotational failure")
+    plt.plot(theta*180/math.pi, slope,linewidth=2,markersize=8,label ="Slope")
+    plt.axhline(y=20, color='r', linestyle='dashdot', label=' Friction angle')
+
 
 #%%
 #script for plot 1
@@ -477,7 +600,7 @@ def omega_comparison_plot():
 def save_3D_omega(parameters):
 
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
     omega = np.loadtxt(file, dtype=float)
     
     length, width = np.shape(omega)
@@ -521,7 +644,7 @@ def save_3D_omega(parameters):
         ax1.set_ylabel('Rotational time period  (hrs)',color='white')
         ax1.set_xlim([0,1.0])#max(omega[:,0])/1e+6])
         ax1.set_ylim([3.8,5.3])
-        img = Output_File(parameters=parameters, filetype='output', filenames=['plots','omega.svg']) 
+        img = Output_File_old(parameters=parameters, filetype='output', filenames=['plots','omega.svg']) 
         fig.savefig(img, dpi=150, bbox_inches='tight')  # Save as PNG
    #    canvas.draw_idle()
         #canvas = FigureCanvasAgg(fig)
@@ -536,10 +659,10 @@ def save_3D_omega(parameters):
     
 def save_3D_shapes(parameters):
     
-    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
     w = np.loadtxt(file, dtype=float, delimiter=",")
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
     omega = np.loadtxt(file, dtype=float)
     
     length, width = np.shape(w)
@@ -599,7 +722,7 @@ def save_3D_shapes(parameters):
         sm.set_array(R)
  
        
-        img = Output_File(parameters=parameters, filetype='output', filenames=['plots',f'shape{i}.svg']) 
+        img = Output_File_old(parameters=parameters, filetype='output', filenames=['plots',f'shape{i}.svg']) 
         fig1.savefig(img, dpi=300, bbox_inches='tight')  # Save as PNG
    #    canvas.draw_idle()
         #canvas = FigureCanvasAgg(fig)
@@ -613,12 +736,12 @@ def save_3D_shapes(parameters):
 def show_shape_deviation(parameters):
     plt.close()
     fig,ax = plt.subplots()
-    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
     w = np.loadtxt(file, dtype=float, delimiter=",")
-    file = Output_File(parameters=parameters, filetype='output', filenames=['std_shape.csv']) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=['std_shape.csv']) 
     std = np.loadtxt(file, dtype=float, delimiter=",")
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
     omega = np.loadtxt(file, dtype=float)
     length, width = np.shape(w)
     length -= 1       # First row of mean shape contains theta and first column contains time   
@@ -710,16 +833,16 @@ from matplotlib.patches import ConnectionPatch
 def save_2D_plot(parameters):
    # pdb.set_trace()
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
     omega = np.loadtxt(file, dtype=float)
-        
+    T = T=float(parameters['Simulation period'])    
     length, width = np.shape(omega)
 
     fig = plt.figure(figsize=(16, 9),dpi=150)
-    margin_l =0.07
+    margin_l =0.06
     margin_b =margin_l*16/9
-    box_l =1-0.03 - margin_l
-    box_w = 1-0.03 - margin_b
+    box_l =1-0.06 - margin_l
+    box_w = 1-0.1 - margin_b
     ax = fig.add_axes([margin_l, margin_b, box_l, box_w])
     
     fig.patch.set_facecolor('white')
@@ -731,22 +854,22 @@ def save_2D_plot(parameters):
 
      
     x1 =  omega[:, 0]/1e+6
-    y1 =  omega[:, 1]
-    z1 = omega[:, 1]- omega[:,2]
-    z2 = omega[:, 1]+ omega[:,2]
+    y1 =   2*np.pi/(omega[:, 1]*3600)
+    z1 = 2*np.pi/((omega[:, 1] - omega[:, 2])*3600)
+    z2 =  2*np.pi/((omega[:, 1] + omega[:, 2])*3600)
     ax.plot(x1, y1, '-b', linewidth=2)
     ax.fill_between(x1,z1,z2,color='#B0E0E6',alpha=0.5,zorder=10)
 
     ax.set_xlabel('Time (Myr)',color='black',fontsize=18)
-    ax.set_ylabel('Rotational time period  (hr)',color='black',fontsize=18)
-    xlim = [0,2.0]
+    ax.set_ylabel(r"$\omega$ (1/s)",color='black',fontsize=18)
+    xlim = [0,T]
     ax.set_xlim(xlim)
-    ylim = [3.98,5.4]
+    ylim = [np.min(y1)/1.05,1.05*np.max(y1)]
     ax.set_ylim(ylim)
     
     #plt.tight_layout()
         
-    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
     w = np.loadtxt(file, dtype=float, delimiter=",")
 
     length, width = np.shape(w)
@@ -791,21 +914,21 @@ def save_2D_plot(parameters):
 
     box_size = 0.4
     axes =[]
-    ax1 = [0, 0 , box_size, box_size]
+    ax1 = [-0.05, 0 , box_size, box_size]
     axes.append(ax1)
     ax1 = [-0.08, 0.6 , box_size, box_size]
     axes.append(ax1)
-    ax1 = [0.23, 0 , box_size, box_size]
+    ax1 = [0.23, 0.25 , box_size, box_size]
     axes.append(ax1)
     ax1 = [0.12, 0.6 , box_size, box_size]
     axes.append(ax1)
-    ax1 = [0.46, 0 , box_size, box_size]
+    ax1 = [0.46, 0.25 , box_size, box_size]
     axes.append(ax1)
-    ax1 = [0.46, 0.35 , box_size, box_size]
+    ax1 = [0.46, 0.6 , box_size, box_size]
     axes.append(ax1)
-    ax1 = [0.69, 0. , box_size, box_size]
+    ax1 = [0.69, 0.25 , box_size, box_size]
     axes.append(ax1)
-    ax1 = [0.69, 0.35 , box_size, box_size]
+    ax1 = [0.69, 0.6 , box_size, box_size]
     axes.append(ax1)
     print(np.max(w[:, 1:width]))
     for i in range(1,9):
@@ -831,8 +954,314 @@ def save_2D_plot(parameters):
         
     #img = Output_File(parameters=parameters, filetype='output', filenames=['plots','omega.svg']) 
     ax.grid(zorder = -1)
+    secax = ax.secondary_yaxis('right', functions=(lambda y: 2*np.pi/(y*3600), lambda y: 2*np.pi/(y*3600)))
+    secax.set_ylabel('Rotational time period  (hr)' )
+    secax.tick_params(axis='y')
+    #secax.set_yticks(ax.get_yticks())
+    plt.minorticks_on()
+    secax.minorticks_on()
+    # Apply scientific notation formatting
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-2, 2))
+    ax.yaxis.set_major_formatter(formatter)
+    secax.tick_params(direction='in',which='minor', length=5, width=1, color='black', bottom=False, top=False, left=False, right=True)
+    secax.tick_params(direction='in',which='major', length=10, width=1, color='black', bottom=False, top=False, left=False, right=True)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=False)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=False)
+   
     #fig.savefig(img, dpi=150)  # Save as PNG
     plt.show()
     return axes
 
+#%%
 
+
+def save_rot_plot(parameters):
+    #pdb.set_trace()
+    file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
+    omega = np.loadtxt(file, dtype=float)
+        
+    length, width = np.shape(omega)
+    T=float(parameters['Simulation period'])
+    fig = plt.figure(figsize=(16, 9),dpi=150)
+    margin_l =0.08
+    margin_b =margin_l*16/9
+    box_l =1-0.08 - margin_l
+    box_w = 1-0.08 - margin_b
+    ax = fig.add_axes([margin_l, margin_b, box_l, box_w])
+    
+    fig.patch.set_facecolor('white')
+
+    plt.rcParams.update({'font.size' : 18})
+    ax.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
+    ax.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
+     
+    x1 =  omega[:, 0]/1e+6
+    y1 =  2*np.pi/(omega[:, 1]*3600)
+
+    ax.plot(x1, y1, '-b', linewidth=2,zorder=10)
+
+    ax.set_xlabel('Time (Myr)',color='black',fontsize=18)
+    ax.set_ylabel(r"$\omega$ (1/s)",color='black',fontsize=18)
+    xlim = [np.min(x1),np.max(x1)]
+    ax.set_xlim(xlim)
+    
+    ylim = [np.min(y1),np.max(y1)]
+    ax.set_ylim(ylim)
+    
+    #plt.tight_layout()
+        
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
+    w = np.loadtxt(file, dtype=float, delimiter=",")
+
+    length, width = np.shape(w)
+
+    # Explicitly specify the height and width of each subplot
+   # ax1.set_position([0.10, 0.2, 0.35, 0.7])  # [left, bottom, width, height]
+   # ax2.set_position([0.52, 0.12, 0.42, 0.84])  # [left, bottom, width, height]
+
+    custom_gray = LinearSegmentedColormap.from_list("my_gray", [ "#F5F5F5", "#7F7F7F"])
+    def update_plot(ax,i):
+        # First subplot
+        
+        ax.cla()
+        x = np.sin(w[0, 1:width]) * w[i, 1:width]
+        y = np.cos(w[0, 1:width]) * w[i, 1:width]
+        ax.plot(x, y, '-k', linewidth=2)
+        #ax.fill_betweenx(y,x,-x,color='lightcoral',alpha =0.3)
+        # 2. Create the "Stencil" (The path to fill)
+        # We create a dummy fill and extract its path
+        path = ax.fill_betweenx(y, x, -x, color='none').get_paths()[0]
+        
+        # 3. Create a Gradient Image
+        # 'Greys' is a built-in colormap; we create a 2D array for the gradient
+        gradient = np.linspace(0, 1, 256).reshape(-1, 1)
+        
+        # 4. Display the gradient and CLIP it to the path
+
+        img = ax.imshow(gradient, aspect='auto', 
+                        extent=[-x.max(), x.max(), -y.max(), y.max()],
+                        cmap=custom_gray, origin='lower', alpha=1,zorder=1)
+        
+        img.set_clip_path(path, transform=ax.transData)
+        
+        x = -np.sin(w[0, 1:width]) * w[i, 1:width]
+        ax.plot(x, y, '-k', linewidth=2)
+
+        # Set x and y limits
+        ax.set_xlim(-1.02*np.max(w[:, 1:width]), 1.02*np.max(w[:, 1:width]))
+        ax.set_ylim(-1.02*np.max(w[:, 1:width]), 1.02*np.max(w[:, 1:width]))
+        ax.set_aspect('equal')
+        ax.set_axis_off()
+
+    box_size = 0.4
+    axes =[]
+    ax1 = [-0.08, 0.05 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [-0.08, 0.6 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.15, 0.05 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.12, 0.6 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.35, 0 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.48, 0.35 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.6, 0. , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.69, 0.35 , box_size, box_size]
+    axes.append(ax1)
+    print(np.max(w[:, 1:width]))
+    for i in range(1,9):
+
+        ax1 = ax.inset_axes(axes[i-1])
+        ax1.patch.set_alpha(0)
+        ax1.set_zorder(5)
+        j= 1+ math.ceil((length-2)*xlim[1]/T/8*i)
+        update_plot(ax1,j)
+        plt.minorticks_on()
+
+# xyA is the point on the inset, xyB is the point on the main plot
+        con = ConnectionPatch(xyA=(0.5, 0.5), xyB=(i/8, 0+(i-1)%2), 
+                      coordsA=ax1.transAxes, # Relative to Inset (0,0 is bottom-left)
+                      coordsB=ax.transAxes,  # Relative to Main Plot Data
+                      arrowstyle="->", color="red", lw=1.5)
+
+# 2. Add it to the FIGURE (not the axis) so it stays on top
+        fig.add_artist(con)
+
+# 3. Ensure it's in the foreground
+        con.set_zorder(1)
+        
+    #img = Output_File(parameters=parameters, filetype='output', filenames=['plots','omega.svg']) 
+    ax.grid(zorder = -1)
+    #fig.savefig(img, dpi=150)  # Save as PNG
+    secax = ax.secondary_yaxis('right', functions=(lambda y: 2*np.pi/(y*3600), lambda y: 2*np.pi/(y*3600)))
+    secax.set_ylabel('Rotational time period  (hr)' )
+    secax.tick_params(axis='y')
+    #secax.set_yticks(ax.get_yticks())
+    plt.minorticks_on()
+    secax.minorticks_on()
+    # Apply scientific notation formatting
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-2, 2))
+    ax.yaxis.set_major_formatter(formatter)
+    secax.tick_params(direction='in',which='minor', length=5, width=1, color='black', bottom=False, top=False, left=False, right=True)
+    secax.tick_params(direction='in',which='major', length=10, width=1, color='black', bottom=False, top=False, left=False, right=True)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=False)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=False)
+   
+    plt.show()
+    
+    return axes
+
+#%%
+import matplotlib.colors as mcolors
+def save_cummulative_plot():
+
+    def update_plot(ax,w,width,color,label):
+        
+        ax.cla()
+        x = np.sin(w[0, 1:width]) * w[-1, 1:width]
+        y = np.cos(w[0, 1:width]) * w[-1, 1:width]
+        ax.plot(x, y, '-k', linewidth=2)
+        
+        path = ax.fill_betweenx(y, x, -x, color='none').get_paths()[0]
+        
+        gradient = np.linspace(0, 1, 256).reshape(-1, 1)
+        
+        circle_cmap = mcolors.LinearSegmentedColormap.from_list(
+        f'circle_cmap_{i}', ['white', color]  # 0 maps to white, 1 maps to line_color
+    )
+        
+        img = ax.imshow(gradient, aspect='auto', 
+                        extent=[-x.max(), x.max(), -y.max(), y.max()],
+                        cmap=circle_cmap, origin='lower', alpha=1,zorder=1)
+        
+        img.set_clip_path(path, transform=ax.transData)
+        
+        x = -np.sin(w[0, 1:width]) * w[-1, 1:width]
+        ax.plot(x, y, '-k', linewidth=2)
+
+        # Set x and y limits
+        ax.set_xlim(-1.02*np.max(w[:, 1:width]), 1.02*np.max(w[:, 1:width]))
+        ax.set_ylim(-1.02*np.max(w[:, 1:width]), 1.02*np.max(w[:, 1:width]))
+        ax.set_aspect('equal')
+        ax.set_axis_off()
+        ax.text(-100,-50,label)
+    
+    fig = plt.figure(figsize=(9, 15),dpi=150)
+    plt.rcParams.update({'font.size' : 15})
+    margin_l =0.09
+    margin_b =0.30
+    box_l =1-0.085 - margin_l
+    box_w = 1-0.30 - margin_b
+    ax = fig.add_axes([margin_l, margin_b, box_l, box_w])
+    ax.set_xlabel('Time (Myr)',color='black')
+    ax.set_ylabel(r"$\omega$ (1/s)",color='black')
+    xlim = [0,2]
+    ax.set_xlim(xlim)
+    fig.patch.set_facecolor('white')
+
+    
+    ax.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=True)
+    ax.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=True)
+    
+    box_size = 0.30
+    axes =[]
+    ax1 = [-0.02, -0.03 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [-0.02, 0.715 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.23, -0.03 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.23, 0.70 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.47, -0.03, box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.47, 0.70 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.72, -0.03 , box_size, box_size]
+    axes.append(ax1)
+    ax1 = [0.72, 0.70 , box_size, box_size]
+    axes.append(ax1)
+    
+    folders = ["New_1","New_2.1","New_3","New_4","New_5","New_6","New_7","New_8"]
+    labels =["Tab. 6.2",r"$\eta↓$", r"Q↓","D↑","a↓","S waves",r"$c_0$↑","Stochastic\n YORP"]
+    i=0
+    colors = [
+    '#E6194B',  # Red
+    '#3CB44B',  # Green
+    '#FFE119',  # Yellow
+    '#4363D8',  # Blue
+    '#F58231',  # Orange
+    '#911EB4',  # Purple
+    '#42D4F4',  # Cyan
+    '#F032E6',  # Magenta
+]
+    #colors = plt.cm.viridis(np.linspace(0, 1, 8))
+    for folder in folders:
+        #pdb.set_trace()
+        parameters ={}
+        parameters['run'] = 0
+        parameters["Output folder"] = "1D/Thesis/"+folder
+        Parameter(parameters,'output')
+        parameters["Output folder"] = "1D/Thesis/"+folder 
+    
+    
+        file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
+        file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
+        omega = np.loadtxt(file, dtype=float)
+        
+        length, width = np.shape(omega)
+   
+        x1 =  omega[:, 0]/1e+6
+        y1 =  2*np.pi/(omega[:, 1]*3600)
+
+        ax.plot(x1, y1,color=colors[i], linewidth=2,zorder=10)
+        
+        file = Output_File_old(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
+        w = np.loadtxt(file, dtype=float, delimiter=",")
+
+        length, width = np.shape(w)
+
+
+        custom_gray = LinearSegmentedColormap.from_list("my_gray", [ "#F5F5F5", "#7F7F7F"])
+
+        i+=1
+        ax1 = fig.add_axes(axes[i-1])
+        ax1.patch.set_alpha(0)
+        ax1.set_zorder(5)
+        update_plot(ax1,w,width,colors[i-1],labels[i-1])
+        plt.minorticks_on()
+
+        
+    #img = Output_File(parameters=parameters, filetype='output', filenames=['plots','omega.svg']) 
+    ax.grid(zorder = -1)
+    #fig.savefig(img, dpi=150)  # Save as PNG
+    secax = ax.secondary_yaxis('right', functions=(lambda y: 2*np.pi/(y*3600), lambda y: 2*np.pi/(y*3600)))
+    secax.set_ylabel('Rotational time period  (hr)' )
+    secax.tick_params(axis='y')
+    #secax.set_yticks(ax.get_yticks())
+    plt.minorticks_on()
+    secax.minorticks_on()
+    # Apply scientific notation formatting
+    formatter = ScalarFormatter(useMathText=True)
+    formatter.set_scientific(True)
+    formatter.set_powerlimits((-2, 2))
+    ax.yaxis.set_major_formatter(formatter)
+    secax.tick_params(direction='in',which='minor', length=5, width=1, color='black', bottom=False, top=False, left=False, right=True)
+    secax.tick_params(direction='in',which='major', length=10, width=1, color='black', bottom=False, top=False, left=False, right=True)
+    plt.tick_params(labelbottom=True, labeltop=False, labelright=False, labelleft=True)
+    plt.tick_params(direction='in',which='minor', length=5, bottom=True, top=True, left=True, right=False)
+    plt.tick_params(direction='in',which='major', length=10, bottom=True, top=True, left=True, right=False)
+   
+    plt.show()
+    
+    return axes

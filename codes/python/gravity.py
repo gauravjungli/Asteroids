@@ -13,20 +13,21 @@ import multiprocessing
 from collisions import G
 from scipy.special import ellipk, ellipe,elliprf,elliprj
 import matplotlib.pyplot as plt
+from scipy.ndimage import gaussian_filter1d
 #%%
 """
 Calculates gravity for the axisymmetric body.
 """
 
-def Gravitycalc(parameters,target):
+def Gravitycalc(target):
     
-    start =time.time()
-    Res=int(parameters["Resolution"])
-    epsilon=1e-3 #This is a different epsilon
-    density=float(parameters["Density"])
+    start = time.time()
+    Res = target.res
+    epsilon = 1e-3 #This is a different epsilon
+    density = target.dens
     rad=target.d/2
     
-    file= Output_File(parameters,"output",["base.txt"])
+    file= Output_File(target,"output",["base.txt"])
 
     try:
         w=np.loadtxt(file,dtype=float,delimiter=",")
@@ -46,7 +47,7 @@ def Gravitycalc(parameters,target):
     r = fR(theta)
     z = fZ(theta)
     
-    num_processes = 20# multiprocessing.cpu_count()#change for a single run
+    num_processes =  multiprocessing.cpu_count()
     pool = multiprocessing.Pool(processes=num_processes)
     
     arguments=[(R[i]+epsilon/2*rad*np.sin(w[i,0]),Z[i]+ epsilon/2*rad*np.cos(w[i,0]),r,z) for i in range(int(Res/2))]#changed it from Res/2
@@ -61,7 +62,7 @@ def Gravitycalc(parameters,target):
     
     #Only for the axisymmetric case
     theta = w[2:Res-2,0]
-    base = w[2:Res-2,1]
+    base  = w[2:Res-2,1]
     dbase = w[2:Res-2,3]
 
     metric = base**2 + dbase**2
@@ -75,7 +76,7 @@ def Gravitycalc(parameters,target):
     #plt.plot(w[:,0],t_grav)
    # print("gravity updated")
     grav=np.hstack((r_grav.reshape(-1,1),t_grav.reshape(-1,1)))
-    file=Output_File(parameters,"output",["grav.txt"])
+    file = Output_File(target,"output",["grav.txt"])
     np.savetxt(file,grav)
     pool.close()
     pool.join()       
@@ -85,11 +86,11 @@ def Gravitycalc(parameters,target):
 
 
 
-def Gravitycalc_2D(parameters,lats,lons,devs,radius,lats_comp,lons_comp,devs_comp,base,dbase):
+def Gravitycalc_2D(target,lats,lons,devs,radius,lats_comp,lons_comp,devs_comp,base,dbase):
     
     start =time.time()
     epsilon=0.001 #This is a different epsilon
-    density=float(parameters["Density"])
+    density= target.dens
     rad=radius*1000
     devs = devs*1000
     
@@ -142,7 +143,7 @@ def Gravitycalc_2D(parameters,lats,lons,devs,radius,lats_comp,lons_comp,devs_com
     gravity_data = np.stack((r_grav_2D.ravel(),t_grav_2D.ravel())).T 
     print("gravity updated")
     plt.plot(lats_comp,t_grav)
-    file=Output_File(parameters,"output",["grav.txt"])
+    file = Output_File(target,"output",["grav.txt"])
     np.savetxt(file,gravity_data)
     
     pool.close()

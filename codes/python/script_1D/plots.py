@@ -16,7 +16,7 @@ from matplotlib.figure import Figure
 from pathlib import Path
 import os
 import pdb
-from IO import Output_File, ExportOmega
+from IO import Output_File_old, ExportOmega
 import seaborn as sns
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import tkinter as tk
@@ -37,7 +37,7 @@ def show_shape(parameters):
     file2=os.path.join(file1,'dia.txt')
     epsilon=np.loadtxt(file2,dtype=float)[:,2]
 
-    for count in range(1,10000,1):
+    for count in range(0,10000,1):
         
         
         file=os.path.join(file1,f'field_{(count+1)}.csv')
@@ -71,8 +71,12 @@ def show_shape(parameters):
 def show_omega(parameters):
     plt.close()
     fig,ax = plt.subplots()
+    file2 = "output.yorp"
     file1 = f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = Output_File(parameters,'output',[file1])
+    file = Output_File_old(parameters,'output',[file1])
+    
+    if not os.path.exists(file):
+        file = Output_File_old(parameters,'output',[file2])
    
     if os.path.exists(file):
   
@@ -87,7 +91,9 @@ def show_omega(parameters):
         fig.canvas.draw()
         fig.canvas.flush_events()
         plt.show(block=False)
+        
     else:
+        
         print("No omega file exists")
     
     plt.pause(0.1)
@@ -96,7 +102,7 @@ def show_omega(parameters):
 
      
 def post_process(parameters):
-    
+    #pdb.set_trace()
     length=101
     if parameters["YORP"]=="Yes":
         file1="output.yorp"
@@ -112,7 +118,7 @@ def post_process(parameters):
     x[:,0]=np.linspace(0, T,num=length, endpoint=True)
     
     for i in range (1,N+1):
-        file = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i}',file1])     
+        file = Output_File_old(parameters=parameters,filetype='output',filenames=[f'run{i}',file1])     
         try:
             w=np.loadtxt(file,dtype=float)
         except FileNotFoundError:
@@ -121,13 +127,13 @@ def post_process(parameters):
         x[:,i] = 2*np.pi/np.interp(x[:,0], w[:,0], w[:,1])/3600   
         
     myomega=[[x[i,0],np.mean(x[i,1:N+1]),np.std(x[i,1:N+1])] for i in range(length) ]
-    ExportOmega(parameters=parameters,myomega=myomega)
+    ExportOmega(parameters = parameters, myomega=myomega)
     
     shape=np.ones((length+1,res+1,N))
         
     for i in range (0,N):
         
-        file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','base.txt']) #change
+        file2 = Output_File_old(parameters=parameters,filetype='output',filenames=[f'run{i+1}','base.txt']) #change
         try:
             grid = np.loadtxt(file2,dtype=float,delimiter=",")
         except FileNotFoundError:
@@ -139,7 +145,7 @@ def post_process(parameters):
         
         if parameters["Landslide"]=="Yes":
             
-            file2 = Output_File(parameters=parameters,filetype='output',filenames=[f'run{i+1}','data','dia.txt'])
+            file2 = Output_File_old(parameters=parameters,filetype='output',filenames=[f'run{i+1}','data','dia.txt'])
             try:
                 slides=np.loadtxt(file2,dtype=float,ndmin = 2)
                 epsilon = slides[:,2]
@@ -152,7 +158,7 @@ def post_process(parameters):
             
             for j in range(0,len(slides)):
                 
-                file2 = Output_File(parameters=parameters,filetype='output',
+                file2 = Output_File_old(parameters=parameters,filetype='output',
                                     filenames=[f'run{i+1}','data',f'field_{j+1}.csv'])
                 try:
                     w = np.loadtxt(file2,delimiter=",",dtype=float)
@@ -175,18 +181,18 @@ def post_process(parameters):
     std_shape[0,1:res+1]=mean_shape[0,1:res+1]
     std_shape[1:length+1,0]=mean_shape[1:length+1,0]
     
-    file = Output_File(parameters=parameters,filetype='output',filenames=['mean_shape.csv']) 
+    file = Output_File_old(parameters=parameters,filetype='output',filenames=['mean_shape.csv']) 
     np.savetxt(file, mean_shape, delimiter=',', fmt='%f')
-    file = Output_File(parameters=parameters,filetype='output',filenames=['std_shape.csv']) 
+    file = Output_File_old(parameters=parameters,filetype='output',filenames=['std_shape.csv']) 
     np.savetxt(file, std_shape, delimiter=',', fmt='%f')
     
 """ For old style 2D plots"""
 
 def show_plots(parameters, root):
-    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.txt']) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=['mean_shape.txt']) 
     w = np.loadtxt(file, dtype=float, delimiter=",")
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
     omega = np.loadtxt(file, dtype=float)
     
     length, width = np.shape(w)
@@ -248,10 +254,11 @@ def show_3D_plots(gui):
     
     parameters = gui.parameters
     root = gui.root
-    file = Output_File(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
+    plt.rcParams.update({'font.size' : 11})
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=['mean_shape.csv']) 
     w = np.loadtxt(file, dtype=float, delimiter=",")
     file1=f'Omega_{"C" if parameters["Collision"]=="Yes" else ""}{"L" if parameters["Landslide"]=="Yes" else ""}{"Y" if parameters["YORP"]=="Yes" else ""}.txt'
-    file = Output_File(parameters=parameters, filetype='output', filenames=[file1]) 
+    file = Output_File_old(parameters=parameters, filetype='output', filenames=[file1]) 
     omega = np.loadtxt(file, dtype=float)
     
     length, width = np.shape(w)
@@ -260,9 +267,9 @@ def show_3D_plots(gui):
     gui.fig = Figure(figsize=(16, 9), dpi=300) 
     fig = gui.fig
     fig.patch.set_facecolor('black')
-    ax2 = fig.add_axes([0.23, -0.3, 0.80, 1.6], projection='3d') 
-    ax1 = fig.add_axes([0.08, 0.25, 0.3,0.6])
-    cbar_ax = fig.add_axes([0.88, 0.1, 0.03, 0.75])
+    ax2 = fig.add_axes([0.27, -0.3, 0.7, 1.6], projection='3d') 
+    ax1 = fig.add_axes([0.10, 0.25, 0.3,0.6])
+    cbar_ax = fig.add_axes([0.87, 0.1, 0.03, 0.75])
 
 
     ax2.set_facecolor('black')
@@ -312,7 +319,7 @@ def show_3D_plots(gui):
         #ax2.view_init(elev=0)
         ax2.text2D(0.5, 0.2, f'Rotation period = {omega[i,1]:.2f} hrs', transform=ax2.transAxes, fontsize=12, color='white', ha='center', va='center')
         ax2.set_aspect('equal')
-        fig.suptitle(f'Time = {w[i+1,0]/1e+6} Myrs',color='white')
+        fig.suptitle(f'Time = {w[i+1,0]/1e+6} Myrs',color='white',fontsize=12)
         ax2.set_axis_off()
         ax2.grid(False)
         sm.set_array(R)
